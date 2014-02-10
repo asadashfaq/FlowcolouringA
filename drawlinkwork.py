@@ -1,0 +1,1016 @@
+#! /usr/bin/env python
+from pylab import *
+from scipy import *
+import numpy as np
+from res_classes import *
+import networkx as nx
+from res_tools import get_q#, ISO2LONG, biggestpair
+import decimal
+from EUgrid import *
+from new_linkcolour_algorithm import get_neighbours
+ 
+
+colwidth = (3.425)
+dcolwidth = (2*3.425+0.236) 
+cdict = {'red':  ((0.0, 1.0, 1.0),
+                  (0.5, 0.0, 0.50),
+                  (1.0, 0.0, 0.0)),
+          'green': ((0.0, 0.0, 0.0),
+                    (0.5, 1.0, 0.0),
+                    (1.0, 0.0, 0.0)),
+          'blue': ((0.0, 0.0, 0.0),
+                   (0.5, 0.0, 0.0),
+                   (1.0, 1.0, 1.0))}
+my_cmap = matplotlib.colors.LinearSegmentedColormap('my_colormap',cdict,256)
+colors_countries = ['#00A0B0','#6A4A3C','#CC333F','#EB6841','#EDC951'] #Ocean Five from COLOURlovers.
+#sugar_colours = ['#F8CA00','#BD1550','#E97F02','#490A3D','#8A9B0F','#134B7C']
+sugar_colours = ['#F8CA00','#AD0550','#FF9F22','#490A3D','#9AAB0F','#003B6C']
+order = [24,11,10,22,3,9,17,13,4,23,12,0,14,16,26,25,15,6,18,2,8,7,19,21,20,5,1]
+rolor= ( (19)/255. , (75)/255. , (124)/255.)
+rrolor= ( 0.69,0.12,0.07 )
+grolor= ( 0.6,0.67,0.06)
+joloj= ( (236)/255. , (180)/255. , (131)/255.)
+crolor=sugar_colours[4]
+
+def nlargest(X,n=2):
+    a=max(X)
+    b=min(X)
+    for i in X:
+        if i>b and i<a:
+            b=i
+    return b
+    
+def draw_node_links_rel_network(n0,linksrel,linkflows,ports="ex+im",new=False,mode="linear",N=None,F=None,title=None,alph=None,copper=True, modified=False): 
+## links is the new_node_links_rel file or node_links_rel or variants of these, 
+#n0 is the countrynumber and the function draws the relative usage of the different links compared to the countrys total usage of links.
+#Mode can be "linear", "square" or "random".
+	close()
+	if alph==None:
+		alph="hetero"
+	if title==None:
+		title="powermix"
+	if N==None:
+		N=EU_Nodes()
+	G=nx.Graph()
+	nodelist=[]
+	colours=[]
+	for n in N:
+		G.add_node(str(n.label))
+		nodelist.append(str(n.label))
+		
+	alpha=
+	alphas=[N[n0].power_mix/alpha*2 for x in range(len(N)) ] # We multiply by 2, because the colorbar is normed to 0.5 instead of 1. All our values in alphas are between 0 and 1 and the colors are in the range 0 to 1, so since the values in links are between 0and 0.5 as max it will now fit with the colourbar.
+	print sum(alphas)
+	
+
+	cmap=mpl.cm.PiYG
+	norm=mpl.colors.Normalize(vmin=0,vmax=0.5) #The biggest user 
+
+	node_c=[]
+    #ax4.arrow(0.15,0.35,0.0,-0.2,fc='k',ec='k',head_width=0.05,head_length=0.1)
+	for n in N:
+		node_c.append(cmap(  alphas[n.id]    ))
+	
+	K,h,ListF=AtoKh_old(N)    
+
+	x=len(ListF)
+	
+	m=max(links[n0*x:n0*x+50])
+	print m
+	p=m**(0.1)
+	print p
+	k=decimal.Decimal(str(p))
+	k=round(k,2)
+	
+	for l in ListF:
+		w=links[n0*x+l[2]]		
+		G.add_edge(l[0], l[1] , weight= w)
+  
+	pos=nx.spring_layout(G)
+
+	pos['AT']=[0.55,0.45]
+	pos['FI']=[.95,1.1]
+	pos['NL']=[0.40,0.85]
+	pos['BA']=[0.65,0.15]
+	pos['FR']=[0.15,0.60]
+	pos['NO']=[0.5,1.1]
+	pos['BE']=[0.275,0.775]
+	pos['GB']=[0.10,1.05]
+	pos['PL']=[0.75,0.8]
+	pos['BG']=[0.9,0.0]
+	pos['GR']=[0.7,0.0]
+	pos['PT']=[0.0,0.15]
+	pos['CH']=[0.4,0.45]
+	pos['HR']=[0.75,0.3]
+	pos['RO']=[1.0,0.15]
+	pos['CZ']=[0.75,0.60]
+	pos['HU']=[1.0,0.45]
+	pos['RS']=[0.85,0.15]
+	pos['DE']=[0.45,0.7]
+	pos['IE']=[0.0,0.95]
+	pos['SE']=[0.75,1.0]
+	pos['DK']=[0.5,0.875]
+	pos['IT']=[0.4,0.2]
+	pos['SI']=[0.55,0.3]
+	pos['ES']=[0.15,0.35]
+	pos['LU']=[0.325,0.575]
+	pos['SK']=[0.90,0.55]
+	if len(N)>27:
+		pos['EE']=[1.0,0.94]
+		pos['LV']=[0.95,0.83]
+		pos['LT']=[0.87,0.72]
+	if len(N)>30:
+		pos['NS']=[0.325,.95]
+		pos['NA']=[0.275,0.0]
+
+	if modified:	    
+	    idle_weights=[]
+	    #print G.edges()
+	    for n in N:
+		idle_weights=[]
+		#if n.id==0:
+		    #print (d['weight'] for (n.label,v,d) in G.edges(data=True))    
+		
+		idle_weights=[d["weight"] for (u,v,d) in G.edges(data=True) if u==n.label or v==n.label] 
+		if all(idle_weights<=p):
+		    G.remove_node(str(n.label))
+		    del pos[str(n.label)]
+		    nodelist.remove(str(n.label))	
+
+	fig = figure(dpi=100,figsize=(13,7))
+
+	ax1= fig.add_axes([-0.025,0.235,1.00,0.8]) #For displaying graph    
+	nx.draw_networkx_nodes(G,pos,node_size=600,nodelist=nodelist,node_color=crolor,facecolor=(1,1,1))
+
+#    nx.draw_networkx_edges(G,pos,edgelist=e1,width=1.5,edgecolor=(0.175,0.175,0.175))
+	e0=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=p]
+	e1=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p and d['weight']<=p**2]
+	e2=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**2 and d['weight']<=p**3]
+	e3=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**3 and d['weight']<=p**4]
+	e4=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**4 and d['weight']<=p**5]
+	e5=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**5 and d['weight']<=p**6]
+	e6=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**6 and d['weight']<=p**7]
+	e7=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**7 and d['weight']<=p**8]
+	e8=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**8 and d['weight']<=p**9]
+	e9=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**9]
+#    ax1.text(-0.05,1.05,"(a)",fontsize=12)
+	if modified:
+	    nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=0.0,style='dotted')
+	else:
+	    nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=1.0,style='dotted')
+	nx.draw_networkx_edges(G,pos,edgelist=e1,width=0.5,edge_color='k',alpha=0.7,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e2,width=1.0,edge_color='k',alpha=0.8,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e3,width=2.0,edge_color='k',alpha=.9,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e4,width=3.0,edge_color='k',alpha=1.0,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e5,width=3.0,edge_color='k',alpha=0.6)
+	nx.draw_networkx_edges(G,pos,edgelist=e6,width=3.5,edge_color='k',alpha=.7)
+	nx.draw_networkx_edges(G,pos,edgelist=e7,width=4.0,edge_color='k',alpha=.8)
+	nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.5,edge_color='k',alpha=0.9)
+	nx.draw_networkx_edges(G,pos,edgelist=e9,width=5.0,edge_color='k',alpha=1.0)
+	nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')	
+
+#    nx.draw_networkx_labels(G,pos,font_size=8,font_color='k',font_family='sans-serif')
+
+	ax1.axis('off')
+	
+	ax4= fig.add_axes([-0.075,0.075,1.5,.15]) #For displaying graph
+	ax4.vlines(0.06*1.05+0.025,0.6,1.0,linewidth=1.0,color='k',alpha=1.0,linestyles='dotted')
+	ax4.vlines(0.12*1.05+0.025,0.6,1.0,linewidth=0.5,color='k',alpha=0.7,linestyle='dashed')
+	ax4.vlines(0.18*1.05+0.025,0.6,1.0,linewidth=1.0,color='k',alpha=0.8,linestyle='dashed')
+	ax4.vlines(0.24*1.05+0.025,0.6,1.0,linewidth=2.0,color='k',alpha=0.9,linestyle='dashed')
+	ax4.vlines(0.30*1.05+0.025,0.6,1.0,linewidth=3.0,color='k',alpha=1.0,linestyle='dashed')
+	ax4.vlines(0.36*1.05+0.025,0.6,1.0,linewidth=3.0,color='k',alpha=0.6)
+	ax4.vlines(0.42*1.05+0.025,0.6,1.0,linewidth=3.5,color='k',alpha=0.7)
+	ax4.vlines(0.48*1.05+0.025,0.6,1.0,linewidth=4.0,color='k',alpha=0.8)
+	ax4.vlines(0.54*1.05+0.025,0.6,1.0,linewidth=4.5,color='k',alpha=0.9)
+	ax4.vlines(0.60*1.05+0.025,0.6,1.0,linewidth=5.0,color='k',alpha=1.0)
+	ax4.text(0.06*1.05+0.01,0.5,"$\leq$"+str(k)+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.12*1.05+0.01,0.5,"$\leq$"+str(round(p**2,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.18*1.05+0.01,0.5,"$\leq$"+str(round(p**3,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.24*1.05+0.01,0.5,"$\leq$"+str(round(p**4,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.30*1.05+0.01,0.5,"$\leq$"+str(round(p**5,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.36*1.05+0.01,0.5,"$\leq$"+str(round(p**6,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.42*1.05+0.01,0.5,"$\leq$"+str(round(p**7,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.48*1.05+0.01,0.5,"$\leq$"+str(round(p**8,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.54*1.05+0.01,0.5,"$\leq$"+str(round(p**9,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.60*1.05+0.01,0.5,"$\leq$"+str(round(p**10,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.axis([0.0,1.0,0.0,1.2])
+	
+	if new:
+	    if copper:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,copper, modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,square,copper,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,random,copper,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,square,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,random,copper,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+	    else:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,square,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,random,constr,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,square,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,new,random,constr,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+	else:
+	    if copper:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,copper,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,square,copper,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old random,copper,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,square,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old random,copper,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    
+	    else:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,square,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old random,constr,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")	
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,square,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old random,constr,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_countryflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")	
+	ax4.axis('off')
+
+
+	
+		
+	
+	show() # 
+
+def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex+im",N=None,F=None,title=None,alph=None,copper=True,modified=False): 
+## links is the new_links_mix file or links_mix or variants of these, linksflow is the links_flow file or variants of this, n0 is the countrynumber
+# and it draws the countrys relative usage of the different links compared to the different flows over these links.
+	#set new=True if you use new_links_mix
+	close()
+	if alph==None:
+		alph="hetero"
+	if title==None:
+		title=="powermix"
+	if N==None:
+		N=EU_Nodes()
+	G=nx.Graph()
+	nodelist=[]
+	colours=[]
+	for n in N:
+		G.add_node(str(n.label))
+		nodelist.append(str(n.label))
+		
+	
+
+	
+	K,h,ListF=AtoKh_old(N)
+    
+	x=len(N)
+	m=0
+	for i in range(len(ListF)):
+		
+		j=links[n0+i*x]/linksflow[i]*100
+		if j>m:
+			m=j
+	p=m**(0.1)
+	print p	
+	k=decimal.Decimal(str(p))
+	k=round(k,2)
+	print m
+	for l in ListF:
+		w=links[x*l[2]+n0]/linksflow[l[2]]*100	
+		G.add_edge(l[0], l[1] , weight= w)
+		
+
+  
+	pos=nx.spring_layout(G)
+
+
+	pos['AT']=[0.55,0.45]
+	pos['FI']=[.95,1.1]
+	pos['NL']=[0.40,0.85]
+	pos['BA']=[0.65,0.15]
+	pos['FR']=[0.15,0.60]
+	pos['NO']=[0.5,1.1]
+	pos['BE']=[0.275,0.775]
+	pos['GB']=[0.10,1.05]
+	pos['PL']=[0.75,0.8]
+	pos['BG']=[0.9,0.0]
+	pos['GR']=[0.7,0.0]
+	pos['PT']=[0.0,0.15]
+	pos['CH']=[0.4,0.45]
+	pos['HR']=[0.75,0.3]
+	pos['RO']=[1.0,0.15]
+	pos['CZ']=[0.75,0.60]
+	pos['HU']=[1.0,0.45]
+	pos['RS']=[0.85,0.15]
+	pos['DE']=[0.45,0.7]
+	pos['IE']=[0.0,0.95]
+	pos['SE']=[0.75,1.0]
+	pos['DK']=[0.5,0.875]
+	pos['IT']=[0.4,0.2]
+	pos['SI']=[0.55,0.3]
+	pos['ES']=[0.15,0.35]
+	pos['LU']=[0.325,0.575]
+	pos['SK']=[0.90,0.55]
+	if len(N)>27:
+		pos['EE']=[1.0,0.94]
+		pos['LV']=[0.95,0.83]
+		pos['LT']=[0.87,0.72]
+	if len(N)>30:
+		pos['NS']=[0.325,.95]
+		pos['NA']=[0.275,0.0]
+
+	if modified:
+	    idle_nodes=[]
+	    idle_weights=[]
+	    #print G.edges()
+	    for n in N:
+		idle_weights=[]
+		#if n.id==0:
+		    #print (d['weight'] for (n.label,v,d) in G.edges(data=True))    
+		
+		idle_weights=[d["weight"] for (u,v,d) in G.edges(data=True) if u==n.label or v==n.label] 
+		if all(idle_weights<=p):
+		    G.remove_node(str(n.label))
+		    del pos[str(n.label)]
+		    nodelist.remove(str(n.label))	    	    
+	       
+	
+	fig = figure(dpi=100,figsize=(13,7))
+	
+
+	ax1= fig.add_axes([-0.025,0.235,1.00,0.8]) #For displaying graph    
+	nx.draw_networkx_nodes(G,pos,node_size=600,nodelist=nodelist,node_color=crolor,facecolor=(1,1,1))
+#    e1=[(u,v) for (u,v,d) in G.edges(data=True)]
+#    nx.draw_networkx_edges(G,pos,edgelist=e1,width=1.5,edgecolor=(0.175,0.175,0.175))
+	e0=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=p]
+	e1=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p and d['weight']<=p**2]
+	e2=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**2 and d['weight']<=p**3]
+	e3=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**3 and d['weight']<=p**4]
+	e4=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**4 and d['weight']<=p**5]
+	e5=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**5 and d['weight']<=p**6]
+	e6=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**6 and d['weight']<=p**7]
+	e7=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**7 and d['weight']<=p**8]
+	e8=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**8 and d['weight']<=p**9]
+	e9=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>p**9]
+#    ax1.text(-0.05,1.05,"(a)",fontsize=12)
+	if modified:
+	    nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=0.0,style='dotted')
+	else:
+	    nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=1.0,style='dotted')
+	nx.draw_networkx_edges(G,pos,edgelist=e1,width=0.5,edge_color='k',alpha=0.7,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e2,width=1.0,edge_color='k',alpha=0.8,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e3,width=2.0,edge_color='k',alpha=.9,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e4,width=3.0,edge_color='k',alpha=1.0,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e5,width=3.0,edge_color='k',alpha=0.6)
+	nx.draw_networkx_edges(G,pos,edgelist=e6,width=3.5,edge_color='k',alpha=.7)
+	nx.draw_networkx_edges(G,pos,edgelist=e7,width=4.0,edge_color='k',alpha=.8)
+	nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.5,edge_color='k',alpha=0.9)
+	nx.draw_networkx_edges(G,pos,edgelist=e9,width=5.0,edge_color='k',alpha=1.0)
+	nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')
+	
+	
+	
+	
+	
+	ax1.axis('off') 
+
+#    nx.draw_networkx_labels(G,pos,font_size=8,font_color='k',font_family='sans-serif')
+	
+
+	ax4= fig.add_axes([-0.075,0.075,1.5,.15]) #For displaying graph
+	ax4.vlines(0.06*1.05+0.025,0.6,1.0,linewidth=1.0,color='k',alpha=1.0,linestyles='dotted')
+	ax4.vlines(0.12*1.05+0.025,0.6,1.0,linewidth=0.5,color='k',alpha=0.7,linestyle='dashed')
+	ax4.vlines(0.18*1.05+0.025,0.6,1.0,linewidth=1.0,color='k',alpha=0.8,linestyle='dashed')
+	ax4.vlines(0.24*1.05+0.025,0.6,1.0,linewidth=2.0,color='k',alpha=0.9,linestyle='dashed')
+	ax4.vlines(0.30*1.05+0.025,0.6,1.0,linewidth=3.0,color='k',alpha=1.0,linestyle='dashed')
+	ax4.vlines(0.36*1.05+0.025,0.6,1.0,linewidth=3.0,color='k',alpha=0.6)
+	ax4.vlines(0.42*1.05+0.025,0.6,1.0,linewidth=3.5,color='k',alpha=0.7)
+	ax4.vlines(0.48*1.05+0.025,0.6,1.0,linewidth=4.0,color='k',alpha=0.8)
+	ax4.vlines(0.54*1.05+0.025,0.6,1.0,linewidth=4.5,color='k',alpha=0.9)
+	ax4.vlines(0.60*1.05+0.025,0.6,1.0,linewidth=5.0,color='k',alpha=1.0)
+	ax4.text(0.06*1.05+0.01,0.5,"$\leq$"+str(k)+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.12*1.05+0.01,0.5,"$\leq$"+str(round(p**2,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.18*1.05+0.01,0.5,"$\leq$"+str(round(p**3,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.24*1.05+0.01,0.5,"$\leq$"+str(round(p**4,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.30*1.05+0.01,0.5,"$\leq$"+str(round(p**5,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.36*1.05+0.01,0.5,"$\leq$"+str(round(p**6,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.42*1.05+0.01,0.5,"$\leq$"+str(round(p**7,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.48*1.05+0.01,0.5,"$\leq$"+str(round(p**8,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.54*1.05+0.01,0.5,"$\leq$"+str(round(p**9,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.text(0.60*1.05+0.01,0.5,"$\leq$"+str(round(p**10,2))+"$\%$",fontsize=9,rotation=-60)
+	ax4.axis([0.0,1.0,0.0,1.2])
+	
+	if new:
+	    if copper:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,copper, modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,square,copper,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,random,copper,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,square,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,random,copper,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+	    else:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,square,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,random,constr,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_linear_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,square,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/new_squared_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,random,constr,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/new_random_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+	else:
+	    if copper:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,copper,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,square,copper,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old random,copper,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+str(ports)+",ports,old,square,copper,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old random,copper,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    
+	    else:
+		if modified:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,square,constr,modified,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old random,constr,modified,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")	
+		else:
+		    if mode =="linear":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_linear_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "square":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,square,constr,alpha="+str(alph), fontsize=9)
+			savefig("./figures/old_squared_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    elif mode == "random":
+			ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old random,constr,alpha="+str(alph), fontsize=9)	
+			savefig("./figures/old_random_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")	
+	ax4.axis('off')
+	
+
+	show() # display
+
+def draw_linkmix_network(l0,links,ports="ex+im",new=False,mode="linear",N=None,F=None,title=None,alph=None,copper=True): 
+# l0 is the linknumber you want to look at, links is either links_mix.npy, new_links_mix.npy or variants of these.
+# Draws each countrys share of the usage of the link. If you use new_links_mix remember to set new=True. 
+	close()
+	if alph==None:
+		alph="hetero"
+	if title==None:
+		title=="linkmix"
+	if N==None:
+		N=EU_Nodes()
+	G=nx.Graph()
+	nodelist=[]
+	colours=[]
+	o=len(N)
+	
+	for n in N:
+		G.add_node(str(n.label))
+		nodelist.append(str(n.label))
+
+	alpha=sum(links[o*l0:o*l0+30]) 
+	print alpha
+	
+
+	
+	alphas=[links[o*l0+x]/alpha*2 for x in range(len(N)) ] # We multiply by 2, because the colorbar is normed to 0.5 instead of 1. All our values in alphas are between 0 and 1 and the colors are in the range 0 to 1, so since the values in links are between 0and 0.5 as max it will now fit with the colourbar.
+	print sum(alphas)
+	
+
+	cmap=mpl.cm.PiYG
+	norm=mpl.colors.Normalize(vmin=0,vmax=0.5) #The biggest user 
+
+	node_c=[]
+    #ax4.arrow(0.15,0.35,0.0,-0.2,fc='k',ec='k',head_width=0.05,head_length=0.1)
+	for n in N:
+		node_c.append(cmap(  alphas[n.id]    ))
+
+	a,b,ListF=AtoKh_old(N)
+	f,g,h,j,e=au.AtoKh(N)
+	
+    
+	for l in ListF:
+		w=4500	
+		if l[2]==l0:
+			G.add_edge(l[0],l[1],weight=13000)
+		else:
+			G.add_edge(l[0], l[1] , weight= w)
+  
+	pos=nx.spring_layout(G)
+
+
+	pos['AT']=[0.55,0.45]
+	pos['FI']=[.95,1.1]
+	pos['NL']=[0.40,0.85]
+	pos['BA']=[0.65,0.15]
+	pos['FR']=[0.15,0.60]
+	pos['NO']=[0.5,1.1]
+	pos['BE']=[0.275,0.775]
+	pos['GB']=[0.10,1.05]
+	pos['PL']=[0.75,0.8]
+	pos['BG']=[0.9,0.0]
+	pos['GR']=[0.7,0.0]
+	pos['PT']=[0.0,0.15]
+	pos['CH']=[0.4,0.45]
+	pos['HR']=[0.75,0.3]
+	pos['RO']=[1.0,0.15]
+	pos['CZ']=[0.75,0.60]
+	pos['HU']=[1.0,0.45]
+	pos['RS']=[0.85,0.15]
+	pos['DE']=[0.45,0.7]
+	pos['IE']=[0.0,0.95]
+	pos['SE']=[0.75,1.0]
+	pos['DK']=[0.5,0.875]
+	pos['IT']=[0.4,0.2]
+	pos['SI']=[0.55,0.3]
+	pos['ES']=[0.15,0.35]
+	pos['LU']=[0.325,0.575]
+	pos['SK']=[0.90,0.55]
+	if len(N)>27:
+		pos['EE']=[1.0,0.94]
+		pos['LV']=[0.95,0.83]
+		pos['LT']=[0.87,0.72]
+	if len(N)>30:
+		pos['NS']=[0.325,.95]
+		pos['NA']=[0.275,0.0]
+
+
+	#fig = figure(dpi=100,figsize=(1.7*colwidth,1.7*colwidth*0.75))
+	fig = figure(dpi=100,figsize=(13,7))
+
+	ax1= fig.add_axes([-0.025,0.04,0.93,1.0]) #For displaying graph    
+	nx.draw_networkx_nodes(G,pos,node_size=600,nodelist=nodelist,node_color=node_c,facecolor=(1,1,1))
+#    e1=[(u,v) for (u,v,d) in G.edges(data=True)]
+#    nx.draw_networkx_edges(G,pos,edgelist=e1,width=1.5,edgecolor=(0.175,0.175,0.175))
+	e0=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=700]
+	e1=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>700 and d['weight']<=1200]
+	e2=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1200 and d['weight']<=1800]
+	e3=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1800 and d['weight']<=2400]
+	e4=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>2400 and d['weight']<=3300]
+	e5=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>3300 and d['weight']<=4000]
+	e6=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>4000 and d['weight']<=5500]
+	e7=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>5500 and d['weight']<=8000]
+	e8=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>8000 and d['weight']<=12000]
+	e9=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>12000]
+#    ax1.text(-0.05,1.05,"(a)",fontsize=12)
+	nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=1.0,style='dotted')
+	nx.draw_networkx_edges(G,pos,edgelist=e1,width=0.5,edge_color='k',alpha=0.7,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e2,width=1.0,edge_color='k',alpha=0.8,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e3,width=2.0,edge_color='k',alpha=.9,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e4,width=3.0,edge_color='k',alpha=1.0,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e5,width=3.0,edge_color='k',alpha=0.6)
+	nx.draw_networkx_edges(G,pos,edgelist=e6,width=3.5,edge_color='k',alpha=.2)
+	nx.draw_networkx_edges(G,pos,edgelist=e7,width=4.0,edge_color='k',alpha=.8)
+	nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.5,edge_color='k',alpha=0.9)
+	nx.draw_networkx_edges(G,pos,edgelist=e9,width=5.0,edge_color='k',alpha=1.0)
+	nx.draw_networkx_labels(G,pos,font_size=13,font_color='k',font_family='sans-serif')
+	
+	if new:
+	    if copper:
+		if mode =="linear":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow"+str(e[l0][0:1])+",new,linear,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",new,square,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",new,random,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	    else:
+		if mode =="linear":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow"+str(e[l0][0:1])+",new,linear,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",new,square,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",new,random,constrr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	else:
+	    if copper:
+		if mode =="linear":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow"+str(e[l0][0:1])+",old,linear,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",old,square,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",old,random,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	    else:
+		if mode =="linear":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow"+str(e[l0][0:1])+",old,linear,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",old,square,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(-0.03,0.02, "Each countrys linkusage relative to linkflow "+str(e[l0][0:1])+",old,random,constrr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	ax1.axis('off') 
+
+#    nx.draw_networkx_labels(G,pos,font_size=8,font_color='k',font_family='sans-serif')
+	
+	ax1.axis('off')
+	ax2= fig.add_axes([0.86,0.05,0.05,0.92]) #displaying colorbarlegend
+	cbl=mpl.colorbar.ColorbarBase(ax2,cmap,norm,orientation= 'vertical' )
+
+	ax4= fig.add_axes([-0.075,0.075,1.5,.15]) #For displaying graph (the link)
+	
+	ax4.axis([0.0,1.0,0.0,1.2])
+	ax4.axis('off')
+
+    #plt.tight_layout
+	
+	if new:
+	    if copper:
+		if mode == "linear":
+		    savefig("./figures/linkwork_new_linear_copper"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_new_square_copper"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_new_random_copper"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")	
+	    else:
+		if mode == "linear":
+		    savefig("./figures/linkwork_new_linear_constr"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_new_square_constr"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_new_random_constr"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")		
+	
+	    
+	else:
+	    if copper:
+		if mode == "linear":
+		    savefig("./figures/linkwork_old_linear_copper"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_old_square_copper"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_old_random_copper"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")	
+	    else:
+		if mode == "linear":
+		    savefig("./figures/linkwork_old_linear_constr"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_old_square_constr"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_old_random_constr"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")			
+	
+	show()
+def draw_rel_linkmix_network(l0,links,ports="ex+im",new=False,mode="linear",N=None,F=None,title=None,alph=None, copper=True): 
+# l0 is the linknumber you want to look at, 
+## links is the new_node_links_rel file or node_links_rel or variants of these,
+# Draws each countrys share of the usage of the link compared to the countrys overall usage of the network. 
+#If you use new_node_links_rel remember to set new=True. 
+
+######## In progress ############################################
+	close()
+	if alph==None:
+		alph="hetero"
+	if title==None:
+		title=="linkmix"
+	if N==None:
+		N=EU_Nodes()
+	G=nx.Graph()
+	nodelist=[]
+	colours=[]	
+	
+	for n in N:
+		G.add_node(str(n.label))
+		nodelist.append(str(n.label))
+		
+	K,h,ListF=AtoKh_old(N)    
+
+	x=len(ListF)
+	
+	
+	alphas=[links[n.id*x+l0]/100 for n in N]
+	m=max(alphas)
+	print m
+	#print alphas
+	
+
+	cmap=mpl.cm.RdYlGn
+	#norm=autoscale(alphas)
+	norm=mpl.colors.Normalize(vmin=0,vmax=1)
+
+	node_c=[]
+    #ax4.arrow(0.15,0.35,0.0,-0.2,fc='k',ec='k',head_width=0.05,head_length=0.1)
+	for n in N:
+		node_c.append(cmap(  alphas[n.id]    ))
+	
+	f,g,h,j,e=au.AtoKh(EU_Nodes())
+    
+	for l in ListF:
+		w=4500	
+		if l[2]==l0:
+			G.add_edge(l[0],l[1],weight=13000)
+		else:
+			G.add_edge(l[0], l[1] , weight= w)
+  
+	pos=nx.spring_layout(G)
+
+
+	pos['AT']=[0.55,0.45]
+	pos['FI']=[.95,1.1]
+	pos['NL']=[0.40,0.85]
+	pos['BA']=[0.65,0.15]
+	pos['FR']=[0.15,0.60]
+	pos['NO']=[0.5,1.1]
+	pos['BE']=[0.275,0.775]
+	pos['GB']=[0.10,1.05]
+	pos['PL']=[0.75,0.8]
+	pos['BG']=[0.9,0.0]
+	pos['GR']=[0.7,0.0]
+	pos['PT']=[0.0,0.15]
+	pos['CH']=[0.4,0.45]
+	pos['HR']=[0.75,0.3]
+	pos['RO']=[1.0,0.15]
+	pos['CZ']=[0.75,0.60]
+	pos['HU']=[1.0,0.45]
+	pos['RS']=[0.85,0.15]
+	pos['DE']=[0.45,0.7]
+	pos['IE']=[0.0,0.95]
+	pos['SE']=[0.75,1.0]
+	pos['DK']=[0.5,0.875]
+	pos['IT']=[0.4,0.2]
+	pos['SI']=[0.55,0.3]
+	pos['ES']=[0.15,0.35]
+	pos['LU']=[0.325,0.575]
+	pos['SK']=[0.90,0.55]
+	if len(N)>27:
+		pos['EE']=[1.0,0.94]
+		pos['LV']=[0.95,0.83]
+		pos['LT']=[0.87,0.72]
+	if len(N)>30:
+		pos['NS']=[0.325,.95]
+		pos['NA']=[0.275,0.0]
+
+
+	fig = figure(dpi=100,figsize=(13,7))
+
+	ax1= fig.add_axes([-0.025,0.04,0.93,1.0]) #For displaying graph    
+	nx.draw_networkx_nodes(G,pos,node_size=600,nodelist=nodelist,node_color=node_c,facecolor=(1,1,1))
+#    e1=[(u,v) for (u,v,d) in G.edges(data=True)]
+#    nx.draw_networkx_edges(G,pos,edgelist=e1,width=1.5,edgecolor=(0.175,0.175,0.175))
+	e0=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=700]
+	e1=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>700 and d['weight']<=1200]
+	e2=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1200 and d['weight']<=1800]
+	e3=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1800 and d['weight']<=2400]
+	e4=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>2400 and d['weight']<=3300]
+	e5=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>3300 and d['weight']<=4000]
+	e6=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>4000 and d['weight']<=5500]
+	e7=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>5500 and d['weight']<=8000]
+	e8=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>8000 and d['weight']<=12000]
+	e9=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>12000]
+#    ax1.text(-0.05,1.05,"(a)",fontsize=12)
+	nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=1.0,style='dotted')
+	nx.draw_networkx_edges(G,pos,edgelist=e1,width=0.5,edge_color='k',alpha=0.7,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e2,width=1.0,edge_color='k',alpha=0.8,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e3,width=2.0,edge_color='k',alpha=.9,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e4,width=3.0,edge_color='k',alpha=1.0,style='dashed')
+	nx.draw_networkx_edges(G,pos,edgelist=e5,width=3.0,edge_color='k',alpha=0.6)
+	nx.draw_networkx_edges(G,pos,edgelist=e6,width=3.5,edge_color='k',alpha=.2)
+	nx.draw_networkx_edges(G,pos,edgelist=e7,width=4.0,edge_color='k',alpha=.8)
+	nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.5,edge_color='k',alpha=0.9)
+	nx.draw_networkx_edges(G,pos,edgelist=e9,width=5.0,edge_color='k',alpha=1.0)
+	nx.draw_networkx_labels(G,pos,font_size=13,font_color='k',font_family='sans-serif')
+	
+	
+	if new:
+	    if copper:
+		if mode =="linear":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",new,linear,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",new,square,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",new,random,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	    else:
+		if mode =="linear":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",new,linear,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",new,square,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",new,random,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	else:
+	    if copper:
+		if mode =="linear":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",old,linear,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",old,square,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",old,random,copper,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	    else:
+		if mode =="linear":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",old,linear,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "square":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",old,square,constr,alpha="+str(alph)+","+str(ports)+"ports", fontsize=9)
+		elif mode == "random":
+		    ax1.text(0.03,0.02, "Each countrys linkusage relative to countryflow"+str(e[l0][0:1])+",old,random,constr,alph a="+str(alph)+","+str(ports)+"ports", fontsize=9)	
+	
+	ax1.axis('off') 
+
+#    nx.draw_networkx_labels(G,pos,font_size=8,font_color='k',font_family='sans-serif')
+	
+	ax1.axis('off')
+	ax2= fig.add_axes([0.86,0.05,0.05,0.92]) #displaying colorbarlegend
+	cbl=mpl.colorbar.ColorbarBase(ax2,cmap,norm,orientation= 'vertical' )
+
+	ax4= fig.add_axes([-0.075,0.075,1.5,.15]) #For displaying graph (the link)
+	
+	ax4.axis([0.0,1.0,0.0,1.2])
+	ax4.axis('off')
+
+    #plt.tight_layout
+	
+	if new:
+	    if copper:
+		if mode == "linear":
+		    savefig("./figures/linkwork_new_linear_copper_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_new_square_copper_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_new_random_copper_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    else:
+		if mode == "linear":
+		    savefig("./figures/linkwork_new_linear_constr_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_new_square_constr_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_new_random_constr_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")	
+	
+	else:
+	    if copper:
+		if mode == "linear":
+		    savefig("./figures/linkwork_old_linear_copper_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_old_square_copper_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_old_random_copper_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    else:
+		if mode == "linear":
+		    savefig("./figures/linkwork_old_linear_constr_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="square":
+		    savefig("./figures/linkwork_old_square_constr_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+		elif mode=="random":
+		    savefig("./figures/linkwork_old_random_constr_rel"+str(l0)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	
+	show()
+
+
+
+def histogram_of_linkflow(l,n,links, ports="ex+im",alph=None,copper=True,new=False,N=None,mode="linear"):
+#links should be a variant of new_linear_copper_link_mix_export_all_alpha=, l is the linknumber and n the countrynumber we want to look at.
+    close()
+    if alph == None:
+	alph="hetero"
+    if N == None:
+	N=EU_Nodes()
+	
+    f,g,h,j,e=au.AtoKh(EU_Nodes())
+    fig=plt.figure(figsize=(18,10))
+    counter=0
+    linksnew=[]
+    for t in range(70128):
+	if links[l][n][t]>1:
+	    linksnew.append(links[l][n][t])
+	
+	    counter+=1
+    print counter
+
+    plt.ion()
+    plt.show()
+    plt.hist(linksnew,normed=1,bins=np.linspace(min(linksnew),max(linksnew),100))
+    ax=plt.gca()
+    labels = ax.get_xticks().tolist()
+    labels[0]="1"
+    ax.set_xticklabels(labels)
+    
+
+    if new:
+	if copper:
+	    if mode == "linear":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",new,linear,copper,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_new_linear_copper"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="square":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",new,square,copper,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_new_square_copper"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="random":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",new,random,copper,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_new_random_copper"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	else:
+	    if mode == "linear":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",new,linear,constr,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_new_linear_constr"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="square":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",new,square,constr,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_new_square_constr"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="random":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",new,random,constr,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_new_random_constr"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")	
+	    
+    else:
+	if copper:
+	    if mode == "linear":
+		plt.title("Histogram of the " +str(ports)+ "ports over link " + str(e[l][0:1])+" for "+str(N[n].label)+",old,linear,copper,alpha="+str(alph), fontsize=15)
+		print("mojn")
+		savefig("./figures/histogram_old_linear_copper"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="square":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",old,square,copper,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_old_square_copper"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="random":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",old,random,copper,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_old_random_copper"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	else:
+	    if mode == "linear":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",old,linear,constr,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_old_linear_constr"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="square":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",old,square,constr,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_old_square_constr"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+	    elif mode=="random":
+		plt.title("histogram of the " +str(ports)+ "ports over link " +str(e[l][0:1])+" for "+str(N[n].label)+",old,random,constr,alpha="+str(alph), fontsize=15)
+		savefig("./figures/histogram_old_random_constr"+str(l)+","+str(n)+"alpha="+str(alph)+","+str(ports)+"ports.pdf")
+plt.show()
+	
