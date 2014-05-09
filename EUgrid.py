@@ -15,9 +15,15 @@ files = ['AT.npz', 'FI.npz', 'NL.npz', 'BA.npz', 'FR.npz', 'NO.npz', 'BE.npz', '
 def EU_Nodes(load_filename=None, full_load=False):
     return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=np.ones(30))
 
-def EU_Nodes_homo(load_filename=None, full_load=False,alph=0):# for homogenous alphas, use alph from 0 to 10 included
-    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=homo_alphas[alph::11], gammas=np.ones(30))
+def EU_Nodes_homo(load_filename=None, full_load=False,alph=0):# for homogenous alphas, use alph from 0 to 1 included
+    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=homo_alphas[alph*10::11], gammas=np.ones(30))
 
+def EU_Nodes_gamma2(load_filename=None, full_load=False):
+    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=np.ones(30)*2)
+def EU_Nodes_log(load_filename=None, full_load=False,year=0):
+    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=np.load("./alphas/alpha"+str(year)+".npy"), gammas=np.load("./gammas/gamma"+str(year-2014)+".npy"))
+def EU_Nodes_Ben(load_filename=None, full_load=False,alphas=None,gammas=None):
+    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=np.ones(30))
 def linfo():
     link_info = open("line_info")
     LI = []

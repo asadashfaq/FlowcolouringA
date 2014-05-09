@@ -10,6 +10,7 @@ from figutils import AtoKh_old
 from time import time
 from drawnet import draw_powmix_network
 from EUgrid import *
+import networkx as nx
 
 def get_neighbours(n,matr=np.genfromtxt("./settings/eadmat.txt")):
     """ matr should be = np.genfromtxt("./settings/eadmat.txt")"""
@@ -41,180 +42,35 @@ def get_link_direction(n,N): #getting the first country-node in the link-label a
 	
 	return [start_node,end_node]
 
-def track_new_square_link_usage_total(N,F,lapse=None,alph=None): #tracks the usage of each link for each country in the shared-balancing-scenario,alph sets the value of homogenous alphas
-	
-	if lapse== None:
-		lapse=N[0].nhours   
-	#if alph!=None:
-		#file=open('new_square_link_usage_total_alpha='+str(alph)+'.dat','w+')
-	
-	#file = open('new_square_link_usage_total.dat', 'w+')
-	
-	matr=np.genfromtxt(N.pathadmat)
-       
-	a,b,c,d,e=au.AtoKh(EU_Nodes())     
-	f,g,list_F=au.AtoKh_old(N)
-	
-	boxplot=np.zeros((4,len(e)))
-	boksplotlabel=[]
-	links=[]
-	linksflow=[]
-	cost=[]
-	 		
-	
-	for n in range(len(e)):
-		
-		total_flow_link=0 
-		total_link_mix=np.zeros((len(N)))   		
-		link_mix_export=np.zeros((len(N),lapse))		
-		link_mix_import=np.zeros((len(N),lapse))	
-		total_link_mix_percentage=np.zeros((len(N)))
-		#getting the first country-node in the link-label as start and the second as end
-		start=get_link_direction(n,N)[0]
-		end=get_link_direction(n,N)[1]
-		# determining the links connected to start
-		start.links=get_links(start.id,matr) 
-
-		for t in range(lapse):
-		## Update progress bar.
-			if mod(t,100)==0 and t>0: 
-				print "\r",round(100.0*(t/float(lapse)),2),"%",
-				sys.stdout.flush()
-			
-    
-			for l in start.links:
-			    if end.label== list_F[l[0]][0] or end.label == list_F[l[0]][1]:
-			#if flow indicates export from start_node			
-				if F[l[0],t]*l[1]>0:
-					if l[1]==1:
-						sending_node_label=list_F[l[0]][0]
-						receiving_node_label=list_F[l[0]][1]
-					elif l[1]==-1:
-						sending_node_label=list_F[l[0]][1] 
-						receiving_node_label=list_F[l[0]][0]
-					else:
-						print "Warning (234nsd23): Link direction unknown!"
-			#if flow indicates export from end_node
-				else:				
-					if l[1]==-1:
-						sending_node_label=list_F[l[0]][0]
-						receiving_node_label=list_F[l[0]][1]
-					elif l[1]==1:
-						sending_node_label=list_F[l[0]][1] 
-						receiving_node_label=list_F[l[0]][0]
-					else:
-						print "Warning (234nsd23): Link direction unknown!"
-				#finding the nodes corresponding to the sending and receiving nodes
-				for k in N:
-							
-					if k.label==sending_node_label: 
-						sending_node=k
-					elif k.label==receiving_node_label:
-						receiving_node=k
-				# if sending_node and receiving_node are at the ends of the link we are looking at, create arrays with the flows being imported and exported from and to each country					
-				if (sending_node==start and receiving_node==end) or (sending_node==end and receiving_node==start):
-					link_mix_import[:,t]=receiving_node.power_mix_ex[:,t]*abs(F[l[0],t])/(sum(receiving_node.power_mix_ex[:,t])+0.000000000001)
-					link_mix_export[:,t]=sending_node.power_mix[:,t]*abs(F[l[0],t])/(sum(sending_node.power_mix[:,t])+0.000000000001)
-					
-				#adding the flow over the link	for each timestep									
-					total_flow_link+=abs(F[l[0],t])
-				#adding the arrays with import and export to the array with the total_link_mix
-					total_link_mix[:] += (link_mix_export[:,t]+link_mix_import[:,t])/2	
-									
-		# calculating each countrys usage of the link in percentages of the total usage of the link			   	    
-		total_link_mix_percentage[:]=total_link_mix[:]/total_flow_link*100		
-		print sum(total_link_mix_percentage[:])		
-		links=np.append(links,total_link_mix[:])
-		linksflow=np.append(linksflow,total_flow_link)			
-		cost=np.append(cost,total_link_mix_percentage)
-		
-		# saving information to human-readable file
-		#for k in N:			
-			#x="country", str(k.label), "has a total usage of link", e[n], "of" ,str(total_link_mix_percentage[k.id]), "% after", str(t), "hours"
-			#file.write(str(x) + '\n')			
-			
-		#file.write('\n')
-		# sorting the total_link_mix_percentage, such that the higher percentages are first
-		a=sorted(total_link_mix_percentage,reverse=True)
-		#for the 4 highest values we save the usage for each link and the corresponding countries
-		for i in range(4):
-			boxplot[i,n]=a[i]
-			for h in N:
-				
-				if a[i]==total_link_mix_percentage[h.id]:
-					boksplotlabel=np.append(boksplotlabel,str(h.label))
-	#if alph==None:
-		np.save('linkcolouring/new_square_boxplot',boxplot) 
-		np.save('linkcolouring/new_square_boksplotlabel',boksplotlabel)
-		np.save('linkcolouring/new_square_links_mix',links)
-		np.save('linkcolouring/new_square_links_flow',linksflow)
-		np.save('linkcolouring/new_square_cost',cost)
-	#else:
-		np.save('linkcolouring/new_square_boxplot_alpha='+str(alph),boxplot) 
-		np.save('linkcolouring/new_square_boksplotlabel_alpha='+str(alph),boksplotlabel)
-		np.save('linkcolouring/new_square_links_mix_alpha='+str(alph),links)
-		np.save('linkcolouring/new_square_links_flow_alpha='+str(alph),linksflow)
-		np.save('linkcolouring/new_square_cost_alpha='+str(alph),cost)
-	
-	
-	return boxplot,boksplotlabel
 
 def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copper=True): 
 #tracks the usage of each link for each country, 
 #alph sets the value of homogenous alphas.
-#Mode can be "linear", "square" or "random".
+#Mode can be "linear", "square", "random" or "capped".
 #set new=True if new model is used.
 	if alph==None:
 	    alph="hetero"
 	if lapse== None:
 		lapse=N[0].nhours 
 	if new:
-	    if mode=="linear":
-		
-		if copper:
-		    file=open('new_linear_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
+	    if copper:
+		file=open('new_'+str(mode)+'_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
 		
 	
-		file = open('new_linear_constr_link_usage_total_alpha='+str(alph)+'.dat', 'w+')
-	    elif mode=="square":
-		
-		if copper:
-		    file=open('new_square_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
-		
-	
-		file=open('new_square_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
+	    else:
+		file = open('new_'+str(mode)+'_constr_link_usage_total_alpha='+str(alph)+'.dat', 'w+')
 	    
-	    elif mode=="random":
-		
-		if copper:
-		    file=open('new_random_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
-		
-	
-		file=open('new_random_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
 	else:
-	    if mode=="linear":
+	
 		
-		if copper:
-		    file=open('old_linear_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
+	    if copper:
+		file=open('old_'+str(mode)+'_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
 		
 	
-		file=open('old_linear_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
+	    else:
+		 file=open('old_'+str(mode)+'_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
 		
-	    elif mode=="square":
-		
-		if copper:
-		    file=open('old_square_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
-		
-	
-		file=open('old_random_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
 	    
-	    elif mode=="random":
-		
-		if copper:
-		    file=open('old_random_copper_link_usage_total_alpha='+str(alph)+'.dat','w+')
-		
-	
-		file=open('old_random_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
 	
 	matr=np.genfromtxt(N.pathadmat)
        
@@ -349,6 +205,7 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 		# sorting the total_link_mix_percentage, such that the higher percentages are first
 		a=sorted(total_link_mix_percentage,reverse=True)
 		#for the 4 highest values we save the usage for each link and the corresponding countries
+		print a
 		for i in range(4):
 			boxplot[i,n]=a[i]
 			for h in N:
@@ -367,270 +224,99 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 	
 	if new:
 	    if copper:
-	    				
-		if mode=="linear":
-			np.save('linkcolouring/new_linear_copper_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/new_linear_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/new_linear_copper_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/new_linear_copper_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/new_linear_copper_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/new_linear_copper_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/new_linear_copper_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/new_linear_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/new_linear_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/new_linear_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/new_linear_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/new_linear_copper_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/new_linear_copper_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/new_linear_copper_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/new_linear_copper_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/new_linear_copper_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/new_linear_copper_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/new_linear_copper_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/new_linear_copper_quant99lim_alpha='+str(alph),quant99lim)
-		elif mode=="square":
-			np.save('linkcolouring/new_square_copper_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/new_square_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/new_square_copper_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/new_square_copper_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/new_square_copper_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/new_square_copper_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/new_square_copper_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/new_square_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/new_square_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/new_square_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/new_square_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/new_square_copper_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/new_square_copper_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/new_square_copper_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/new_square_copper_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/new_square_copper_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/new_square_copper_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/new_square_copper_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/new_square_copper_quant99lim_alpha='+str(alph),quant99lim)
-
-	    
-		elif mode=="random":
-			np.save('linkcolouring/new_random_copper_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/new_random_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/new_random_copper_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/new_random_copper_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/new_random_copper_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/new_random_copper_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/new_random_copper_links_im_alpha='+str(alph),links_im)		    
-			np.save('linkcolouring/new_random_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/new_random_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/new_random_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/new_random_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/new_random_copper_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/new_random_copper_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/new_random_copper_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/new_random_copper_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/new_random_copper_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/new_random_copper_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/new_random_copper_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/new_random_copper_quant99lim_alpha='+str(alph),quant99lim)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_boxplot_alpha='+str(alph),boxplot) 
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_links_mix_alpha='+str(alph),links)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_links_flow_alpha='+str(alph),linksflow)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_cost_alpha='+str(alph),cost)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_links_ex_alpha='+str(alph),links_ex)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_links_im_alpha='+str(alph),links_im)		   
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_maxlex_alpha='+str(alph),maxlex)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_maxlim_alpha='+str(alph),maxlim)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_minlex_alpha='+str(alph),minlex)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_minlim_alpha='+str(alph),minlim)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_meanlex_alpha='+str(alph),meanlex)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_meanlim_alpha='+str(alph),meanlim)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_quant99lex_alpha='+str(alph),quant99lex)
+		    np.save('linkcolouring/new_'+str(mode)+'_copper_quant99lim_alpha='+str(alph),quant99lim)
+		
 	    else:
-		if mode=="linear":
-			np.save('linkcolouring/new_linear_constr_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/new_linear_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/new_linear_constr_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/new_linear_constr_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/new_linear_constr_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/new_linear_constr_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/new_linear_constr_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/new_linear_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/new_linear_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/new_linear_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/new_linear_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/new_linear_constr_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/new_linear_constr_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/new_linear_constr_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/new_linear_constr_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/new_linear_constr_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/new_linear_constr_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/new_linear_constr_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/new_linear_constr_quant99lim_alpha='+str(alph),quant99lim)
-		elif mode=="square":
-			np.save('linkcolouring/new_square_constr_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/new_square_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/new_square_constr_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/new_square_constr_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/new_square_constr_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/new_square_constr_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/new_square_constr_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/new_square_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/new_square_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/new_square_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/new_square_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/new_square_constr_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/new_square_constr_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/new_square_constr_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/new_square_constr_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/new_square_constr_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/new_square_constr_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/new_square_constr_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/new_square_constr_quant99lim_alpha='+str(alph),quant99lim)
-
-	    
-		elif mode=="random":
-			np.save('linkcolouring/new_random_constr_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/new_random_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/new_random_constr_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/new_random_constr_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/new_random_constr_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/new_random_constr_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/new_random_constr_links_im_alpha='+str(alph),links_im)		    
-			np.save('linkcolouring/new_random_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/new_random_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/new_random_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/new_random_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/new_random_constr_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/new_random_constr_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/new_random_constr_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/new_random_constr_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/new_random_constr_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/new_random_constr_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/new_random_constr_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/new_random_constr_quant99lim_alpha='+str(alph),quant99lim)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_boxplot_alpha='+str(alph),boxplot) 
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_links_mix_alpha='+str(alph),links)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_links_flow_alpha='+str(alph),linksflow)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_cost_alpha='+str(alph),cost)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_links_ex_alpha='+str(alph),links_ex)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_links_im_alpha='+str(alph),links_im)		   
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_maxlex_alpha='+str(alph),maxlex)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_maxlim_alpha='+str(alph),maxlim)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_minlex_alpha='+str(alph),minlex)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_minlim_alpha='+str(alph),minlim)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_meanlex_alpha='+str(alph),meanlex)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_meanlim_alpha='+str(alph),meanlim)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_quant99lex_alpha='+str(alph),quant99lex)
+		    np.save('linkcolouring/new_'+str(mode)+'_constr_quant99lim_alpha='+str(alph),quant99lim)
+		
 		
 
 	else:
 	    if copper:
-		if mode=="linear":
+		
 		    
-			np.save('linkcolouring/old_linear_copper_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/old_linear_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/old_linear_copper_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/old_linear_copper_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/old_linear_copper_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/old_linear_copper_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/old_linear_copper_links_im_alpha='+str(alph),links_im)		
-			np.save('linkcolouring/old_linear_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/old_linear_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/old_linear_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/old_linear_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/old_linear_copper_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/old_linear_copper_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/old_linear_copper_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/old_linear_copper_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/old_linear_copper_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/old_linear_copper_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/old_linear_copper_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/old_linear_copper_quant99lim_alpha='+str(alph),quant99lim)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_boxplot_alpha='+str(alph),boxplot) 
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_mix_alpha='+str(alph),links)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_flow_alpha='+str(alph),linksflow)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_cost_alpha='+str(alph),cost)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_ex_alpha='+str(alph),links_ex)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_im_alpha='+str(alph),links_im)		
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_maxlex_alpha='+str(alph),maxlex)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_maxlim_alpha='+str(alph),maxlim)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_minlex_alpha='+str(alph),minlex)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_minlim_alpha='+str(alph),minlim)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_meanlex_alpha='+str(alph),meanlex)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_meanlim_alpha='+str(alph),meanlim)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_quant99lex_alpha='+str(alph),quant99lex)
+		    np.save('linkcolouring/old_'+str(mode)+'_copper_quant99lim_alpha='+str(alph),quant99lim)
 			
 		    
-		elif mode=="square":
-		    
-			np.save('linkcolouring/old_square_copper_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/old_square_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/old_square_copper_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/old_square_copper_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/old_square_copper_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/old_square_copper_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/old_square_copper_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/old_square_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/old_square_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/old_square_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/old_square_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/old_square_copper_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/old_square_copper_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/old_square_copper_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/old_square_copper_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/old_square_copper_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/old_square_copper_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/old_square_copper_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/old_square_copper_quant99lim_alpha='+str(alph),quant99lim)
-
-	    
-		elif mode=="random":
-		    
-			np.save('linkcolouring/old_random_copper_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/old_random_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/old_random_copper_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/old_random_copper_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/old_random_copper_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/old_random_copper_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/old_random_copper_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/old_random_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/old_random_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/old_random_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/old_random_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/old_random_copper_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/old_random_copper_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/old_random_copper_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/old_random_copper_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/old_random_copper_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/old_random_copper_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/old_random_copper_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/old_random_copper_quant99lim_alpha='+str(alph),quant99lim)
+		
 	    else:
-		if mode=="linear":
+		
 		    
-			np.save('linkcolouring/old_linear_constr_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/old_linear_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/old_linear_constr_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/old_linear_constr_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/old_linear_constr_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/old_linear_constr_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/old_linear_constr_links_im_alpha='+str(alph),links_im)		
-			np.save('linkcolouring/old_linear_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/old_linear_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/old_linear_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/old_linear_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/old_linear_constr_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/old_linear_constr_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/old_linear_constr_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/old_linear_constr_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/old_linear_constr_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/old_linear_constr_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/old_linear_constr_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/old_linear_constr_quant99lim_alpha='+str(alph),quant99lim)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_boxplot_alpha='+str(alph),boxplot) 
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_links_mix_alpha='+str(alph),links)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_links_flow_alpha='+str(alph),linksflow)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_cost_alpha='+str(alph),cost)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_links_ex_alpha='+str(alph),links_ex)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_links_im_alpha='+str(alph),links_im)		
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_maxlex_alpha='+str(alph),maxlex)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_maxlim_alpha='+str(alph),maxlim)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_minlex_alpha='+str(alph),minlex)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_minlim_alpha='+str(alph),minlim)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_meanlex_alpha='+str(alph),meanlex)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_meanlim_alpha='+str(alph),meanlim)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_quant99lex_alpha='+str(alph),quant99lex)
+		    np.save('linkcolouring/old_'+str(mode)+'_constr_quant99lim_alpha='+str(alph),quant99lim)
 		    
-		elif mode=="square":
-		    
-			np.save('linkcolouring/old_square_constr_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/old_square_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/old_square_constr_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/old_square_constr_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/old_square_constr_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/old_square_constr_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/old_square_constr_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/old_square_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/old_square_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/old_square_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/old_square_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/old_square_constr_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/old_square_constr_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/old_square_constr_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/old_square_constr_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/old_square_constr_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/old_square_constr_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/old_square_constr_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/old_square_constr_quant99lim_alpha='+str(alph),quant99lim)
-
-	    
-		elif mode=="random":
-		    
-			np.save('linkcolouring/old_random_constr_boxplot_alpha='+str(alph),boxplot) 
-			np.save('linkcolouring/old_random_constr_boksplotlabel_alpha='+str(alph),boksplotlabel)
-			np.save('linkcolouring/old_random_constr_links_mix_alpha='+str(alph),links)
-			np.save('linkcolouring/old_random_constr_links_flow_alpha='+str(alph),linksflow)
-			np.save('linkcolouring/old_random_constr_cost_alpha='+str(alph),cost)
-			np.save('linkcolouring/old_random_constr_links_ex_alpha='+str(alph),links_ex)
-			np.save('linkcolouring/old_random_constr_links_im_alpha='+str(alph),links_im)		   
-			np.save('linkcolouring/old_random_constr_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-			np.save('linkcolouring/old_random_constr_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-			np.save('linkcolouring/old_random_constr_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-			np.save('linkcolouring/old_random_constr_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-			np.save('linkcolouring/old_random_constr_maxlex_alpha='+str(alph),maxlex)
-			np.save('linkcolouring/old_random_constr_maxlim_alpha='+str(alph),maxlim)
-			np.save('linkcolouring/old_random_constr_minlex_alpha='+str(alph),minlex)
-			np.save('linkcolouring/old_random_constr_minlim_alpha='+str(alph),minlim)
-			np.save('linkcolouring/old_random_constr_meanlex_alpha='+str(alph),meanlex)
-			np.save('linkcolouring/old_random_constr_meanlim_alpha='+str(alph),meanlim)
-			np.save('linkcolouring/old_random_constr_quant99lex_alpha='+str(alph),quant99lex)
-			np.save('linkcolouring/old_random_constr_quant99lim_alpha='+str(alph),quant99lim)
+		
 
 		
 	
@@ -638,6 +324,8 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 	
 def boksplot(a,b,alph=None,new=False,mode="linear",copper=True): # draws a columndiagram displaying the 4 biggest users and their usage of each link. 
 #Insert new_boxplot and new_boksplotlabel or variants of these.
+#a is an array representing the portion of usage of the different links for the 4 biggest users at each link.
+#b is an array holding the corresponding labels of these different users.
 #Mode can be "linear", "square" or "random".
 	if alph==None:
 	    alph="hetero"	
@@ -668,6 +356,7 @@ def boksplot(a,b,alph=None,new=False,mode="linear",copper=True): # draws a colum
 	
 	if new:
 	    if copper:
+		
 		if mode =="linear":
 		    plt.text(0.03,92, "Linkusg rel to linkflow,new,linear,copper,alpha="+str(alph), fontsize=15, color='w')
 		    savefig("./figures/new_linear_copper_columndiagram_alpha="+str(alph)+".pdf")
@@ -714,172 +403,568 @@ def boksplot(a,b,alph=None,new=False,mode="linear",copper=True): # draws a colum
 		
 	    
 
-def costplot(links,N=None,alph=None,new=False,mode="linear",copper=True,ports="ex+im"): # draws a columndiagram displaying the 4 biggest users and their usage of each link. 
-#Insert new_boxplot and new_boksplotlabel or variants of these.
-#Mode can be "linear", "square" or "random".
+def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",copper=True,ports="ex_and_im",load=False): 
+#Mode can be "linear", "square", "random" or "capped".
+#links is the links_mix or variations of that
 	if N==None:
 	    N=EU_Nodes()
 	if alph==None:
 	    alph="hetero"		
-	f,g,h,j,e=au.AtoKh(EU_Nodes())
+	d,f,g,r,e=au.AtoKh(EU_Nodes())	
+	if new:
+	    file=open('new_'+str(mode)+'_copper_costplot_alpha='+str(alph)+'.dat','w+')
+	else:
+	    file=open('old_'+str(mode)+'_copper_costplot_alpha='+str(alph)+'.dat','w+')
+	
+	capacities_today=[]
+	capacities_year=[]
 	width=1.0	
+	gyell="#CCFF00"
 	E = [n.label for n in N]
+	D = [n.label for n in N]
+	C = [n.label for n in N]
 	fig=plt.figure(figsize=(13,7))
+	blue_div_yellow_kms=np.zeros(len(N))
+	blue_div_yellow_cost=np.zeros(len(N))
+	blue_div_yellow=np.zeros(len(N))
+	red_div_yellow_kms=np.zeros(len(N))
+	red_div_yellow_cost=np.zeros(len(N))
+	red_div_yellow=np.zeros(len(N))
+	green_div_yellow_kms=np.zeros(len(N))
+	green_div_yellow_cost=np.zeros(len(N))
+	green_div_yellow=np.zeros(len(N))
 	c=np.zeros(len(N))
+	c_kms=np.zeros(len(N))
+	c_kms_avg=np.zeros(len(N))
+	c_cost=np.zeros(len(N))
+	c_cost_final=np.zeros(len(N))
+	c_kms_avg_final=np.zeros(len(N))
+	d=np.zeros(len(N))
+	d_cost=np.zeros(len(N))
+	cost=np.zeros(len(N))
+	Graford=np.zeros(len(N))
+	t=np.zeros(len(N))
+	t_kms=np.zeros(len(N))
+	t_cost=np.zeros(len(N))	
+	today_usage=np.zeros(len(N))
+	usage_year=np.zeros(len(N))
+	usage_year_kms=np.zeros(len(N))
+	usage_year_cost=np.zeros(len(N))
+	today_usage_kms=np.zeros(len(N))
+	total_usage=np.zeros(len(N))
+	total_usage_year=np.zeros(len(N))
+	total_usage_kms_year=np.zeros(len(N))
+	total_usage_cost_year=np.zeros(len(N))
+	total_usage_kms=np.zeros(len(N))
+	total_usage_cost=np.zeros(len(N))
+	today_usage_cost=np.zeros(len(N))
+	cost_rev=np.zeros(len(N))
+	usage_rel_to_share_of_load=np.zeros(len(N))
+	usage_rel_to_share_of_load_kms=np.zeros(len(N))
+	usage_rel_to_share_of_load_cost=np.zeros(len(N))
 	j=np.arange(len(N))
+	total_mean_load=0
+	total_capacity=0
+	total_capacity_kms=0
+	total_capacities_2050_cost=0
+	today_cap=0
+	today_cap_kms=0
+	today_cap_cost=0
+	counter=0
+	loads=[]
+	tot_usage=0
+	tot_usage_rel=0
+	link_kms=[686,250,217,523,766,278,397,82,914,175,358,577,289,201,262,342,436,879,1109,1053,418,483,464,520,520,808,534,524,298,328,1052,503,753,691,305,371,117,642,446,281,291,317,163,812,356,591,523,491,277,263]
+	link_prizes=[400,400,400,400,400,400,1500,1500,1500,400,1500,400,400,400,400,1500,400,400,400,400,400,1500,1500,400,400,1500,400,400,400,400,1500,400,400,400,400,400,400,400,400,400,400,400,400,1500,400,400,1500,400,400,400]
+	print len(link_prizes)
+	link_kms_average=sum(link_kms)/len(link_kms)
+	print link_kms_average
+	
+	for i in range(len(e)):
+	    capacities_today.append(max(r[i*2:i*2+2]))
+	for l in range(len(F)):
+	    capacities_year.append(max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99))))
+	    total_capacity+=max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))
+	    total_capacity_kms+=max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*link_kms[l]
+	    if link_prizes[l]==1500: #If DC then a converter is needed at every end of the cable/HV-line
+		total_capacities_2050_cost+=max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*150000*2+max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*link_kms[l]*link_prizes[l]
+	    else: 
+		total_capacities_2050_cost+=max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*link_kms[l]*link_prizes[l]
 	
 	for n in N:
-		c[n.id]=sum(links[n.id::30])/n.mean
+	    total_mean_load+=n.mean
+	    loads.append(n.mean)
+	loadssort=sorted(loads,reverse=True)
+	print loadssort
+	if Graf != None:
+	    Grafordering=nx.betweenness_centrality(Graf)
+	    new_Grafordering=Grafordering.items()
+	    newer_Grafordering=[]
+	    for n in N:
+		newer_Grafordering.append(new_Grafordering[n.id][1])
+	    for n in N:
+		for h in N:
+		    if n.label==new_Grafordering[h.id][0]:
+			newer_Grafordering[h.id]=newer_Grafordering[h.id]/n.mean
+	    lookup={new_Grafordering[h.id][0]:newer_Grafordering[h.id] for h in N}
+	    Grafsorted=sorted(lookup.items(), key=lambda lookup: lookup[1],reverse=True)
+	    print Grafsorted
+	    	
+	   
+		
+		
+	    
+	for n in N:
+	    cap=0	    
+	    attached_links=get_links(n.id)
+	    today_cap=0
+	    today_cap_kms=0
+	    today_cap_cost=0
+	    cap_year=0
+	    cap_year_kms=0
+	    cap_cost_year=0
+	    for l in attached_links:
+		cap_year+=capacities_year[l[0]]
+		cap_year_kms+=capacities_year[l[0]]*link_kms[l[0]]
+		today_cap+=capacities_today[l[0]]
+		today_cap_kms+=capacities_today[l[0]]*link_kms[l[0]]
+		
+		if link_prizes[l[0]]==1500: #If link is DC and two converter stations are needed
+		    today_cap_cost+=capacities_today[l[0]]*link_kms[l[0]]*link_prizes[l[0]]+capacities_today[l[0]]*150000*2
+		    cap_cost_year+=capacities_year[l[0]]*link_kms[l[0]]*link_prizes[l[0]]+capacities_year[l[0]]*150000*2
+		else:    
+		    today_cap_cost+=capacities_today[l[0]]*link_kms[l[0]]*link_prizes[l[0]]
+		    cap_cost_year+=capacities_year[l[0]]*link_kms[l[0]]*link_prizes[l[0]]
+	
+	    today_usage[n.id]=today_cap*0.5
+	    today_usage_kms[n.id]=today_cap_kms*0.5
+	    today_usage_cost[n.id]=today_cap_cost*0.5
+	    usage_year[n.id]=cap_year*0.5
+	    usage_year_kms[n.id]=cap_year_kms*0.5
+	    usage_year_cost[n.id]=cap_cost_year*0.5
+	  
+	    
+	
+	for n in N:	    
+	    for l in range(len(F)):
+		c[n.id]+=links[n.id+30*l]/linksflow[l]*max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))
+		c_kms[n.id]+=links[n.id+30*l]/linksflow[l]*max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*link_kms[l]		
+	    t[n.id]=n.mean*total_capacity/total_mean_load
+	    t_kms[n.id]=n.mean*total_capacity_kms/total_mean_load
+	    t_cost[n.id]=n.mean*total_capacities_2050_cost/total_mean_load
+	    c_cost[n.id]=c_kms[n.id]/total_capacity_kms*total_capacities_2050_cost
+	    c[n.id]=c[n.id]/1000
+	    c_kms[n.id]=c_kms[n.id]/1000
+	    c_kms_avg[n.id]=c_kms[n.id]/link_kms_average
+	    
+	print c_kms_avg
+	    
 	k=sorted(c,reverse=True)
+	k_kms=sorted(c_kms,reverse=True)
+	k_cost=sorted(c_cost,reverse=True)
 	
 	
-	
-	for n in range(len(N)):
-	    
+	if load:
 	    for h in N:
-		if c[h.id]==k[n]:		    
-		    E[n]=h.label
-		   
+		for n in N:
+		    
+		    if n.mean==loadssort[h.id]:		    
+			E[h.id]=n.label
+					    
+			usage_rel_to_share_of_load[h.id]=t[n.id]/1000
+		    
+			total_usage[h.id]=today_usage[n.id]/1000
+			red_div_yellow[h.id]=total_usage[h.id]/usage_rel_to_share_of_load[h.id]
+			
+			total_usage_year[h.id]=usage_year[n.id]/1000
+		tot_usage+=k[h.id]
+		tot_usage_rel+=t[h.id]
+	else:
+	    for h in N:
+		for n in N:		    
+			if n.label==Grafsorted[h.id][0]:
+			    E[h.id]=n.label	
+			    
+			    d[h.id]=c[n.id]/sum(abs(n.mismatch))*1000000000
+			    usage_rel_to_share_of_load[h.id]=t[n.id]/1000
+			   
+			    total_usage[h.id]=today_usage[n.id]/1000
+			    
+			    total_usage_year[h.id]=usage_year[n.id]/1000
+		tot_usage+=k[h.id]
+		tot_usage_rel+=t[h.id]
+	   
+	
+	if Graf!=None:
+	    plt.ion()
+	    plt.show()
+	    p1=plt.bar(np.arange(30)-0.3,d,width=0.2,color=au.blue)	    
+	    p2=plt.bar(np.arange(30),usage_rel_to_share_of_load,width=0.2,color=au.yell)
+	    p3=plt.bar(np.arange(30)+0.3,total_usage,width=0.2,color=au.red)
+	   
+	    plt.xlim(j[0]-0.5)	
+	    plt.xticks(j+0.15,E,rotation=90)    
+	        
 	    
-	for n in range(len(N)):
-	    plt.text(n+width/8,k[n]+2200,int(round(k[n],0)),color='g',rotation=70)    
-	m=max(c)
+	    
+	    if new:
+		if copper:
+			#plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+			
+			savefig("./figures/new_GW_costplots/Graf_red_yellow/new_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		    
+		else:
+		    
+			#plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+			savefig("./figures/new_GW_costplots/Graf_red_yellow/new_"+str(mode)+"_constr_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		    
+	    else:
+		if copper:
+		
+			savefig("./figures/old_GW_costplots/Graf_red_yellow/old_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")		
+		else:
+		    
+			#plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+			savefig("./figures/old_GW_costplots/Graf_red_yellow/old_"+str(mode)+"_constr_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		    
+	    close()
+	    	
 		
 	plt.ion()
-	plt.show()
-	p1=plt.bar(range(30),k,width,color=au.blue)
+	plt.show()	
+	p1=plt.bar(np.arange(30),red_div_yellow,width=0.7,color=au.oran)
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+			
+	
+	if new:
+	    if copper:
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    file.write("red_div_yellow_GW-new"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage)+str(total_usage_year)+"red_div_yellow"+str(red_div_yellow) + '\n')
+		    savefig("./figures/new_GW_costplots/red_yellow/new_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
 		
-	plt.xticks(j+width/2.,E,rotation=90)
-	#plt.yticks(np.arange(0,m,5))
-	#subplots_adjust(left=None, bottom=0.2, right=None, top=None, wspace=None, hspace=None)
-	#plt.legend( (p1[0], p2[0],p3[0],p4[0],p5[0]), ('Primary user', 'Secondary user','Tertiary user','Quaternary user', 'The rest'), 'upper center',fancybox=True,prop={'size':10})
+	    else:
+		
+		    
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GW_costplots/red_yellow/new_"+str(mode)+"_constr_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("red_div_yellow_GW-old"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage)+str(total_usage_year)+"red_div_yellow"+str(red_div_yellow) + '\n')
+		    
+		    savefig("./figures/old_GW_costplots/red_yellow/old_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GW_costplots/red_yellow/old_"+str(mode)+"_constr_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	close()
+	
+	    
+	for h in N:
+	    for n in N:
+		if  n.label==E[h.id]:
+		   
+		    usage_rel_to_share_of_load_kms[h.id]=t_kms[n.id]/1000
+		    total_usage_kms[h.id]=today_usage_kms[n.id]/1000
+		    red_div_yellow_kms[h.id]=total_usage_kms[h.id]/usage_rel_to_share_of_load_kms[h.id]
+		   
+	p1=plt.bar(np.arange(30),red_div_yellow_kms,width=0.7,color=au.oran)
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
 	
 	
 	if new:
 	    if copper:
-		if mode =="linear":
-		    plt.text(0.03,92, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/new_linear_copper_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "square":
-		    plt.text(0.03,92, "cost rel to meanload,new,square,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/new_square_copper_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "random":
-		    plt.text(0.03,92, "cost rel to meanload,new,random,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/new_random_copper_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")	
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    file.write("red_div_yellow_GWKm-new"+str(E)+str(usage_rel_to_share_of_load_kms)+str(total_usage_kms)+"red_div_yellow"+str(red_div_yellow_kms) + '\n')
+		    savefig("./figures/new_GWKMs_costplots/red_yellow/new_"+str(mode)+"_copper_costdiagram_kms_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
 	    else:
-		if mode =="linear":
-		    plt.text(0.03,92, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/new_linear_constr_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "square":
-		    plt.text(0.03,92, "cost rel to meanload,new,square,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/new_square_constr_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "random":
-		    plt.text(0.03,92, "cost rel to meanload,new,random,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/new_random_constr_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GWKMs_costplots/red_yellow/new_"+str(mode)+"_constr_costdiagram_kms_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
 	else:
 	    if copper:
-		if mode =="linear":
-		    plt.text(0.03,92, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/old_linear_copper_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "square":
-		    plt.text(0.03,92, "cost rel to meanload,old,square,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/old_square_copper_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "random":
-		    plt.text(0.03,92, "cost rel to meanload,old,random,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/old_random_copper_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		    file.write("red_div_yellow_GWKm-old"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage)+str(total_usage_year)+"red_div_yellow"+str(red_div_yellow) + '\n')
+		   
+		    savefig("./figures/old_GWKMs_costplots/red_yellow/old_"+str(mode)+"_copper_costdiagram_kms_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
 	    else:
-		if mode =="linear":
-		    plt.text(0.03,92, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/old_linear_constr_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "square":
-		    plt.text(0.03,92, "cost rel to meanload,old,square,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/old_square_constr_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
-		elif mode == "random":
-		    plt.text(0.03,92, "cost rel to meanload,old,random,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-		    savefig("./figures/old_random_constr_costdiagram_"+str(ports)+"ports,alpha="+str(alph)+".pdf")
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GWKMs_costplots/red_yellow/old_"+str(mode)+"_constr_costdiagram_kms_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	close()
 	
-def track_new_exports(N,F,admat='./settings/eadmat.txt',lapse=None):
+	    
+	for h in N:
+	    for n in N:
+		if n.mean==loadssort[h.id]:
+		    E[h.id]=n.label
+		    usage_rel_to_share_of_load_cost[h.id]=t_cost[n.id]
+		    total_usage_cost[h.id]=today_usage_cost[n.id]
+		    #total_usage_cost_year[h.id]=usage_year_cost[n.id]
+		    red_div_yellow_cost[h.id]=total_usage_cost[h.id]/usage_rel_to_share_of_load_cost[h.id]
 	
-	matr=np.genfromtxt(admat)
-
-	if lapse==None:
-		lapse=N[0].nhours
-
-	a,b,list_F=au.AtoKh_old(N)
-	start=time()
-	for n in N:
-		n.links = get_links(n.id,matr)
-		n.power_mix_ex = np.zeros((len(N),lapse))
-    
-	for t in range(lapse):
-		R=np.zeros(( len(N),len(N) ))
-        
-        ## Update progress bar.
-		if mod(t,100)==0 and t>0: 
-			print "\r",round(100.0*(t/float(lapse)),2),"%",
-			sys.stdout.flush()
-        
-		for n in N:
-            
-            ## Add the nodes own export/sink strength.
-			n.power_mix_ex[n.id,t] = n.load[t]
-            
-			for l in n.links:
-                
-                ## If the flow direction indicates export from node n on link l.
-				if F[l[0],t]*l[1] > 0:
-                    
-                    ## Determine end of link using the link direction.
-					if l[1]==-1:
-						friend_label = list_F[l[0]][0]
-					elif l[1]==1:
-						friend_label= list_F[l[0]][1]
-					else:
-						print "Warning (234nsd23): Link direction unknown!"
-                    
-					for k in N:
-						if k.label==friend_label: friend_id=k.id  ## lazy and messy way of getting id
-                    # Holger Bech Nielsen
-					n.power_mix_ex[friend_id,t] = abs(F[l[0],t])
-                    
-            ### So now we have the own+direct export vector
-            ### we add it to the big matrix
-			R[n.id]=n.power_mix_ex[:,t]
-        
-        ### Now we have the pre-done matrix
-		target=np.arange(len(N))
-		done=[]
-        
-		while len(done)<len(N): #All is not done yet.
-			for n in target:
-				if n not in done:  ### if it hasn't been done
-					takers=[]
-					for i in target:
-						if R[n,i]>1. and n!=i: takers.append(i)
-						#if n!=i: contributors.append(i)
-					takers.sort()
-                    ## Appears not to be used: contr=np.array(contributors)
-                    
-					if (np.in1d(takers,done).all()) or (len(takers)==0): ### check if it is doable all it's takers are done or takers is empty
-						for c in takers:                           ### then, for all "done" takers, do the thingy
-							export_from_ntoc = R[n,c]*1.0
-							R[n,c] = 0
-							
-							R[n,:]   += R[c,:]*export_from_ntoc/sum(R[c,:])
-							
-						done.append(n)
-						done.sort()
-                        
-		R[np.isnan(R)] = 0.0 #This should not be needed, but R says it is.
-		 
-		for n in N:
-			n.power_mix_ex[:,t] = R[n.id,:]   
+	p1=plt.bar(np.arange(30),red_div_yellow_cost,width=0.7,color=au.oran)
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    file.write("red_div_yellow_Euro-new"+str(E)+str(usage_rel_to_share_of_load_cost)+str(total_usage_cost)+"red_div_yellow"+str(red_div_yellow_cost) + '\n')
+		    savefig("./figures/new_TEuro_costplots/red_yellow/new_"+str(mode)+"linear_copper_costdiagram_cost_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
 			
-			          
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_TEuro_costplots/red_yellow/new_"+str(mode)+"_constr_costdiagram_cost_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("red_div_yellow_GWKm-old"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage)+str(total_usage_year)+"red_div_yellow"+str(red_div_yellow) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
+		    savefig("./figures/old_TEuro_costplots/red_yellow/old_"+str(mode)+"_copper_costdiagram_cost_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_TEuro_costplots/red_yellow/old_"+str(mode)+"_constr_costdiagram_cost_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+	close()
+	for h in N:
+	    for n in N:
+		if  n.label==E[h.id]:		    
+		    usage_rel_to_share_of_load_kms[h.id]=t_kms[n.id]/1000
+		    #total_usage_kms[h.id]=today_usage_kms[n.id]/1000
+		    total_usage_kms_year[h.id]=usage_year_kms[n.id]/1000
+		    green_div_yellow_kms[h.id]=total_usage_kms_year[h.id]/usage_rel_to_share_of_load_kms[h.id]
+    	
+	p1=plt.bar(np.arange(30),green_div_yellow_kms,width=0.7,color=gyell)
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    file.write("green_div_yellow_GWKm-new"+str(E)+str(usage_rel_to_share_of_load_kms)+str(total_usage_kms_year)+"green_div_yellow"+str(green_div_yellow_kms) + '\n')
+		    savefig("./figures/new_GWKMs_costplots/green_yellow/new_"+str(mode)+"_copper_costdiagram_kms_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GWKMs_costplots/green_yellow/new_"+str(mode)+"_constr_costdiagram_kms_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("green_div_yellow_GWKm-old"+str(E)+str(usage_rel_to_share_of_load_kms)+str(total_usage_kms_year)+"green_div_yellow"+str(green_div_yellow_kms) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
+		    savefig("./figures/old_GWKMs_costplots/green_yellow/old_"+str(mode)+"_copper_costdiagram_kms_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GWKMs_costplots/green_yellow/old_"+str(mode)+"_constr_costdiagram_kms_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	close()
+	for h in N:
+	    for n in N:
+		if  n.label==E[h.id]:		    
+		    usage_rel_to_share_of_load[h.id]=t[n.id]/1000
+		    total_usage_year[h.id]=usage_year[n.id]/1000
+		    green_div_yellow[h.id]=total_usage_year[h.id]/usage_rel_to_share_of_load[h.id]	
+	
+	p1=plt.bar(np.arange(30),green_div_yellow,width=0.7,color=gyell)
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		    file.write("green_div_yellow_GWKm-new"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage_year)+"green_div_yellow"+str(green_div_yellow) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    
+		    savefig("./figures/new_GW_costplots/green_yellow/new_"+str(mode)+"_copper_costdiagram_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GW_costplots/green_yellow/new_"+str(mode)+"_constr_costdiagram_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("green_div_yellow_GWKm-old"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage_year)+"green_div_yellow"+str(green_div_yellow) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
+		    savefig("./figures/old_GW_costplots/green_yellow/old_"+str(mode)+"_copper_costdiagram_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+    
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GW_costplots/green_yellow/old_"+str(mode)+"_constr_costdiagram_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	close()
+	
+	    
+	for h in N:
+	    for n in N:
+		if n.mean==loadssort[h.id]:
+		    E[h.id]==n.label
+		    usage_rel_to_share_of_load_cost[h.id]=t_cost[n.id]
+		    #total_usage_cost[h.id]=today_usage_cost[n.id]
+		    total_usage_cost_year[h.id]=usage_year_cost[n.id]
+		    green_div_yellow_cost[h.id]=total_usage_cost_year[h.id]/usage_rel_to_share_of_load_cost[h.id]
+    
+	p1=plt.bar(np.arange(30),green_div_yellow,width=0.7,color=gyell)
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		    file.write("green_div_yellow_cost-new"+str(E)+str(usage_rel_to_share_of_load_cost)+str(total_usage_cost_year)+"green_div_yellow"+str(green_div_yellow_cost) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    
+		    savefig("./figures/new_TEuro_costplots/green_yellow/new_"+str(mode)+"linear_copper_costdiagram_cost_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+			
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_TEuro_costplots/green_yellow/new_"+str(mode)+"_constr_costdiagram_cost_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("green_div_yellow_cost-old"+str(E)+str(usage_rel_to_share_of_load_cost)+str(total_usage_cost_year)+"green_div_yellow"+str(green_div_yellow_cost) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
+		    savefig("./figures/old_TEuro_costplots/green_yellow/old_"+str(mode)+"_copper_costdiagram_cost_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_TEuro_costplots/green_yellow/old_"+str(mode)+"_constr_costdiagram_cost_green_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+	close()
+	for h in N:
+	    for n in N:
+		if  n.label==E[h.id]:
+		    blue_div_yellow[h.id]=usage_year[n.id]/t[n.id]
+		    
+		    		    
+	   
+	p1=plt.bar(np.arange(30),blue_div_yellow,width=0.7,color=au.kelp)
+	
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		    file.write("blue_div_yellow-new"+str(E)+str(blue_div_yellow) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    
+		    savefig("./figures/new_GW_costplots/blue_div_yellow/new_"+str(mode)+"_copper_costdiagram_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GW_costplots/blue_div_yellow/new_"+str(mode)+"_constr_costdiagram_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("blue_div_yellow-old"+str(E)+str(blue_div_yellow) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
+		    savefig("./figures/old_GW_costplots/blue_div_yellow/old_"+str(mode)+"_copper_costdiagram_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GW_costplots/blue_div_yellow/old_"+str(mode)+"_constr_costdiagram_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+	close()
+	
+	for h in N:
+	    for n in N:
+		if  n.label==E[h.id]:
+		    blue_div_yellow_cost[h.id]=usage_year_cost[n.id]/t_cost[n.id]
+		    
+		    		    
+	   
+	p1=plt.bar(np.arange(30),blue_div_yellow_cost,width=0.7,color=au.kelp)
+	
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		    file.write("blue_div_yellow_Euro-new"+str(E)+str(blue_div_yellow_cost) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    
+		    savefig("./figures/new_TEuro_costplots/blue_div_yellow/new_"+str(mode)+"_copper_costdiagram_cost_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_TEuro_costplots/blue_div_yellow/new_"+str(mode)+"_constr_costdiagram_cost_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("blue_div_yellow_Euro-old"+str(E)+str(blue_div_yellow_cost) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
+		    savefig("./figures/old_TEuro_costplots/blue_div_yellow/old_"+str(mode)+"_copper_costdiagram_cost_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_TEuro_costplots/blue_div_yellow/old_"+str(mode)+"_constr_costdiagram_cost_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	close()
+	for h in N:
+	    for n in N:
+		if  n.label==E[h.id]:
+		    blue_div_yellow_kms[h.id]=usage_year_kms[n.id]/t_kms[n.id]
+		    
+		    		    
+	   
+	p1=plt.bar(np.arange(30),blue_div_yellow_kms,width=0.7,color=au.kelp)
+	
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		    file.write("blue_div_yellow_kms-new"+str(E)+str(blue_div_yellow_kms) + '\n')
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    
+		    savefig("./figures/new_GWKMs_costplots/blue_div_yellow/new_"+str(mode)+"_copper_costdiagram_kms_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GWKMs_costplots/blue_div_yellow/new_"+str(mode)+"_constr_costdiagram_kms_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("blue_div_yellow_kms-old"+str(E)+str(blue_div_yellow_kms)  + '\n' )
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
+		    savefig("./figures/old_GWKMs_costplots/blue_div_yellow/old_"+str(mode)+"_copper_costdiagram_kms_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GWKMs_costplots/blue_div_yellow/old_"+str(mode)+"_constr_costdiagram_kms_blue_div_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	close()
+	
 
-	return N    
 
-def track_new_imports(N,F,admat='./settings/eadmat.txt',lapse=None):
+def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None):
 	
 	matr=np.genfromtxt(admat)
 
@@ -888,9 +973,12 @@ def track_new_imports(N,F,admat='./settings/eadmat.txt',lapse=None):
 
 	a,b,list_F=au.AtoKh_old(N)
 	start=time()
+	total_power_mixes=[]
 	for n in N:
 		n.links = get_links(n.id,matr)
 		n.power_mix = np.zeros((len(N),lapse))
+		n.total_power_mix=np.zeros((len(N)))
+		n.power_mix_ex=np.zeros((len(N),lapse))
     
 	for t in range(lapse):
 		R=np.zeros(( len(N),len(N) ))
@@ -903,8 +991,9 @@ def track_new_imports(N,F,admat='./settings/eadmat.txt',lapse=None):
 		for n in N:
             
             ## Add the nodes own contribution/source strength.
-			n.power_mix[n.id,t] = n.get_RES()[t]+n.balancing[t]#-n.curtailment[t]
-            
+			n.power_mix[n.id,t] = n.get_RES()[t]+n.balancing[t]-n.curtailment[t]
+			n.power_mix_ex[n.id,t]=n.load[t]
+			            
 			for l in n.links:
                 
                 ## If the flow direction indicates import to node n on link l.
@@ -955,7 +1044,14 @@ def track_new_imports(N,F,admat='./settings/eadmat.txt',lapse=None):
 		 
 		for n in N:
 			n.power_mix[:,t] = R[n.id,:]   
+			n.total_power_mix[:]+=n.power_mix[:,t]
+			for h in N:
+			    if h.id <>n.id:
+				h.power_mix_ex[n.id,t]=n.power_mix[h.id,t]
+			
+	for n in N:
+	    total_power_mixes.append(n.total_power_mix)
 			
 			          
 
-	return N
+	return N, total_power_mixes
