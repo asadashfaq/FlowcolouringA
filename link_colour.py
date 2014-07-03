@@ -17,7 +17,7 @@ from figutils import AtoKh_old
 from time import time
 from drawnet import draw_powmix_network
 from EUgrid import *
-from new_linkcolour_algorithm import *
+from new_linkcolour-algorithm import *
 def get_neighbours(n,matr=np.genfromtxt("./settings/eadmat.txt")):
     """ matr should be = np.genfromtxt("./settings/eadmat.txt")"""
     neighbours=[]
