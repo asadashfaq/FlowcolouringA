@@ -128,12 +128,7 @@ def track_new_square_link_usage_total(N,F,lapse=None,alph=None): #tracks the usa
 		linksflow=np.append(linksflow,total_flow_link)			
 		cost=np.append(cost,total_link_mix_percentage)
 		
-		# saving information to human-readable file
-		#for k in N:			
-			#x="country", str(k.label), "has a total usage of link", e[n], "of" ,str(total_link_mix_percentage[k.id]), "% after", str(t), "hours"
-			#file.write(str(x) + '\n')			
-			
-		#file.write('\n')
+		
 		# sorting the total_link_mix_percentage, such that the higher percentages are first
 		a=sorted(total_link_mix_percentage,reverse=True)
 		#for the 4 highest values we save the usage for each link and the corresponding countries
@@ -162,7 +157,7 @@ def track_new_square_link_usage_total(N,F,lapse=None,alph=None): #tracks the usa
 def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copper=True): 
 #tracks the usage of each link for each country, 
 #alph sets the value of homogenous alphas.
-#Mode can be "linear", "square" or "random".
+#Mode can be "linear", "square", "capped" or "random".
 #set new=True if new model is used.
 	if alph==None:
 	    alph="hetero"
@@ -746,7 +741,7 @@ def new_square_boksplot(a,b,alph=None): # draws a columndiagram displaying the 4
 		savefig("./figures/new_square_columndiagram.png")
 	
 	
-def track_new_exports(N,F,admat='./settings/eadmat.txt',lapse=None):
+def track_new_exports(N,F,admat='./settings/eadmat.txt',lapse=None): #tracks the flow (upstream powermixes) for the unprocessed case
 	
 	matr=np.genfromtxt(admat)
 
@@ -822,6 +817,9 @@ def track_new_exports(N,F,admat='./settings/eadmat.txt',lapse=None):
 		 
 		for n in N:
 			n.power_mix_ex[:,t] = R[n.id,:]   
+	
+		total_power_mixes.append(n.total_power_mix)
+		total_power_mixes_ex.append(n.total_power_mix_ex)
 			
 			          
 
@@ -907,3 +905,155 @@ def track_new_imports(N,F,admat='./settings/eadmat.txt',lapse=None):
 			          
 
 	return N
+	
+def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None): # tracks the flows (downstream and upstream powermixes) for the unprocessed case
+	
+	matr=np.genfromtxt(admat)
+
+	if lapse==None:
+		lapse=N[0].nhours
+
+	a,b,list_F=au.AtoKh_old(N)
+	start=time()
+	total_power_mixes=[]
+	for n in N:
+		n.links = get_links(n.id,matr)
+		n.power_mix = np.zeros((len(N),lapse))
+		n.total_power_mix=np.zeros((len(N)))
+		n.power_mix_ex=np.zeros((len(N),lapse))
+    
+	for t in range(lapse):
+		R=np.zeros(( len(N),len(N) ))
+        
+        ## Update progress bar.
+		if mod(t,100)==0 and t>0: 
+			print "\r",round(100.0*(t/float(lapse)),2),"%",
+			sys.stdout.flush()
+        
+		for n in N:
+            
+            ## Add the nodes own contribution/source strength.
+			n.power_mix[n.id,t] = n.get_RES()[t]+n.balancing[t]-n.curtailment[t]
+					            
+			for l in n.links:
+                
+                ## If the flow direction indicates import to node n on link l.
+				if F[l[0],t]*l[1] < 0:
+                    
+                    ## Determine end of link using the link direction.
+					if l[1]==-1:
+						friend_label = list_F[l[0]][0]
+					elif l[1]==1:
+						friend_label= list_F[l[0]][1]
+					else:
+						print "Warning (234nsd23): Link direction unknown!"
+                    
+					for k in N:
+						if k.label==friend_label: friend_id=k.id  ## lazy and messy way of getting id
+                    # Holger Bech Nielsen
+					n.power_mix[friend_id,t] = abs(F[l[0],t])
+                    
+            ### So now we have the own+direct input vector
+            ### we add it to the big matrix
+			R[n.id]=n.power_mix[:,t]
+        
+        ### Now we have the pre-done matrix
+		target=np.arange(len(N))
+		done=[]
+        
+		while len(done)<len(N): #All is not done yet.
+			for n in target:
+				if n not in done:  ### if it hasn't been done
+					contributors=[]
+					for i in target:
+						if R[n,i]>1. and n!=i: contributors.append(i)
+						
+					contributors.sort()
+                    ## Appears not to be used: contr=np.array(contributors)
+                    
+					if (np.in1d(contributors,done).all()) or (len(contributors)==0): ### check if it is doable all it's contributors are done or contributors is empty
+						for c in contributors:                           ### then, for all "done" contributors, do the thingy
+							supply_from_cton = R[n,c]*1.0
+							R[n,c] = 0
+							
+							R[n,:]   += R[c,:]*supply_from_cton/sum(R[c,:])
+							
+						done.append(n)
+						done.sort()
+                        
+		R[np.isnan(R)] = 0.0 #This should not be needed, but R says it is.
+		 
+		for n in N:
+			n.power_mix[:,t] = R[n.id,:]   
+			n.total_power_mix[:]+=n.power_mix[:,t]
+			
+			
+	for n in N:
+	    total_power_mixes.append(n.total_power_mix)
+	##################################### outflow powermix ##################################    
+	    n.power_mix_ex = np.zeros((len(N),lapse))
+    
+	for t in range(lapse):
+		R=np.zeros(( len(N),len(N) ))
+        
+        ## Update progress bar.
+		if mod(t,100)==0 and t>0: 
+			print "\r",round(100.0*(t/float(lapse)),2),"%",
+			sys.stdout.flush()
+        
+		for n in N:
+            
+            ## Add the nodes own export/sink strength.
+			n.power_mix_ex[n.id,t] = n.load[t]
+            
+			for l in n.links:
+                
+                ## If the flow direction indicates export from node n on link l.
+				if F[l[0],t]*l[1] > 0:
+                    
+                    ## Determine end of link using the link direction.
+					if l[1]==-1:
+						friend_label = list_F[l[0]][0]
+					elif l[1]==1:
+						friend_label= list_F[l[0]][1]
+					else:
+						print "Warning (234nsd23): Link direction unknown!"
+                    
+					for k in N:
+						if k.label==friend_label: friend_id=k.id  ## lazy and messy way of getting id
+                    # Holger Bech Nielsen
+					n.power_mix_ex[friend_id,t] = abs(F[l[0],t])
+                    
+            ### So now we have the own+direct export vector
+            ### we add it to the big matrix
+			R[n.id]=n.power_mix_ex[:,t]
+        
+        ### Now we have the pre-done matrix
+		target=np.arange(len(N))
+		done=[]
+        
+		while len(done)<len(N): #All is not done yet.
+			for n in target:
+				if n not in done:  ### if it hasn't been done
+					takers=[]
+					for i in target:
+						if R[n,i]>1. and n!=i: takers.append(i)
+						#if n!=i: contributors.append(i)
+					takers.sort()
+                    ## Appears not to be used: contr=np.array(contributors)
+                    
+					if (np.in1d(takers,done).all()) or (len(takers)==0): ### check if it is doable all it's takers are done or takers is empty
+						for c in takers:                           ### then, for all "done" takers, do the thingy
+							export_from_ntoc = R[n,c]*1.0
+							R[n,c] = 0
+							
+							R[n,:]   += R[c,:]*export_from_ntoc/sum(R[c,:])
+							
+						done.append(n)
+						done.sort()
+                        
+		R[np.isnan(R)] = 0.0 #This should not be needed, but R says it is.
+		 
+		for n in N:
+			n.power_mix_ex[:,t] = R[n.id,:]
+	return N, total_power_mixes

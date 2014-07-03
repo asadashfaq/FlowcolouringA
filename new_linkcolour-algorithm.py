@@ -201,7 +201,7 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 			x="country", str(k.label), "has a total usage of link", e[n], "of" ,str(total_link_mix_percentage[k.id]), "% after", str(t), "hours"
 			file.write(str(x) + '\n')			
 			
-		file.write('\n')
+	    
 		# sorting the total_link_mix_percentage, such that the higher percentages are first
 		a=sorted(total_link_mix_percentage,reverse=True)
 		#for the 4 highest values we save the usage for each link and the corresponding countries
@@ -403,9 +403,10 @@ def boksplot(a,b,alph=None,new=False,mode="linear",copper=True): # draws a colum
 		
 	    
 
-def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",copper=True,ports="ex_and_im",load=False): 
+def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",copper=True,ports="ex_and_im",load=True): # prints different columndiagrams and saves values in arrays
 #Mode can be "linear", "square", "random" or "capped".
 #links is the links_mix or variations of that
+#set load=True for a graph that sorts countrys by their average load.
 	if N==None:
 	    N=EU_Nodes()
 	if alph==None:
@@ -433,6 +434,12 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	green_div_yellow_kms=np.zeros(len(N))
 	green_div_yellow_cost=np.zeros(len(N))
 	green_div_yellow=np.zeros(len(N))
+	blue=np.zeros(len(N))
+	Blue_GWKms=np.zeros(len(N))
+	Green_GWkms=np.zeros(len(N))
+	Blue_cost=np.zeros(len(N))
+	Green_cost=np.zeros(len(N))
+	green=np.zeros(len(N))
 	c=np.zeros(len(N))
 	c_kms=np.zeros(len(N))
 	c_kms_avg=np.zeros(len(N))
@@ -476,9 +483,9 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	tot_usage_rel=0
 	link_kms=[686,250,217,523,766,278,397,82,914,175,358,577,289,201,262,342,436,879,1109,1053,418,483,464,520,520,808,534,524,298,328,1052,503,753,691,305,371,117,642,446,281,291,317,163,812,356,591,523,491,277,263]
 	link_prizes=[400,400,400,400,400,400,1500,1500,1500,400,1500,400,400,400,400,1500,400,400,400,400,400,1500,1500,400,400,1500,400,400,400,400,1500,400,400,400,400,400,400,400,400,400,400,400,400,1500,400,400,1500,400,400,400]
-	print len(link_prizes)
+	
 	link_kms_average=sum(link_kms)/len(link_kms)
-	print link_kms_average
+	
 	
 	for i in range(len(e)):
 	    capacities_today.append(max(r[i*2:i*2+2]))
@@ -490,28 +497,12 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		total_capacities_2050_cost+=max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*150000*2+max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*link_kms[l]*link_prizes[l]
 	    else: 
 		total_capacities_2050_cost+=max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*link_kms[l]*link_prizes[l]
-	
+	Capacities_year=np.array(capacities_year)
 	for n in N:
 	    total_mean_load+=n.mean
 	    loads.append(n.mean)
-	loadssort=sorted(loads,reverse=True)
-	print loadssort
-	if Graf != None:
-	    Grafordering=nx.betweenness_centrality(Graf)
-	    new_Grafordering=Grafordering.items()
-	    newer_Grafordering=[]
-	    for n in N:
-		newer_Grafordering.append(new_Grafordering[n.id][1])
-	    for n in N:
-		for h in N:
-		    if n.label==new_Grafordering[h.id][0]:
-			newer_Grafordering[h.id]=newer_Grafordering[h.id]/n.mean
-	    lookup={new_Grafordering[h.id][0]:newer_Grafordering[h.id] for h in N}
-	    Grafsorted=sorted(lookup.items(), key=lambda lookup: lookup[1],reverse=True)
-	    print Grafsorted
-	    	
-	   
-		
+	loadssort=sorted(loads,reverse=True)  	   
+	
 		
 	    
 	for n in N:
@@ -536,12 +527,12 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		    today_cap_cost+=capacities_today[l[0]]*link_kms[l[0]]*link_prizes[l[0]]
 		    cap_cost_year+=capacities_year[l[0]]*link_kms[l[0]]*link_prizes[l[0]]
 	
-	    today_usage[n.id]=today_cap*0.5
-	    today_usage_kms[n.id]=today_cap_kms*0.5
-	    today_usage_cost[n.id]=today_cap_cost*0.5
-	    usage_year[n.id]=cap_year*0.5
-	    usage_year_kms[n.id]=cap_year_kms*0.5
-	    usage_year_cost[n.id]=cap_cost_year*0.5
+	    today_usage[n.id]=today_cap*0.5 #red in "MW"
+	    today_usage_kms[n.id]=today_cap_kms*0.5 #red in "MWKm"
+	    today_usage_cost[n.id]=today_cap_cost*0.5 #red in Euros
+	    usage_year[n.id]=cap_year*0.5 #green in "MW"
+	    usage_year_kms[n.id]=cap_year_kms*0.5 #green in "MWKm"
+	    usage_year_cost[n.id]=cap_cost_year*0.5 #green in Euros
 	  
 	    
 	
@@ -549,15 +540,14 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	    for l in range(len(F)):
 		c[n.id]+=links[n.id+30*l]/linksflow[l]*max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))
 		c_kms[n.id]+=links[n.id+30*l]/linksflow[l]*max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))*link_kms[l]		
-	    t[n.id]=n.mean*total_capacity/total_mean_load
-	    t_kms[n.id]=n.mean*total_capacity_kms/total_mean_load
-	    t_cost[n.id]=n.mean*total_capacities_2050_cost/total_mean_load
-	    c_cost[n.id]=c_kms[n.id]/total_capacity_kms*total_capacities_2050_cost
-	    c[n.id]=c[n.id]/1000
-	    c_kms[n.id]=c_kms[n.id]/1000
+	    t[n.id]=n.mean*total_capacity/total_mean_load #yellow in "MW"
+	    t_kms[n.id]=n.mean*total_capacity_kms/total_mean_load #yellow in "MWKm"
+	    t_cost[n.id]=n.mean*total_capacities_2050_cost/total_mean_load #yellow in "MW"
+	    c_cost[n.id]=c_kms[n.id]/total_capacity_kms*total_capacities_2050_cost #blue in Euros
+	    c[n.id]=c[n.id]/1000  #blue in "GW"
+	    c_kms[n.id]=c_kms[n.id]/1000 #blue in "GW"
 	    c_kms_avg[n.id]=c_kms[n.id]/link_kms_average
 	    
-	print c_kms_avg
 	    
 	k=sorted(c,reverse=True)
 	k_kms=sorted(c_kms,reverse=True)
@@ -571,14 +561,20 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		    if n.mean==loadssort[h.id]:		    
 			E[h.id]=n.label
 					    
-			usage_rel_to_share_of_load[h.id]=t[n.id]/1000
+			usage_rel_to_share_of_load[h.id]=t[n.id]/1000 #yellow in "GW"
+			blue[h.id]=c[n.id]
+			green[h.id]=usage_year[n.id]/1000
 		    
 			total_usage[h.id]=today_usage[n.id]/1000
 			red_div_yellow[h.id]=total_usage[h.id]/usage_rel_to_share_of_load[h.id]
 			
 			total_usage_year[h.id]=usage_year[n.id]/1000
+		
+	    
+			
 		tot_usage+=k[h.id]
 		tot_usage_rel+=t[h.id]
+	    red_div_yellow[25]=0
 	else:
 	    for h in N:
 		for n in N:		    
@@ -591,44 +587,10 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 			    total_usage[h.id]=today_usage[n.id]/1000
 			    
 			    total_usage_year[h.id]=usage_year[n.id]/1000
+			    
 		tot_usage+=k[h.id]
 		tot_usage_rel+=t[h.id]
 	   
-	
-	if Graf!=None:
-	    plt.ion()
-	    plt.show()
-	    p1=plt.bar(np.arange(30)-0.3,d,width=0.2,color=au.blue)	    
-	    p2=plt.bar(np.arange(30),usage_rel_to_share_of_load,width=0.2,color=au.yell)
-	    p3=plt.bar(np.arange(30)+0.3,total_usage,width=0.2,color=au.red)
-	   
-	    plt.xlim(j[0]-0.5)	
-	    plt.xticks(j+0.15,E,rotation=90)    
-	        
-	    
-	    
-	    if new:
-		if copper:
-			#plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-			
-			savefig("./figures/new_GW_costplots/Graf_red_yellow/new_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
-		    
-		else:
-		    
-			#plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-			savefig("./figures/new_GW_costplots/Graf_red_yellow/new_"+str(mode)+"_constr_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
-		    
-	    else:
-		if copper:
-		
-			savefig("./figures/old_GW_costplots/Graf_red_yellow/old_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")		
-		else:
-		    
-			#plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
-			savefig("./figures/old_GW_costplots/Graf_red_yellow/old_"+str(mode)+"_constr_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
-		    
-	    close()
-	    	
 		
 	plt.ion()
 	plt.show()	
@@ -641,6 +603,7 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	    if copper:
 		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
 		    file.write("red_div_yellow_GW-new"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage)+str(total_usage_year)+"red_div_yellow"+str(red_div_yellow) + '\n')
+		    np.savez("./figures/new_GW_costplots/GW-numbers"+str(mode)+str(alph)+str(ports),labels=E, Blue=blue,Green=green,Yellow=usage_rel_to_share_of_load)
 		    savefig("./figures/new_GW_costplots/red_yellow/new_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
 		
 	    else:
@@ -652,7 +615,7 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	else:
 	    if copper:
 		    file.write("red_div_yellow_GW-old"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage)+str(total_usage_year)+"red_div_yellow"+str(red_div_yellow) + '\n')
-		    
+		    np.savez("./figures/old_GW_costplots/GW-numbers"+str(mode)+str(alph)+str(ports),labels=E, Blue=blue,Green=green,Yellow=usage_rel_to_share_of_load)
 		    savefig("./figures/old_GW_costplots/red_yellow/old_"+str(mode)+"_copper_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")		
 	    else:
 		
@@ -660,17 +623,59 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		    savefig("./figures/old_GW_costplots/red_yellow/old_"+str(mode)+"_constr_costdiagram_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
 		
 	close()
+	blue_div_green=blue/green
+	blue_div_green_avg=round(blue_div_green.sum()/(len(N)),2)
 	
-	    
+	plt.ion()
+	plt.show()	
+	p1=plt.bar(np.arange(30),blue_div_green,width=0.7,color=au.cafe)
+	plt.axhline(blue_div_green_avg,linestyle="dashed",color="k")
+	plt.annotate(str(blue_div_green_avg),(-0.5,blue_div_green_avg),(1,blue_div_green_avg+0.5),arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=.2"))
+	plt.ylabel('I-factor')
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    file.write("blue_div_green_GW-new"+str(E)+"blue_div_green"+str(blue_div_green) + '\n')
+		    
+		    savefig("./figures/new_GW_costplots/blue_div_green/new_"+str(mode)+"_copper_costdiagram_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GW_costplots/blue_div_green/new_"+str(mode)+"_constr_costdiagram_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("red_div_yellow_GW-old"+str(E)+"blue_div_green"+str(blue_div_green) + '\n')
+		    
+		    savefig("./figures/old_GW_costplots/blue_div_green/old_"+str(mode)+"_copper_costdiagram_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GW_costplots/blue_div_green/old_"+str(mode)+"_constr_costdiagram_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+	close()
+	
 	for h in N:
 	    for n in N:
 		if  n.label==E[h.id]:
 		   
-		    usage_rel_to_share_of_load_kms[h.id]=t_kms[n.id]/1000
+		    usage_rel_to_share_of_load_kms[h.id]=t_kms[n.id]/1000 #yellow in GWKms
+		    Blue_GWKms[h.id]=c_kms[n.id]
+		    Green_GWkms[h.id]=usage_year_kms[n.id]/1000
 		    total_usage_kms[h.id]=today_usage_kms[n.id]/1000
 		    red_div_yellow_kms[h.id]=total_usage_kms[h.id]/usage_rel_to_share_of_load_kms[h.id]
-		   
-	p1=plt.bar(np.arange(30),red_div_yellow_kms,width=0.7,color=au.oran)
+
+	blue_div_green_kms=Blue_GWKms/Green_GWkms
+	blue_div_green_kms_avg=round(blue_div_green_kms.sum()/(len(N)),2)
+	
+	p1=plt.bar(np.arange(30),blue_div_green_kms,width=0.7,color=au.oran)
+	plt.axhline(blue_div_green_kms_avg,linestyle="dashed",color="k")
+	plt.annotate(str(blue_div_green_kms_avg),(-0.5,blue_div_green_kms_avg),(1,blue_div_green_kms_avg+0.5),arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=.2"))
+	plt.ylabel('I-factor')
 	plt.xlim(j[0]-0.5)	
 	plt.xticks(j+0.4,E,rotation=90)
 	
@@ -679,7 +684,38 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	    if copper:
 		
 		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    file.write("blue_div_green_GWKm-new"+str(E)+"blue_div_green"+str(blue_div_green_kms) + '\n')
+		    np.savez("./figures/new_GWKMs_costplots/GW-numbers"+str(mode)+str(alph)+str(ports),labels=E, Blue=Blue_GWKms,Green=Green_GWkms,Yellow=usage_rel_to_share_of_load_kms)
+		    savefig("./figures/new_GWKMs_costplots/blue_div_green/new_"+str(mode)+"_copper_costdiagram_kms_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/new_GWKMs_costplots/blue_div_green/new_"+str(mode)+"_constr_costdiagram_kms_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	else:
+	    if copper:
+		    file.write("blue_div_green_GWKm-old"+str(E)+"blue_div_green"+str(blue_div_green) + '\n')
+		    np.savez("./figures/old_GWKMs_costplots/GW-numbers"+str(mode)+str(alph)+str(ports),labels=E, Blue=Blue_GWKms,Green=Green_GWkms,Yellow=usage_rel_to_share_of_load_kms)
+		    savefig("./figures/old_GWKMs_costplots/blue_div_green/old_"+str(mode)+"_copper_costdiagram_kms_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	    else:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
+		    savefig("./figures/old_GWKMs_costplots/blue_div_green/old_"+str(mode)+"_constr_costdiagram_kms_blue_div_green"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		
+	close()
+	
+	p1=plt.bar(np.arange(30),red_div_yellow_kms,width=0.7,color=au.oran)
+	plt.xlim(j[0]-0.5)	
+	plt.xticks(j+0.4,E,rotation=90)
+	
+	if new:
+	    if copper:
+		
+		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
 		    file.write("red_div_yellow_GWKm-new"+str(E)+str(usage_rel_to_share_of_load_kms)+str(total_usage_kms)+"red_div_yellow"+str(red_div_yellow_kms) + '\n')
+		    
 		    savefig("./figures/new_GWKMs_costplots/red_yellow/new_"+str(mode)+"_copper_costdiagram_kms_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
 		
 	    else:
@@ -697,18 +733,20 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		
 		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
 		    savefig("./figures/old_GWKMs_costplots/red_yellow/old_"+str(mode)+"_constr_costdiagram_kms_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
-		
-	close()
 	
+	close()   
 	    
 	for h in N:
 	    for n in N:
 		if n.mean==loadssort[h.id]:
 		    E[h.id]=n.label
-		    usage_rel_to_share_of_load_cost[h.id]=t_cost[n.id]
-		    total_usage_cost[h.id]=today_usage_cost[n.id]
+		    usage_rel_to_share_of_load_cost[h.id]=t_cost[n.id] #yellow in Euros
+		    total_usage_cost[h.id]=today_usage_cost[n.id] #red in Euros
+		    Blue_cost[h.id]=c_cost[n.id]
+		    Green_cost[h.id]=usage_year_cost[n.id]
 		    #total_usage_cost_year[h.id]=usage_year_cost[n.id]
 		    red_div_yellow_cost[h.id]=total_usage_cost[h.id]/usage_rel_to_share_of_load_cost[h.id]
+		
 	
 	p1=plt.bar(np.arange(30),red_div_yellow_cost,width=0.7,color=au.oran)
 	plt.xlim(j[0]-0.5)	
@@ -719,8 +757,9 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		
 		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
 		    file.write("red_div_yellow_Euro-new"+str(E)+str(usage_rel_to_share_of_load_cost)+str(total_usage_cost)+"red_div_yellow"+str(red_div_yellow_cost) + '\n')
-		    savefig("./figures/new_TEuro_costplots/red_yellow/new_"+str(mode)+"linear_copper_costdiagram_cost_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
-			
+		    savefig("./figures/new_TEuro_costplots/red_yellow/new_"+str(mode)+"copper_costdiagram_cost_red_yell"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+		    np.save("./figures/new_TEuro_costplots/New_costs"+str(mode)+str(ports)+"alpha="+str(alph),Blue_cost)
+		    np.save("./figures/new_TEuro_costplots/New_costs_old_order"+str(mode)+str(ports)+"alpha="+str(alph),c_cost)
 	    else:
 		
 		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,constr,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
@@ -728,6 +767,8 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		
 	else:
 	    if copper:
+		    np.save("./figures/old_TEuro_costplots/Old_costs"+str(mode)+str(ports)+"alpha="+str(alph),Blue_cost)
+		    np.save("./figures/old_TEuro_costplots/Old_costs_old_order"+str(mode)+str(ports)+"alpha="+str(alph),c_cost)
 		    file.write("red_div_yellow_GWKm-old"+str(E)+str(usage_rel_to_share_of_load)+str(total_usage)+str(total_usage_year)+"red_div_yellow"+str(red_div_yellow) + '\n')
 		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
 		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
@@ -745,8 +786,13 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		    #total_usage_kms[h.id]=today_usage_kms[n.id]/1000
 		    total_usage_kms_year[h.id]=usage_year_kms[n.id]/1000
 		    green_div_yellow_kms[h.id]=total_usage_kms_year[h.id]/usage_rel_to_share_of_load_kms[h.id]
-    	
+		   
+    	green_div_yellow_kms_avg=round(green_div_yellow_kms.sum()/(len(N)),2)
+	
 	p1=plt.bar(np.arange(30),green_div_yellow_kms,width=0.7,color=gyell)
+	plt.axhline(green_div_yellow_kms_avg,linestyle="dashed",color="k")
+	plt.annotate(str(green_div_yellow_kms_avg),(-0.5,green_div_yellow_kms_avg),(1,green_div_yellow_kms_avg+0.5),arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=.2"))
+	plt.ylabel('I-factor')
 	plt.xlim(j[0]-0.5)	
 	plt.xticks(j+0.4,E,rotation=90)
 	
@@ -781,8 +827,13 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		    usage_rel_to_share_of_load[h.id]=t[n.id]/1000
 		    total_usage_year[h.id]=usage_year[n.id]/1000
 		    green_div_yellow[h.id]=total_usage_year[h.id]/usage_rel_to_share_of_load[h.id]	
+		    
+	green_div_yellow_avg=round(green_div_yellow.sum()/(len(N)),2)
 	
 	p1=plt.bar(np.arange(30),green_div_yellow,width=0.7,color=gyell)
+	plt.axhline(green_div_yellow_avg,linestyle="dashed",color="k")
+	plt.annotate(str(green_div_yellow_avg),(-0.5,green_div_yellow_avg),(1,green_div_yellow_avg+0.5),arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=.2"))
+	plt.ylabel('I-factor')
 	plt.xlim(j[0]-0.5)	
 	plt.xticks(j+0.4,E,rotation=90)
 	
@@ -853,12 +904,14 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	for h in N:
 	    for n in N:
 		if  n.label==E[h.id]:
-		    blue_div_yellow[h.id]=usage_year[n.id]/t[n.id]
+		    blue_div_yellow[h.id]=c[n.id]/t[n.id]*1000
 		    
-		    		    
+	blue_div_yellow_avg=round(blue_div_yellow.sum()/(len(N)),2)	    		    
 	   
 	p1=plt.bar(np.arange(30),blue_div_yellow,width=0.7,color=au.kelp)
-	
+	plt.axhline(blue_div_yellow_avg,linestyle="dashed",color="k")
+	plt.annotate(str(blue_div_yellow_avg),(-0.5,blue_div_yellow_avg),(1,blue_div_yellow_avg+0.5),arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=.2"))
+	plt.ylabel('I-factor')
 	plt.xlim(j[0]-0.5)	
 	plt.xticks(j+0.4,E,rotation=90)
 	
@@ -890,7 +943,7 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	for h in N:
 	    for n in N:
 		if  n.label==E[h.id]:
-		    blue_div_yellow_cost[h.id]=usage_year_cost[n.id]/t_cost[n.id]
+		    blue_div_yellow_cost[h.id]=c_cost[n.id]/t_cost[n.id]
 		    
 		    		    
 	   
@@ -927,17 +980,21 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	for h in N:
 	    for n in N:
 		if  n.label==E[h.id]:
-		    blue_div_yellow_kms[h.id]=usage_year_kms[n.id]/t_kms[n.id]
+		    blue_div_yellow_kms[h.id]=c_kms[n.id]/t_kms[n.id]*1000
 		    
 		    		    
+	blue_div_yellow_kms_avg=round(blue_div_yellow_kms.sum()/(len(N)),2)
 	   
 	p1=plt.bar(np.arange(30),blue_div_yellow_kms,width=0.7,color=au.kelp)
-	
+	plt.axhline(blue_div_yellow_kms_avg,linestyle="dashed",color="k")
+	plt.annotate(str(blue_div_yellow_kms_avg),(-0.5,blue_div_yellow_kms_avg),(1,blue_div_yellow_kms_avg+0.5),arrowprops=dict(arrowstyle="->",connectionstyle="arc3,rad=.2"))
+	plt.ylabel('I-factor')
 	plt.xlim(j[0]-0.5)	
 	plt.xticks(j+0.4,E,rotation=90)
 	
 	if new:
 	    if copper:
+		    np.save("new_capacities-year"+str(mode),Capacities_year)
 		    file.write("blue_div_yellow_kms-new"+str(E)+str(blue_div_yellow_kms) + '\n')
 		    #plt.text(0.03,0.03, "cost rel to meanload,new,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
 		    
@@ -950,6 +1007,7 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		
 	else:
 	    if copper:
+		    #np.save("old_capacities-year"+str(mode),capacities-year)
 		    file.write("blue_div_yellow_kms-old"+str(E)+str(blue_div_yellow_kms)  + '\n' )
 		    #plt.text(0.03,0.03, "cost rel to meanload,old,linear,copper,"+str(ports)+"ports,alpha="+str(alph), fontsize=15, color='w')
 		    #plt.text(0.03,0.03, "old linear", fontsize=15, color='w')
@@ -962,9 +1020,10 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 		
 	close()
 	
+	
 
 
-def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None):
+def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None): # tracks the flows (downstream and upstream powermixes) for the unprocessed case
 	
 	matr=np.genfromtxt(admat)
 
@@ -974,14 +1033,19 @@ def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None):
 	a,b,list_F=au.AtoKh_old(N)
 	start=time()
 	total_power_mixes=[]
+	total_power_mixes_ex=[]
 	for n in N:
 		n.links = get_links(n.id,matr)
 		n.power_mix = np.zeros((len(N),lapse))
 		n.total_power_mix=np.zeros((len(N)))
+		n.total_power_mix_ex=np.zeros((len(N)))
+		
 		n.power_mix_ex=np.zeros((len(N),lapse))
+		n.total_power_mix_ex=np.zeros((len(N)))
     
 	for t in range(lapse):
 		R=np.zeros(( len(N),len(N) ))
+		R_ex=np.zeros(( len(N),len(N) ))
         
         ## Update progress bar.
 		if mod(t,100)==0 and t>0: 
@@ -990,10 +1054,9 @@ def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None):
         
 		for n in N:
             
-            ## Add the nodes own contribution/source strength.
+            ## Add the nodes own contribution/taking source/sink strength.
 			n.power_mix[n.id,t] = n.get_RES()[t]+n.balancing[t]-n.curtailment[t]
-			n.power_mix_ex[n.id,t]=n.load[t]
-			            
+			n.power_mix_ex[n.id,t] = n.load[t]		            
 			for l in n.links:
                 
                 ## If the flow direction indicates import to node n on link l.
@@ -1011,11 +1074,32 @@ def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None):
 						if k.label==friend_label: friend_id=k.id  ## lazy and messy way of getting id
                     # Holger Bech Nielsen
 					n.power_mix[friend_id,t] = abs(F[l[0],t])
+				
+	#If the flow indicated export from node n on link l			
+				if F[l[0],t]*l[1] > 0:
+				    
+				    ## Determine end of link using the link direction.
+					if l[1]==-1:
+						friend_label = list_F[l[0]][0]
+					elif l[1]==1:
+						friend_label= list_F[l[0]][1]
+					else:
+						print "Warning (234nsd23): Link direction unknown!"
                     
-            ### So now we have the own+direct input vector
+					for k in N:
+						if k.label==friend_label: friend_id=k.id  ## lazy and messy way of getting id
+                    # Holger Bech Nielsen
+					n.power_mix_ex[friend_id,t] = abs(F[l[0],t])
+				    
+                    
+            ### So now we have the own+direct input vector and the own+direct export vector
+            ### we add it to the big matrix	
+			
             ### we add it to the big matrix
 			R[n.id]=n.power_mix[:,t]
-        
+			R_ex[n.id]=n.power_mix_ex[:,t]
+			
+       ############################################### inflow ##########################################
         ### Now we have the pre-done matrix
 		target=np.arange(len(N))
 		done=[]
@@ -1039,19 +1123,130 @@ def track_new_flows(N,F,admat='./settings/eadmat.txt',lapse=None,mode=None):
 							
 						done.append(n)
 						done.sort()
+						
+                        
+		R[np.isnan(R)] = 0.0 #This should not be needed, but R says it is.
+				
+	
+	##################################### outflow powermix ##################################    
+		target_ex=np.arange(len(N))
+		done_ex=[]
+        
+		while len(done_ex)<len(N): #All is not done yet.
+			for n in target_ex:
+				if n not in done_ex:  ### if it hasn't been done
+					takers=[]
+					for i in target_ex:
+						if R_ex[n,i]>1. and n!=i: takers.append(i)
+						#if n!=i: contributors.append(i)
+					takers.sort()
+                    ## Appears not to be used: contr=np.array(contributors)
+                    
+					if (np.in1d(takers,done_ex).all()) or (len(takers)==0): ### check if it is doable all it's takers are done or takers is empty
+						for c in takers:                           ### then, for all "done" takers, do the thingy
+							export_from_ntoc = R_ex[n,c]*1.0
+							R_ex[n,c] = 0
+							
+							R_ex[n,:]   += R_ex[c,:]*export_from_ntoc/sum(R_ex[c,:])
+							
+						done_ex.append(n)
+						done_ex.sort()
+                        
+		R_ex[np.isnan(R_ex)] = 0.0 #This should not be needed, but R says it is.
+		 
+		for n in N:
+			n.power_mix_ex[:,t] = R_ex[n.id,:]
+			n.power_mix[:,t] = R[n.id,:]   
+			n.total_power_mix[:]+=n.power_mix[:,t]
+			n.total_power_mix_ex[:]+=n.power_mix_ex[:,t]
+			
+	for n in N: 
+				
+		total_power_mixes.append(n.total_power_mix)
+		total_power_mixes_ex.append(n.total_power_mix_ex)
+	
+	return N#, total_power_mixes, total_power_mixes_ex
+	
+	
+	  
+
+def track_new_exports(N,F,admat='./settings/eadmat.txt',lapse=None): # tracks the flows ( upstream powermixes) for the unprocessed case
+	
+	matr=np.genfromtxt(admat)
+
+	if lapse==None:
+		lapse=N[0].nhours
+
+	a,b,list_F=au.AtoKh_old(N)
+	start=time()
+	for n in N:
+		n.links = get_links(n.id,matr)
+		n.power_mix_ex = np.zeros((len(N),lapse))
+    
+	for t in range(lapse):
+		R=np.zeros(( len(N),len(N) ))
+        
+        ## Update progress bar.
+		if mod(t,100)==0 and t>0: 
+			print "\r",round(100.0*(t/float(lapse)),2),"%",
+			sys.stdout.flush()
+        
+		for n in N:
+            
+            ## Add the nodes own export/sink strength.
+			n.power_mix_ex[n.id,t] = n.load[t]
+            
+			for l in n.links:
+                
+                ## If the flow direction indicates export from node n on link l.
+				if F[l[0],t]*l[1] > 0:
+                    
+                    ## Determine end of link using the link direction.
+					if l[1]==-1:
+						friend_label = list_F[l[0]][0]
+					elif l[1]==1:
+						friend_label= list_F[l[0]][1]
+					else:
+						print "Warning (234nsd23): Link direction unknown!"
+                    
+					for k in N:
+						if k.label==friend_label: friend_id=k.id  ## lazy and messy way of getting id
+                    # Holger Bech Nielsen
+					n.power_mix_ex[friend_id,t] = abs(F[l[0],t])
+                    
+            ### So now we have the own+direct export vector
+            ### we add it to the big matrix
+			R[n.id]=n.power_mix_ex[:,t]
+        
+        ### Now we have the pre-done matrix
+		target=np.arange(len(N))
+		done=[]
+        
+		while len(done)<len(N): #All is not done yet.
+			for n in target:
+				if n not in done:  ### if it hasn't been done
+					takers=[]
+					for i in target:
+						if R[n,i]>1. and n!=i: takers.append(i)
+						#if n!=i: contributors.append(i)
+					takers.sort()
+                    ## Appears not to be used: contr=np.array(contributors)
+                    
+					if (np.in1d(takers,done).all()) or (len(takers)==0): ### check if it is doable all it's takers are done or takers is empty
+						for c in takers:                           ### then, for all "done" takers, do the thingy
+							export_from_ntoc = R[n,c]*1.0
+							R[n,c] = 0
+							
+							R[n,:]   += R[c,:]*export_from_ntoc/sum(R[c,:])
+							
+						done.append(n)
+						done.sort()
                         
 		R[np.isnan(R)] = 0.0 #This should not be needed, but R says it is.
 		 
 		for n in N:
-			n.power_mix[:,t] = R[n.id,:]   
-			n.total_power_mix[:]+=n.power_mix[:,t]
-			for h in N:
-			    if h.id <>n.id:
-				h.power_mix_ex[n.id,t]=n.power_mix[h.id,t]
-			
-	for n in N:
-	    total_power_mixes.append(n.total_power_mix)
+			n.power_mix_ex[:,t] = R[n.id,:]   
 			
 			          
 
-	return N, total_power_mixes
+	return N    
