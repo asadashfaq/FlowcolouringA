@@ -53,7 +53,7 @@ def get_link_direction(n,N):
 		
 def track_node_links_usage(links,N=None,ports="ex_and_im",new=False,mode="linear",alph=None,copper = True):
 # as links use links_mix or variants of this, set new=True if you use the new model
-#gives the linkusage for each country relative to its total usage of links. 
+#gives the linkusage for each country relative to its total usage of links. The first 50 entries in 
 #Mode can be "linear", "square", "random" or "capped".
 	if alph== None:
 	    alph="hetero"
@@ -77,8 +77,8 @@ def track_node_links_usage(links,N=None,ports="ex_and_im",new=False,mode="linear
 			total_usage+=links[n.id+x*j]
 			#k=linksflow[j]
 			#cost=np.append(cost,links[n.id+x*j]/k)
-		n.link_usages_normalized=np.append(n.link_usages_normalized,n.link_usages[:]/total_usage*100)		
-		total_link_usage_node_rel=np.append(total_link_usage_node_rel,n.link_usages_normalized)
+		n.link_usages_normalized=np.append(n.link_usages_normalized,n.link_usages[:]/total_usage*100) # calculates node n's usage of the links compared to node n's total usage of the links		
+		total_link_usage_node_rel=np.append(total_link_usage_node_rel,n.link_usages_normalized) # stores them in an array with the 50 first entries storing the relative linkusages for node 0 and the 50 next for node 1 and so on.
 		total_link_usage_node=np.append(total_link_usage_node,n.link_usages)
 		total_usages.append(total_usage)
 		
@@ -160,7 +160,7 @@ def track_node_links_usage(links,N=None,ports="ex_and_im",new=False,mode="linear
 	
 
 
-def track_flows(N,F,admat='./settings/eadmat.txt',mode=None,lapse=None):
+def track_flows(N,F,admat='./settings/eadmat.txt',mode=None,lapse=None): #tracks the flows (downstream and upstream powermixes) for the processed case.
 	
 	matr=np.genfromtxt(admat)
 
