@@ -6,8 +6,8 @@ from pylab import plt
 import aurespf.solvers as au
 from aurespf.tools import *
 from EUgrid import *
-from link_colour_less_functions import track_flows
-from new_linkcolouralgorithm_less_functions import track_link_usage_total
+from link_colour_less import track_flows
+from new_linkcolouralgorithm_less import track_link_usage_total
 
 """
 Script to create scatter plots of nodes' usages of links for three export schemes:
