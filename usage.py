@@ -26,6 +26,7 @@ python usage.py solve
 
 """
 
+
 """
 Initialisation
 """
@@ -37,24 +38,14 @@ else:
 modes = ['linear','square','RND']
 lapse = 70128
 
-"""
-Solving flows for different export schemes
-"""
-if 'solve' in task:
-    alphas = np.ones(30)*.7
-    gammas = np.ones(30)
-    
-    Nodes = EU_Nodes_usage()
-    
-    for m in modes:
-        N,F = au.solve(Nodes,mode=m+' copper verbose',lapse=lapse)
-        N.save_nodes(m)
-        np.save('./results/'+m+'-flows',F)
 
 """
-Calculate powermixes and nodes' usages of links and save results to file.
+Helper functions
 """
 def usage(m):
+    """
+    Calculate powermixes and nodes' usages of links and save results to file.
+    """
     N = EU_Nodes_usage(m+'.npz')
     F = np.load('./results/'+m+'-flows.npy')
     
@@ -70,9 +61,94 @@ def usage(m):
     """
     boxplot,boxplotlabel = track_link_usage_total(N2,F,mode=m,alph='same',lapse=lapse)
 
+def scatter_plotter(F,Fmax,usage,direction,mode):
+    """
+    Scatter plots of nodes' import/export usages of links saved to ./figures/.
+    """
+    colors = ['#b30000','#ff0000','#ff4d4d']
+    nodes = usage.shape[1]
+    links = usage.shape[0]
+    for l in range(links):
+        plt.figure()
+        for t in range(lapse):
+            linkflow = abs(F[l,t]*np.ones(nodes))
+            usages = usage[l,:,t]/Fmax[l]
+            """
+            Find the three highest contributors and plot in red colors.
+            """
+            maxs = []
+            for k in range(3):
+                i = usages.argmax()
+                maxs.append(usages[i])
+                usages = np.delete(usages,i)
+                plt.plot(linkflow[k],maxs[k],'.',color=str(colors[k]))
+            """
+            Plot other nodes' usages.
+            """
+            plt.plot(linkflow[3:],usages,'.k')
+        plt.title(str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
+        plt.xlabel(r'$F_l(t)$ [MW]')
+        plt.ylabel(r'$H_{ln}/\max(F_l)$')
+        plt.savefig('./figures/'+str(mode)+'-'+str(direction)+'-flows-'+str(l+1)+'.png')
+
+def top_plotter(top,N,F,Fmax,usage,direction,mode):
+    """
+    Plots of top 5 contributors to each links transmission capacity
+    """
+    colors = ['#e32636','#008000','#007fff','#fdee00','#ed9121']
+    nodes = usage.shape[1]
+    links = usage.shape[0]
+    for l in range(links):
+        plt.figure()
+        ax = plt.subplot(111)
+        max_usages = np.max(export_usage[l],1)
+        max_users = []
+        names = ['Rest']
+        for k in range(top):
+            i = max_usages.argmax()
+            max_users.append(i)
+            max_usages = np.delete(max_usages,i)
+            names.append(str(N[i].label))
+        for t in range(lapse):
+            linkflow = abs(F[l,t]*np.ones(nodes))
+            usages = usage[l,:,t]/Fmax[l]
+            bg, = ax.plot(linkflow,usages,'.',color='#b2beb5',alpha=.3,label='rest')
+            for k in range(top):
+                ax.plot(linkflow[k],usages[max_users[k]],'.',color=str(colors[k]),label=names[k])
+        ax.set_title('Top '+str(top)+' '+str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
+        ax.set_xlabel(r'$F_l(t)$ [MW]')
+        ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
+
+        # Shrink x-axis to make room for legend
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
+
+        ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5),title='Country')
+        plt.savefig('./figures/'+str(mode)+'-top-flows-'+str(l+1)+'.png')
+
+
+"""
+Solving flows for different export schemes
+"""""
+if 'solve' in task:
+    alphas = np.ones(30)*.7
+    gammas = np.ones(30)
+    
+    Nodes = EU_Nodes_usage()
+    
+    for m in modes:
+        N,F = au.solve(Nodes,mode=m+' copper verbose',lapse=lapse)
+        N.save_nodes(m)
+        np.save('./results/'+m+'-flows',F)
+
+
+"""
+Calculate powermixes and nodes' usages of links and save results to file.
+"""
 if 'usage' in task:
     p = Pool(3)
     p.map(usage,modes)
+
 
 """
 Scatterplots of usages
@@ -82,8 +158,9 @@ if 'plot' in task:
         """
         Load flows and find maximum values for normalisation
         """
+        N = EU_Nodes_usage(m+'.npz')
         F = np.load('./results/'+m+'-flows.npy')
-        Fmax = np.max(F,1)
+        Fmax = np.max(abs(F),1)
 
         """
         Load nodes' usage of links for export and import respectively with
@@ -93,57 +170,14 @@ if 'plot' in task:
         import_usage = np.load('./linkcolouring/old_'+m+'_copper_link_mix_import_all_alpha=same.npy')
 
         """
-        Plots of export usage
+        Scatter plots of import/export usage
         """
-        nodes = export_usage.shape[1]
-        links = export_usage.shape[0]
-        for l in range(links):
-            plt.figure()
-            for t in range(lapse):
-                linkflow = abs(F[l,t]*np.ones(nodes))
-                usages = export_usage[l,:,t]/Fmax[l]
-                """
-                Find the three highest contributors and plot in red colors.
-                """
-                maxs = []
-                colors = ['#b30000','#ff0000','#ff4d4d']
-                for k in range(3):
-                    i = usages.argmax()
-                    maxs.append(usages[i])
-                    usages = np.delete(usages,i)
-                    plt.plot(linkflow[k],maxs[k],'.',color=str(colors[k]))
-                """
-                Plot other nodes' usages.
-                """
-                plt.plot(linkflow[3:],usages,'.k')
-            plt.title('Export flows on link #'+str(l))
-            plt.xlabel(r'$F_l(t)$ [MW]')
-            plt.ylabel(r'$H_{ln}/\max(F_l)$')
-            plt.savefig('./figures/'+str(m)+'-exportflows-'+str(l)+'.png')
+        scatter_plotter(F,Fmax,export_usage,'export',m)
+        scatter_plotter(F,Fmax,import_usage,'import',m)
 
         """
-        Plots of import usage
+        Plots of top 5 contributors to each links transmission capacity
         """
-        for l in range(links):
-            plt.figure()
-            for t in range(lapse):
-                linkflow = abs(F[l,t]*np.ones(nodes))
-                usages = import_usage[l,:,t]/Fmax[l]
-                """
-                Find the three highest contributors and plot in red colors.
-                """
-                maxs = []
-                colors = ['#b30000','#ff0000','#ff4d4d']
-                for k in range(3):
-                    i = usages.argmax()
-                    maxs.append(usages[i])
-                    usages = np.delete(usages,i)
-                    plt.plot(linkflow[k],maxs[k],'.',color=str(colors[k]))
-                """
-                Plot other nodes' usages.
-                """
-                plt.plot(linkflow,usages,'.k')
-            plt.title('Import flows on link #'+str(l))
-            plt.xlabel(r'$F_l(t)$ [MW]')
-            plt.ylabel(r'$H_{ln}/\max(F_l)$')
-            plt.savefig('./figures/'+str(m)+'-importflows-'+str(l)+'.png')
+        top = 5
+        top_plotter(top,N,F,Fmax,export_usage,'export',m)
+        top_plotter(top,N,F,Fmax,import_usage,'import',m)
