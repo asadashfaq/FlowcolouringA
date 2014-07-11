@@ -36,7 +36,7 @@ else:
     task = str(sys.argv[1])
 
 modes = ['linear','square','RND']
-lapse = 70128
+lapse = 365*24
 
 
 """
@@ -71,6 +71,7 @@ def scatter_plotter(F,Fmax,usage,direction,mode,lapse):
     links = usage.shape[0]
     for l in range(links):
         plt.figure()
+        ax = plt.subplot(111)
         for t in range(lapse):
             linkflow = abs(F[l,t]*np.ones(nodes))
             usages = usage[l,:,t]/Fmax[l]
@@ -87,9 +88,17 @@ def scatter_plotter(F,Fmax,usage,direction,mode,lapse):
             Plot other nodes' usages.
             """
             plt.plot(linkflow[3:],usages,'.k')
-        plt.title(str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
-        plt.xlabel(r'$F_l(t)$ [MW]')
-        plt.ylabel(r'$H_{ln}/\max(F_l)$')
+        ax.set_title(str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
+        ax.set_xlabel(r'$F_l(t)$ [MW]')
+        ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
+
+        # Shrink x-axis to make room for legend
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
+
+        names = ['1st', '2nd', '3rd', 'Rest']
+        ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5),title='Contributions')
+
         plt.savefig('./figures/'+str(mode)+'-'+str(direction)+'-flows-'+str(l+1)+'.png')
     return
 
