@@ -42,7 +42,7 @@ lapse = 365*24
 """
 Helper functions
 """
-def usage(m):
+def calc_usage(m):
     """
     Calculate powermixes and nodes' usages of links and save results to file.
     """
@@ -91,15 +91,16 @@ def scatter_plotter(F,Fmax,usage,direction,mode,lapse):
         ax.set_title(str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
         ax.set_xlabel(r'$F_l(t)$ [MW]')
         ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
-
+    
         # Shrink x-axis to make room for legend
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
-
+    
         names = ['1st', '2nd', '3rd', 'Rest']
         ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5),title='Contributions')
-
+    
         plt.savefig('./figures/'+str(mode)+'-'+str(direction)+'-flows-'+str(l+1)+'.png')
+        plt.close('all') # fixes memory leak.
     return
 
 def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
@@ -136,6 +137,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
 
         ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5),title='Country')
         plt.savefig('./figures/top-'+str(mode)+'-'+str(direction)+'-flows-'+str(l+1)+'.png')
+        plt.close('all') # fixes memory leak.
     return
 
 """
@@ -158,7 +160,7 @@ Calculate powermixes and nodes' usages of links and save results to file.
 """
 if 'usage' in task:
     p = Pool(3)
-    p.map(usage,modes)
+    p.map(calc_usage,modes)
 
 
 """
