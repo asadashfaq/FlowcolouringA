@@ -119,7 +119,7 @@ if 'plot' in task:
             plt.title('Export flows on link #'+str(l))
             plt.xlabel(r'$F_l(t)$ [MW]')
             plt.ylabel(r'$H_{ln}/\max(F_l)$')
-            plt.savefig('./figures/exportflows-'+str(l)+'.png')
+            plt.savefig('./figures/'+str(m)+'-exportflows-'+str(l)+'.png')
 
         """
         Plots of import usage
@@ -146,4 +146,4 @@ if 'plot' in task:
             plt.title('Import flows on link #'+str(l))
             plt.xlabel(r'$F_l(t)$ [MW]')
             plt.ylabel(r'$H_{ln}/\max(F_l)$')
-            plt.savefig('./figures/importflows-'+str(l)+'.png')
+            plt.savefig('./figures/'+str(m)+'-importflows-'+str(l)+'.png')
