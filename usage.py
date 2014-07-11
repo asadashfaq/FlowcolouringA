@@ -124,7 +124,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
         for t in range(lapse):
             linkflow = abs(F[l,t]*np.ones(nodes))
             usages = usage[l,:,t]/Fmax[l]
-            bg, = ax.plot(linkflow,usages,'.',color='#b2beb5',alpha=.3,label='rest')
+            ax.plot(linkflow,usages,'.',color='#b2beb5',alpha=.3,label='rest')
             for k in range(top):
                 ax.plot(linkflow[k],usages[max_users[k]],'.',color=str(colors[k]),label=names[k])
         ax.set_title('Top '+str(top)+' '+str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
@@ -139,6 +139,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
         plt.savefig('./figures/top-'+str(mode)+'-'+str(direction)+'-flows-'+str(l+1)+'.png')
         plt.close('all') # fixes memory leak.
     return
+
 
 """
 Solving flows for different export schemes
