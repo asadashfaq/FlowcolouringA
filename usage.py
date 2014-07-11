@@ -2,7 +2,7 @@
 from __future__ import division
 import sys
 import numpy as np
-from pylab import plt
+import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import aurespf.solvers as au
 from aurespf.tools import *
@@ -60,8 +60,9 @@ def usage(m):
     are saved to files '..._links_ex_...' and '..._links_im_...'.
     """
     boxplot,boxplotlabel = track_link_usage_total(N2,F,mode=m,alph='same',lapse=lapse)
+    return
 
-def scatter_plotter(F,Fmax,usage,direction,mode):
+def scatter_plotter(F,Fmax,usage,direction,mode,lapse):
     """
     Scatter plots of nodes' import/export usages of links saved to ./figures/.
     """
@@ -90,8 +91,9 @@ def scatter_plotter(F,Fmax,usage,direction,mode):
         plt.xlabel(r'$F_l(t)$ [MW]')
         plt.ylabel(r'$H_{ln}/\max(F_l)$')
         plt.savefig('./figures/'+str(mode)+'-'+str(direction)+'-flows-'+str(l+1)+'.png')
+    return
 
-def top_plotter(top,N,F,Fmax,usage,direction,mode):
+def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
     """
     Plots of top 5 contributors to each links transmission capacity
     """
@@ -101,7 +103,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode):
     for l in range(links):
         plt.figure()
         ax = plt.subplot(111)
-        max_usages = np.max(export_usage[l],1)
+        max_usages = np.max(usage[l],1)
         max_users = []
         names = ['Rest']
         for k in range(top):
@@ -124,8 +126,8 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode):
         ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
 
         ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5),title='Country')
-        plt.savefig('./figures/'+str(mode)+'-top-flows-'+str(l+1)+'.png')
-
+        plt.savefig('./figures/top-'+str(mode)+'-'+str(direction)+'-flows-'+str(l+1)+'.png')
+    return
 
 """
 Solving flows for different export schemes
@@ -154,6 +156,7 @@ if 'usage' in task:
 Scatterplots of usages
 """
 if 'plot' in task:
+    top = 5
     for m in modes:
         """
         Load flows and find maximum values for normalisation
@@ -163,21 +166,15 @@ if 'plot' in task:
         Fmax = np.max(abs(F),1)
 
         """
-        Load nodes' usage of links for export and import respectively with
-        dimensions export_usage = (links, nodes, lapse).
+        Load usages, do scatter plots and plot of top 5 contributors to a links capacity.
         """
         export_usage = np.load('./linkcolouring/old_'+m+'_copper_link_mix_export_all_alpha=same.npy')
+        scatter_plotter(F,Fmax,export_usage,'export',m,lapse)
+        top_plotter(top,N,F,Fmax,export_usage,'export',m,lapse)
+        export_usage = []
+
         import_usage = np.load('./linkcolouring/old_'+m+'_copper_link_mix_import_all_alpha=same.npy')
+        scatter_plotter(F,Fmax,import_usage,'import',m,lapse)
+        top_plotter(top,N,F,Fmax,import_usage,'import',m,lapse)
+        import_usage = []
 
-        """
-        Scatter plots of import/export usage
-        """
-        scatter_plotter(F,Fmax,export_usage,'export',m)
-        scatter_plotter(F,Fmax,import_usage,'import',m)
-
-        """
-        Plots of top 5 contributors to each links transmission capacity
-        """
-        top = 5
-        top_plotter(top,N,F,Fmax,export_usage,'export',m)
-        top_plotter(top,N,F,Fmax,import_usage,'import',m)
