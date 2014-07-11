@@ -132,9 +132,21 @@ if 'plot' in task:
             for t in range(lapse):
                 linkflow = abs(F[l,t]*np.ones(nodes))
                 usages = import_usage[l,:,t]/Fmax[l]
+                """
+                Find the three highest contributors and plot in red colors.
+                """
+                maxs = []
+                colors = ['#b30000','#ff0000','#ff4d4d']
+                for k in range(3):
+                    i = usages.argmax()
+                    maxs.append(usages[i])
+                    usages = np.delete(usages,i)
+                    plt.plot(linkflow[k],maxs[k],'.',color=str(colors[k]))
+                """
+                Plot other nodes' usages.
+                """
                 plt.plot(linkflow,usages,'.k')
             plt.title('Import flows on link #'+str(l))
             plt.xlabel(r'$F_l(t)$ [MW]')
             plt.ylabel(r'$H_{ln}/\max(F_l)$')
             plt.savefig('./figures/importflows-'+str(l)+'.png')
-
