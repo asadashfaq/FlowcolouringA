@@ -38,7 +38,21 @@ modes = ['linear','square','RND']
 lapse = 70128
 
 """
-Function to calculate link usage and save results to file.
+Solving flows for different export schemes
+"""
+if 'solve' in task:
+    alphas = np.ones(30)*.7
+    gammas = np.ones(30)
+    
+    Nodes = EU_Nodes_usage()
+    
+    for m in modes:
+        N,F = au.solve(Nodes,mode=m+' copper verbose',lapse=lapse)
+        N.save_nodes(m)
+        np.save('./results/'+m+'-flows',F)
+
+"""
+Calculate powermixes and nodes' usages of links and save results to file.
 """
 def usage(m):
     N = EU_Nodes_usage(m+'.npz')
@@ -56,23 +70,6 @@ def usage(m):
     """
     boxplot,boxplotlabel = track_link_usage_total(N2,F,mode=m,alph='same',lapse=lapse)
 
-"""
-Solving flows for different export schemes
-"""
-if 'solve' in task:
-    alphas = np.ones(30)*.7
-    gammas = np.ones(30)
-    
-    Nodes = EU_Nodes_usage()
-    
-    for m in modes:
-        N,F = au.solve(Nodes,mode=m+' copper verbose',lapse=lapse)
-        N.save_nodes(m)
-        np.save('./results/'+m+'-flows',F)
-
-"""
-Calculate powermixes
-"""
 if 'usage' in task:
     p = Pool(3)
     p.map(usage,modes)
