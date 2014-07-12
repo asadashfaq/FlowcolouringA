@@ -23,7 +23,6 @@ Call the program with only one of the following command line arguments:
 
 Example call:
 python usage.py solve
-
 """
 
 
@@ -35,8 +34,8 @@ if len(sys.argv)<2:
 else:
     task = str(sys.argv[1])
 
-modes = ['linear','square','RND']
-lapse = 365*24
+modes = ['linear','square','RND']   # Export schemes. 'RND' is also known as 'Market'.
+lapse = 365*24  # number of hours to include
 
 
 """
@@ -143,7 +142,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
 
 """
 Solving flows for different export schemes
-"""""
+"""
 if 'solve' in task:
     alphas = np.ones(30)*.7
     gammas = np.ones(30)
@@ -183,10 +182,9 @@ if 'plot' in task:
         export_usage = np.load('./linkcolouring/old_'+m+'_copper_link_mix_export_all_alpha=same.npy')
         scatter_plotter(F,Fmax,export_usage,'export',m,lapse)
         top_plotter(top,N,F,Fmax,export_usage,'export',m,lapse)
-        export_usage = []
+        export_usage = [] # frees roughly 800 MB RAM before loading import usage.
 
         import_usage = np.load('./linkcolouring/old_'+m+'_copper_link_mix_import_all_alpha=same.npy')
         scatter_plotter(F,Fmax,import_usage,'import',m,lapse)
         top_plotter(top,N,F,Fmax,import_usage,'import',m,lapse)
         import_usage = []
-
