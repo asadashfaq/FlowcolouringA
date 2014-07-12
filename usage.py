@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import aurespf.solvers as au
 from aurespf.tools import *
 from EUgrid import *
-from link_colour_less import track_flows
+from link_colour_less import track_flows, get_link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
 
 """
@@ -35,12 +35,19 @@ else:
     task = str(sys.argv[1])
 
 modes = ['linear','square','RND']   # Export schemes. 'RND' is also known as 'Market'.
-lapse = 365*24  # number of hours to include
+lapse = 10 # 365*24  # number of hours to include
 
 
 """
 Helper functions
 """
+def link_label(num,N):
+    """
+    Translate link number into a string like: 'Country1-Country2'.
+    """
+    label = get_link_direction(num,N)
+    return str(label[0].label)+'-'+str(label[1].label)
+
 def calc_usage(m):
     """
     Calculate powermixes and nodes' usages of links and save results to file.
@@ -61,7 +68,7 @@ def calc_usage(m):
     boxplot,boxplotlabel = track_link_usage_total(N2,F,mode=m,alph='same',lapse=lapse)
     return
 
-def scatter_plotter(F,Fmax,usage,direction,mode,lapse):
+def scatter_plotter(N,F,Fmax,usage,direction,mode,lapse):
     """
     Scatter plots of nodes' import/export usages of links saved to ./figures/.
     """
@@ -87,7 +94,8 @@ def scatter_plotter(F,Fmax,usage,direction,mode,lapse):
             Plot other nodes' usages.
             """
             plt.plot(linkflow[3:],usages,'.k')
-        ax.set_title(str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
+        label = link_label(l+1,N)
+        ax.set_title(str(mode)+' '+str(direction)+' flows on link '+label)
         ax.set_xlabel(r'$F_l(t)$ [MW]')
         ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
     
@@ -126,7 +134,8 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
             ax.plot(linkflow,usages,'.',color='#b2beb5',alpha=.3,label='rest')
             for k in range(top):
                 ax.plot(linkflow[k],usages[max_users[k]],'.',color=str(colors[k]),label=names[k])
-        ax.set_title('Top '+str(top)+' '+str(mode)+' '+str(direction)+' flows on link #'+str(l+1))
+        label = link_label(l+1,N)
+        ax.set_title('Top '+str(top)+' '+str(mode)+' '+str(direction)+' flows on link '+label)
         ax.set_xlabel(r'$F_l(t)$ [MW]')
         ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
 
@@ -180,11 +189,11 @@ if 'plot' in task:
         Load usages, do scatter plots and plot of top 5 contributors to a links capacity.
         """
         export_usage = np.load('./linkcolouring/old_'+m+'_copper_link_mix_export_all_alpha=same.npy')
-        scatter_plotter(F,Fmax,export_usage,'export',m,lapse)
+        scatter_plotter(N,F,Fmax,export_usage,'export',m,lapse)
         top_plotter(top,N,F,Fmax,export_usage,'export',m,lapse)
         export_usage = [] # frees roughly 800 MB RAM before loading import usage.
 
         import_usage = np.load('./linkcolouring/old_'+m+'_copper_link_mix_import_all_alpha=same.npy')
-        scatter_plotter(F,Fmax,import_usage,'import',m,lapse)
+        scatter_plotter(N,F,Fmax,import_usage,'import',m,lapse)
         top_plotter(top,N,F,Fmax,import_usage,'import',m,lapse)
         import_usage = []
