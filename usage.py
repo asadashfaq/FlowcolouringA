@@ -35,7 +35,7 @@ else:
     task = str(sys.argv[1])
 
 modes = ['linear','square','RND']   # Export schemes. 'RND' is also known as 'Market'.
-lapse = 10 # 365*24  # number of hours to include
+lapse = 365*24  # number of hours to include
 
 
 """
@@ -94,7 +94,7 @@ def scatter_plotter(N,F,Fmax,usage,direction,mode,lapse):
             Plot other nodes' usages.
             """
             plt.plot(linkflow[3:],usages,'.k')
-        label = link_label(l+1,N)
+        label = link_label(l,N)
         ax.set_title(str(mode)+' '+str(direction)+' flows on link '+label)
         ax.set_xlabel(r'$F_l(t)$ [MW]')
         ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
@@ -120,7 +120,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
     for l in range(links):
         plt.figure()
         ax = plt.subplot(111)
-        max_usages = np.max(usage[l],1)
+        max_usages = np.max(usage[l,:,:lapse],1)
         max_users = []
         names = ['Rest']
         for k in range(top):
@@ -134,7 +134,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
             ax.plot(linkflow,usages,'.',color='#b2beb5',alpha=.3,label='rest')
             for k in range(top):
                 ax.plot(linkflow[k],usages[max_users[k]],'.',color=str(colors[k]),label=names[k])
-        label = link_label(l+1,N)
+        label = link_label(l,N)
         ax.set_title('Top '+str(top)+' '+str(mode)+' '+str(direction)+' flows on link '+label)
         ax.set_xlabel(r'$F_l(t)$ [MW]')
         ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
