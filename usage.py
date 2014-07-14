@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import aurespf.solvers as au
+from aurespf.tools import get_q
 from aurespf.tools import *
 from EUgrid import *
 from link_colour_less import track_flows, get_link_direction
@@ -72,10 +73,12 @@ def scatter_plotter(N,F,Fmax,usage,direction,mode,lapse):
     """
     Scatter plots of nodes' import/export usages of links saved to ./figures/.
     """
-    colors = ['#b30000','#ff0000','#ff4d4d']
+    colors = ['#670000','#ff0000','#e67400']
     nodes = usage.shape[1]
     links = usage.shape[0]
     for l in range(links):
+        diag = []
+        diagflow = []
         plt.figure()
         ax = plt.subplot(111)
         for t in range(lapse):
@@ -94,10 +97,20 @@ def scatter_plotter(N,F,Fmax,usage,direction,mode,lapse):
             Plot other nodes' usages.
             """
             plt.plot(linkflow[3:],usages,'.k')
+            """
+            Plot diagonal and 99 quantile of link flow
+            """
+            diag.append(sum(usages)+sum(maxs))
+            diagflow.append(linkflow[0])
+        plt.plot(diagflow,diag,'-k')
+        qq = get_q(abs(F[l,:lapse]),.99)
+        plt.plot([qq,qq],[0,max(diag)],'-k')
+
         label = link_label(l,N)
         ax.set_title(str(mode)+' '+str(direction)+' flows on link '+label)
         ax.set_xlabel(r'$F_l(t)$ [MW]')
         ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
+        plt.axis([0,max(abs(F[l,:lapse])),0,max(diag)])
     
         # Shrink x-axis to make room for legend
         box = ax.get_position()
@@ -118,6 +131,8 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
     nodes = usage.shape[1]
     links = usage.shape[0]
     for l in range(links):
+        diag = []
+        diagflow = []
         plt.figure()
         ax = plt.subplot(111)
         max_usages = np.max(usage[l,:,:lapse],1)
@@ -134,10 +149,20 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
             ax.plot(linkflow,usages,'.',color='#b2beb5',alpha=.3,label='rest')
             for k in range(top):
                 ax.plot(linkflow[k],usages[max_users[k]],'.',color=str(colors[k]),label=names[k])
+            """
+            Plot diagonal and 99 quantile of link flow
+            """
+            diag.append(sum(usages))
+            diagflow.append(linkflow[0])
+        plt.plot(diagflow,diag,'-k')
+        qq = get_q(abs(F[l,:lapse]),.99)
+        plt.plot([qq,qq],[0,max(diag)*1.05],'-k')
+
         label = link_label(l,N)
         ax.set_title('Top '+str(top)+' '+str(mode)+' '+str(direction)+' flows on link '+label)
         ax.set_xlabel(r'$F_l(t)$ [MW]')
         ax.set_ylabel(r'$H_{ln}/\max(F_l)$')
+        plt.axis([0,max(abs(F[l,:lapse])),0,max(diag)])
 
         # Shrink x-axis to make room for legend
         box = ax.get_position()
@@ -183,7 +208,7 @@ if 'plot' in task:
         """
         N = EU_Nodes_usage(m+'.npz')
         F = np.load('./results/'+m+'-flows.npy')
-        Fmax = np.max(abs(F),1)
+        Fmax = np.max(np.abs(F[:,:lapse]),1)
 
         """
         Load usages, do scatter plots and plot of top 5 contributors to a links capacity.
