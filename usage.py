@@ -21,6 +21,7 @@ Call the program with only one of the following command line arguments:
 - solve : solves the network
 - usage : calculates nodes' usages of links
 - plot : plot results
+- cond : calculate af plot conditional average usages
 
 Example call:
 python usage.py solve
@@ -36,7 +37,7 @@ else:
     task = str(sys.argv[1])
 
 modes = ['linear','square','RND']   # Export schemes. 'RND' is also known as 'Market'.
-lapse = 365*24  # number of hours to include
+lapse = 1000 # 365*24  # number of hours to include
 
 
 """
@@ -222,3 +223,70 @@ if 'plot' in task:
         scatter_plotter(N,F,Fmax,import_usage,'import',m,lapse)
         top_plotter(top,N,F,Fmax,import_usage,'import',m,lapse)
         import_usage = []
+
+"""
+Looking at conditional average usages in absolute units
+"""
+if 'cond' in task:
+    N = EU_Nodes_usage('linear.npz')
+    F = abs(np.load('./results/linear-flows.npy'))
+    export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
+    bin_size = 1000
+
+    # for n in nodes, l in links, m in modes
+
+    """
+    Stacking, sorting and looping through bins to obtain means of conditional usages
+    """
+    F_vert = np.reshape(F[0,:lapse],(len(F[0,:lapse]),1))
+    exp_vert = np.reshape(export_usage[0,0,:lapse],(len(export_usage[0,0,:lapse]),1))
+    F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+    F_matrix.sort(axis=0)
+    bin_max = np.ceil(max(F_matrix[:,0])/bin_size)*bin_size   # round up to nearest bin_size
+    nbins = bin_max/bin_size
+    bin_means = np.linspace(.5*bin_size,bin_max-(.5*bin_size),nbins)
+
+    H_temp = []
+    H = np.zeros((nbins,4)) # [#nodes, mean usage, min usage, max usage]
+    bin_id = 0
+    for t in range(lapse):
+        if F_matrix[t,0] < (bin_id+1)*bin_size:
+            H_temp.append(F_matrix[t,1])
+#            print bin_id, F_matrix[t,1]
+        else:
+            if len(H_temp)>0:
+                H[bin_id,0] = len(H_temp)
+                H[bin_id,1] = sum(H_temp)/len(H_temp)
+                H[bin_id,2] = min(H_temp)
+                H[bin_id,3] = max(H_temp)
+                bin_id += 1
+                H_temp = []
+            else:
+                H[bin_id,0] = 0
+                H[bin_id,1] = 0
+                H[bin_id,2] = 0
+                H[bin_id,3] = 0
+                bin_id += 1
+                H_temp = []
+
+    print 'lapse: ',lapse
+    print 't: ',t
+    print 'bin_id: ',bin_id
+    print 'bin_max: ',bin_max
+    print 'n_bins: ',nbins
+    print 'bin_means', bin_means
+    print 'H.shape: ',H.shape
+
+    """
+    Plotting
+    """
+    plt.plot(F_vert,exp_vert,'.k',alpha=.3)
+    plt.plot(bin_means,H[:,1],'.r')
+
+    plt.title('Node 0\'s usage of link 0')
+    plt.xlabel(r'$F_l$ [MW]')
+    plt.ylabel(r'$H_{ln}$ [MW]')
+    plt.show()
+
+
+
