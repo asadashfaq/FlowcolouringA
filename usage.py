@@ -18,10 +18,11 @@ Script to create scatter plots of nodes' usages of links for three export scheme
 - Market (RND)
 
 Call the program with only one of the following command line arguments:
-- solve : solves the network
-- usage : calculates nodes' usages of links
-- plot : plot results
-- cond : calculate af plot conditional average usages
+- solve:                solve the network and save solutions
+- usage:                calculate nodes' usages of links
+- plot:                 produce figures of usage
+- conditional:          calculate conditional average usages
+- conditional converge: check convergence of conditional average usages with bin sizes
 
 Example call:
 python usage.py solve
@@ -34,10 +35,10 @@ Initialisation
 if len(sys.argv)<2:
     raise Exception('Not enough inputs!')
 else:
-    task = str(sys.argv[1])
+    task = str(sys.argv[1:])
 
 modes = ['linear','square','RND']   # Export schemes. 'RND' is also known as 'Market'.
-lapse = 1000 # 365*24  # number of hours to include
+lapse = 365*24  # number of hours to include
 
 
 """
@@ -179,12 +180,14 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
 Solving flows for different export schemes
 """
 if 'solve' in task:
+    print 'Mode selected: Solving network flows'
     alphas = np.ones(30)*.7
     gammas = np.ones(30)
     
     Nodes = EU_Nodes_usage()
     
     for m in modes:
+        print 'Solving: '+str(modes[m])
         N,F = au.solve(Nodes,mode=m+' copper verbose',lapse=lapse)
         N.save_nodes(m)
         np.save('./results/'+m+'-flows',F)
@@ -194,6 +197,7 @@ if 'solve' in task:
 Calculate powermixes and nodes' usages of links and save results to file.
 """
 if 'usage' in task:
+    print 'Mode selected: Calculate usages'
     p = Pool(3)
     p.map(calc_usage,modes)
 
@@ -202,8 +206,10 @@ if 'usage' in task:
 Scatterplots of usages
 """
 if 'plot' in task:
+    print 'Mode selected: Plotting figures of usages'
     top = 5
     for m in modes:
+        print 'Plotting'+str(modes[m])
         """
         Load flows and find maximum values for normalisation
         """
@@ -227,66 +233,81 @@ if 'plot' in task:
 """
 Looking at conditional average usages in absolute units
 """
-if 'cond' in task:
+if 'conditional' in task:
+    print 'Mode selected: Conditional usage'
     N = EU_Nodes_usage('linear.npz')
     F = abs(np.load('./results/linear-flows.npy'))
     export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
-    bin_size = 1000
 
-    # for n in nodes, l in links, m in modes
-
-    """
-    Stacking, sorting and looping through bins to obtain means of conditional usages
-    """
+    # Stacking and sorting data
     F_vert = np.reshape(F[0,:lapse],(len(F[0,:lapse]),1))
     exp_vert = np.reshape(export_usage[0,0,:lapse],(len(export_usage[0,0,:lapse]),1))
     F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
     F_matrix.sort(axis=0)
-    bin_max = np.ceil(max(F_matrix[:,0])/bin_size)*bin_size   # round up to nearest bin_size
-    nbins = bin_max/bin_size
-    bin_means = np.linspace(.5*bin_size,bin_max-(.5*bin_size),nbins)
 
-    H_temp = []
-    H = np.zeros((nbins,4)) # [#nodes, mean usage, min usage, max usage]
-    bin_id = 0
-    for t in range(lapse):
-        if F_matrix[t,0] < (bin_id+1)*bin_size:
-            H_temp.append(F_matrix[t,1])
-#            print bin_id, F_matrix[t,1]
-        else:
-            if len(H_temp)>0:
-                H[bin_id,0] = len(H_temp)
-                H[bin_id,1] = sum(H_temp)/len(H_temp)
-                H[bin_id,2] = min(H_temp)
-                H[bin_id,3] = max(H_temp)
-                bin_id += 1
-                H_temp = []
-            else:
-                H[bin_id,0] = 0
-                H[bin_id,1] = 0
-                H[bin_id,2] = 0
-                H[bin_id,3] = 0
-                bin_id += 1
-                H_temp = []
-
-    print 'lapse: ',lapse
-    print 't: ',t
-    print 'bin_id: ',bin_id
-    print 'bin_max: ',bin_max
-    print 'n_bins: ',nbins
-    print 'bin_means', bin_means
-    print 'H.shape: ',H.shape
-
-    """
-    Plotting
-    """
+    # Plot data as scatter background
+    plt.figure()
     plt.plot(F_vert,exp_vert,'.k',alpha=.3)
-    plt.plot(bin_means,H[:,1],'.r')
 
-    plt.title('Node 0\'s usage of link 0')
+    # Get rid of large variables in memory
+    export_usage = []
+    exp_vert = []
+    F = []
+    F_vert = []
+
+    if 'converge' in task:
+        """
+        Apply a number of bin sizes to investigate convergence
+        """
+        print 'Checking convergence'
+        run = 0
+        bin_sizes = np.linspace(100,1000,10)    # bin sizes to be tested
+        colors = ['#ff0000','#ff5500','#ffaa00','#ffff00','#aaff00','#00ff00','#00ffff','#00aaff','#0055ff','#0000ff']
+        for bin_size in bin_sizes:
+            bin_max = np.ceil(max(F_matrix[:,0])/bin_size)*bin_size # round up to nearest bin_size
+            nbins = bin_max/bin_size # number of bins
+            bin_means = np.linspace(.5*bin_size,bin_max-(.5*bin_size),nbins) # mean values of bins
+        
+            H_temp = []
+            H = np.zeros((nbins,4)) # [#nodes, mean usage, min usage, max usage]
+            bin_id = 0
+            for t in range(lapse):
+                if F_matrix[t,0] < (bin_id+1)*bin_size:
+                    H_temp.append(F_matrix[t,1])
+                else:
+                    if len(H_temp)>0:
+                        H[bin_id,0] = len(H_temp)
+                        H[bin_id,1] = sum(H_temp)/len(H_temp)
+                        H[bin_id,2] = min(H_temp)
+                        H[bin_id,3] = max(H_temp)
+                        bin_id += 1
+                        H_temp = []
+                    else:
+                        H[bin_id,0] = 0
+                        H[bin_id,1] = 0
+                        H[bin_id,2] = 0
+                        H[bin_id,3] = 0
+                        bin_id += 1
+                        H_temp = []
+
+            # Plotting
+            plt.plot(bin_means,H[:,1],'-',color=str(colors[run]))
+            run += 1
+
+    #    print 'lapse: ',lapse
+    #    print 't: ',t
+    #    print 'bin_id: ',bin_id
+    #    print 'bin_max: ',bin_max
+    #    print 'n_bins: ',nbins
+    #    print 'bin_means', bin_means
+    #    print 'H.shape: ',H.shape
+
+    """
+    Pretty plotting
+    """
+    plt.title('Convergence check: AT\'s usage of the AT-CH link')
     plt.xlabel(r'$F_l$ [MW]')
     plt.ylabel(r'$H_{ln}$ [MW]')
-    plt.show()
-
+    plt.savefig('./figures/convergence.png')
 
 
