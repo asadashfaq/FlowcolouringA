@@ -19,10 +19,10 @@ Script to create scatter plots of nodes' usages of links for three export scheme
 
 Call the program with only one of the following command line arguments:
 - solve:                solve the network and save solutions
-- usage:                calculate nodes' usages of links
+- usage:                calculate nodes' usages of each link
 - plot:                 produce figures of usage
-- conditional:          calculate conditional average usages
 - conditional converge: check convergence of conditional average usages with bin sizes
+- conditional usage:    calculate and produce figueres of conditional average usages of each link
 
 Example call:
 python usage.py solve
@@ -38,8 +38,6 @@ else:
     task = str(sys.argv[1:])
 
 modes = ['linear','square','RND']   # Export schemes. 'RND' is also known as 'Market'.
-lapse = 365*24  # number of hours to include
-print 'Lapse: '+str(lapse)+' hours'
 
 
 """
@@ -105,9 +103,9 @@ def scatter_plotter(N,F,Fmax,usage,direction,mode,lapse):
             """
             diag.append(sum(usages)+sum(maxs))
             diagflow.append(linkflow[0])
-        plt.plot(diagflow,diag,'-k')
+        plt.plot(diagflow,diag,'--k')
         qq = get_q(abs(F[l,:lapse]),.99)
-        plt.plot([qq,qq],[0,max(diag)],'-k')
+        plt.plot([qq,qq],[0,max(diag)],'--k')
 
         label = link_label(l,N)
         ax.set_title(str(mode)+' '+str(direction)+' flows on link '+label)
@@ -144,7 +142,7 @@ def top_plotter(top,N,F,Fmax,usage,direction,mode,lapse):
         for k in range(top):
             i = max_usages.argmax()
             max_users.append(i)
-            max_usages = np.delete(max_usages,i)
+            max_usages[i] = 0
             names.append(str(N[i].label))
         for t in range(lapse):
             linkflow = abs(F[l,t]*np.ones(nodes))
@@ -217,6 +215,8 @@ Solving flows for different export schemes
 """
 if 'solve' in task:
     print 'Mode selected: Solving network flows'
+    lapse = 365*24  # number of hours to include
+    print 'Lapse: '+str(lapse)+' hours'
     alphas = np.ones(30)*.7
     gammas = np.ones(30)
     
@@ -234,6 +234,8 @@ Calculate powermixes and nodes' usages of links and save results to file.
 """
 if (('usage' in task) and ('conditional' not in task)):
     print 'Mode selected: Calculate usages'
+    lapse = 365*24  # number of hours to include
+    print 'Lapse: '+str(lapse)+' hours'
     p = Pool(3)
     p.map(calc_usage,modes)
 
@@ -243,6 +245,8 @@ Scatterplots of usages
 """
 if 'plot' in task:
     print 'Mode selected: Plotting figures of usages'
+    lapse = 365*24  # number of hours to include
+    print 'Lapse: '+str(lapse)+' hours'
     top = 5
     for m in modes:
         print 'Plotting'+str(modes[m])
@@ -271,6 +275,8 @@ Looking at conditional average usages in absolute units
 """
 if 'conditional' in task:
     print 'Mode selected: Conditional usage'
+    print 'Lapse: 70128'
+    lapse = 70128
 
     if 'converge' in task:
         """
@@ -290,11 +296,13 @@ if 'conditional' in task:
     
         # Plot data as scatter background
         plt.figure()
-        plt.plot(F_vert,exp_vert,'.k',alpha=.3)
+        ax = plt.subplot(111)
+        plt.plot(F_vert,exp_vert,'.k',alpha=.2)
 
         # Plot 99% quantile of flow
-        qq = get_q(abs(F[l,:lapse]),.99)
-        plt.plot([qq,qq],[0,max(exp_vert)],'-k')
+        qq = get_q(abs(F[0,:lapse]),.99)
+        plt.plot([qq,qq],[0,np.ceil(max(exp_vert)/500)*500],'--k',label=r'$99\%$')
+        plt.axis([0,np.ceil(max(F_vert)/1000)*1000,0,np.ceil(max(exp_vert)/500)*500])
     
         # Get rid of large variables in memory
         export_usage = []
@@ -306,19 +314,27 @@ if 'conditional' in task:
         run = 0
         bin_sizes = np.linspace(100,1000,10)    # bin sizes to be tested
         colors = ['#ff0000','#ff5500','#ffaa00','#ffff00','#aaff00','#00ff00','#00ffff','#00aaff','#0055ff','#0000ff']
+        names = ['100','200','300','400','500','600','700','800','900','1000']
         for bin_size in bin_sizes:
             bin_means,H = bin_maker(bin_size,F_matrix)
-            plt.plot(bin_means,H[:,1],'-',color=str(colors[run]))
+            plt.plot(bin_means,H[:,1],'-',color=str(colors[run]),label=names[run],lw=1.5)
             run += 1
 
-        """
-        Pretty plotting
-        """
-        plt.title('Convergence check: AT\'s usage of the AT-CH link')
-        plt.xlabel(r'$F_l$ [MW]')
-        plt.ylabel(r'$H_{ln}$ [MW]')
-        plt.savefig('./figures/convergence-'+str(lapse)+'.png')
-        print 'Saved results to: ./figures/convergence-'+str(lapse)+'.png'
+        ax.set_title('Convergence check:\nAT\'s usage of the AT-CH link over '+str(lapse)+' hours')
+        ax.set_xlabel(r'$F_l$ [MW]')
+        ax.set_ylabel(r'$H_{ln}$ [MW]')
+
+        # Shrink x-axis to make room for legend
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
+        
+        handles, labels = ax.get_legend_handles_labels()
+        handles = np.append(handles[1:],handles[0])
+        labels = np.append(labels[1:],labels[0])
+        ax.legend(handles,labels,loc='center left', bbox_to_anchor=(1,0.5),title='Bin size')
+         
+        plt.savefig('./figures/convergence-'+str(lapse)+'.pdf')
+        print 'Saved result to: ./figures/convergence-'+str(lapse)+'.pdf'
 
     if 'usage' in task:
         """
@@ -335,51 +351,62 @@ if 'conditional' in task:
         top = 5         # how many contributors to plot
         
         # insert loop over links here
-        link = 0
-
-        # Plot 99% quantile of flow
-        plt.figure()
-#        qq = get_q(abs(F[link,:lapse]),.99)
-#        plt.plot([qq,qq],[0,max(exp_vert)],'-k')
-
-        Bin_means = []
-        Total_H = []
-        Bin_sums = np.array([])
-        for node in range(len(N)):
-            # Stacking and sorting data
-            F_vert = np.reshape(F[node,:lapse],(len(F[node,:lapse]),1))
-            exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
-            F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
-            F_matrix.sort(axis=0)
+        for link in [0]:#range(len(F)):
+            plt.figure()
+            ax = plt.subplot(111)
+            Fmax = np.max(np.abs(F[link,:lapse]))
+            Bin_means = []
+            Total_H = []
+            Bin_sums = np.array([])
+            for node in range(len(N)):
+                # Stacking and sorting data
+                F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
+                exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
+                F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+                F_matrix.sort(axis=0)
+        
+                # Calculate conditional usages
+                M,bin_sum = bin_maker(bin_size,F_matrix,summed=1) # M = [[bin_means],[conditional usages]]
+                Bin_means.append(M[0])
+                Total_H.append(M[1])
+                Bin_sums = np.append(Bin_sums,bin_sum)
+                p0 = plt.plot(M[0],M[1],'-',color='#545454',alpha=.2,label='background',lw=1.5)
+        
+            # Plot 99% quantile of link flow
+            qq = get_q(abs(F[link,:lapse]),.99)
+            pq = plt.plot([qq,qq],[0,Fmax],'--k',label='99%')
+            
+            # Plot top 5 contributors' conditional usages for each link.
+            max_users = []
+            names = []
+            for k in range(top):
+                i = Bin_sums.argmax()
+                max_users.append(i)
+                Bin_sums[i] = 0 # = np.delete(Bin_sums,i)
+                names.append(str(N[i].label))
     
-            # Calculate conditional usages
-            M,bin_sum = bin_maker(bin_size,F_matrix,summed=1) # M = [[bin_means],[conditional usages]]
-            Bin_means.append(M[0])
-            Total_H.append(M[1])
-            Bin_sums = np.append(Bin_sums,bin_sum)
-            plt.plot(M[0],M[1],'-',color='#545454',alpha=.2)
+            colors = ['#ff0000','#ff5500','#ffaa00','#ffff00','#aaff00','#00ff00','#00ffff','#00aaff','#0055ff','#0000ff']
+            p1 = plt.plot(Bin_means[max_users[0]],Total_H[max_users[0]],'-',color=str(colors[0]),label=str(names[0]),lw=1.5)
+            p2 = plt.plot(Bin_means[max_users[1]],Total_H[max_users[1]],'-',color=str(colors[2]),label=str(names[1]),lw=2)
+            p3 = plt.plot(Bin_means[max_users[2]],Total_H[max_users[2]],'-',color=str(colors[3]),label=str(names[2]),lw=2)
+            p4 = plt.plot(Bin_means[max_users[3]],Total_H[max_users[3]],'-',color=str(colors[4]),label=str(names[3]),lw=2)
+            p5 = plt.plot(Bin_means[max_users[4]],Total_H[max_users[4]],'-',color=str(colors[8]),label=str(names[4]),lw=2)
+            
+            label = link_label(link,N)
+            ax.set_title('Top 5 users of the '+str(label)+' link with bin size '+str(bin_size)+' MW')
+            ax.set_xlabel(r'$F_l$ [MW]')
+            ax.set_ylabel(r'$\left\langle H_{ln}|F_l\right\rangle$ [MW]')
+            plt.axis([0,np.ceil(Fmax/1000)*1000,0,np.ceil(np.max(np.max(Total_H))/500)*500])
     
-        # Plot top 5 contributors' conditional usages for each link.
-        max_users = []
-        names = []
-        for k in range(top):
-            i = Bin_sums.argmax()
-            max_users.append(i)
-            Bin_sums = np.delete(Bin_sums,i)
-            names.append(str(N[i].label))
-
-        run = 0
-        colors = ['#ff0000','#ff5500','#ffaa00','#ffff00','#aaff00','#00ff00','#00ffff','#00aaff','#0055ff','#0000ff']
-        for c in range(top):
-            country = int(c)
-            plt.plot(Bin_means[max_users[country]],Total_H[max_users[country]],'-',color=str(colors[run]))
-            run += 1
-        """
-        Pretty plotting
-        """
-        plt.title('title')
-        plt.xlabel(r'$F_l$ [MW]')
-        plt.ylabel(r'$H_{ln}$ [MW]')
-#        plt.savefig('./figures/convergence-'+str(lapse)+'.png')
-#        print 'Saved results to: ./figures/convergence-'+str(lapse)+'.png'
-        plt.show()
+            # Shrink x-axis to make room for legend
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
+            
+            handles, labels = ax.get_legend_handles_labels()
+            handles = np.append(handles[-5:],handles[-6])
+            labels = np.append(labels[-5:],labels[-6])
+            ax.legend(handles,labels,loc='center left', bbox_to_anchor=(1,0.5),title='Country')
+            
+            plt.savefig('./figures/conditional-'+str(lapse)+'-'+str(link)+'.png')
+            plt.close('all')
+        print 'Saved results to: ./figures/conditional-lapse-link.png'
