@@ -424,6 +424,7 @@ if 'conditional' in task:
         export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
         bin_size = 400  # determined from the _convergence_ mode.
         N_usages = np.zeros((len(N),len(F))) # empty array for weighted sums of conditional usages
+        links = range(len(F))
 
         for node in range(len(N)):
             for link in range(len(F)):
@@ -444,9 +445,6 @@ if 'conditional' in task:
             plt.figure()
             ax = plt.subplot(111)
 
-            # plot N_usages[node,:] element wise divided by usage_sums
-            # one bar for each link
-            links = np.linspace(0,49,50)
             plt.bar(links,np.divide(N_usages[node,:],usage_sums),width=1)
             
             node_id = str(N[node].label)
@@ -457,16 +455,13 @@ if 'conditional' in task:
             plt.close('all')
         print 'Saved results to: ./figures/country-importance-node.png'
 
+        # plot each nodes usage of each link normed to the country's total network usage
         print "Calculating link importance for country's network usage"
         network_usages = np.sum(N_usages,1) # each country's total network usage
-        # plot each nodes usage of each link normed to the country's total network usage
         for node in range(len(N)):
             plt.figure()
             ax = plt.subplot(111)
 
-            # plot N_usages[node,:] element wise divided by usage_sums
-            # one bar for each link
-            links = np.linspace(0,49,50)
             plt.bar(links,np.divide(N_usages[node,:],network_usages[node]),width=1)
             
             node_id = str(N[node].label)
@@ -477,9 +472,19 @@ if 'conditional' in task:
             plt.close('all')
         print 'Saved results to: ./figures/link-importance-node.png'
 
+        # compare each nodes total usage of the network to the others normalised to the average usage of the network
+        avg_usage = sum(network_usages)/len(network_usages)
+        plt.figure()
+        ax = plt.subplot(111)
 
-
-
-        # compare each nodes total usage of the network to the others normed to the average usage of the network
-        # plot sum(N_usages[node,:])/sum(usage_sums)/len(N)
-        # one bar for each node
+        nodes = range(len(N))
+        plt.bar(nodes,np.divide(network_usages,avg_usage),width=1)
+        plt.plot([0,30],[1,1],'--k',lw=2)
+        
+        node_id = str(N[node].label)
+        ax.set_title('Comparing network usages for weighted sums of link usages')
+        ax.set_xlabel(r'Node')
+        ax.set_ylabel(r'Network usage normalised to avg. network usage')
+        plt.savefig('./figures/network-usage.png')
+        plt.close('all')
+        print 'Saved results to: ./figures/network-usage.png'
