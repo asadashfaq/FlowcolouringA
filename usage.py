@@ -22,7 +22,8 @@ Call the program with only one of the following command line arguments:
 - usage:                calculate nodes' usages of each link
 - plot:                 produce figures of usage
 - conditional converge: check convergence of conditional average usages with bin sizes
-- conditional usage:    calculate and produce figueres of conditional average usages of each link
+- conditional usage:    calculate and produce figures of conditional average usages of each link
+- conditional country:  figure of each node's weighted usage of all links
 
 Example call:
 python usage.py solve
@@ -103,7 +104,7 @@ def scatter_plotter(N,F,Fmax,usage,direction,mode,lapse):
             """
             diag.append(sum(usages)+sum(maxs))
             diagflow.append(linkflow[0])
-        plt.plot(diagflow,diag,'--k')
+        plt.plot(diagflow,diag,'-k',lw=.9)
         qq = get_q(abs(F[l,:lapse]),.99)
         plt.plot([qq,qq],[0,max(diag)],'--k')
 
@@ -233,9 +234,10 @@ if 'solve' in task:
 Calculate powermixes and nodes' usages of links and save results to file.
 """
 if (('usage' in task) and ('conditional' not in task)):
-    print 'Mode selected: Calculate usages'
+    print 'Mode selected: Calculate usages.'
     lapse = 365*24  # number of hours to include
-    print 'Lapse: '+str(lapse)+' hours'
+    print 'Lapse: '+str(lapse)+' hours.'
+    print 'Running on 3 cores.'
     p = Pool(3)
     p.map(calc_usage,modes)
 
@@ -249,7 +251,7 @@ if 'plot' in task:
     print 'Lapse: '+str(lapse)+' hours'
     top = 5
     for m in modes:
-        print 'Plotting'+str(modes[m])
+        print 'Plotting '+str(m)
         """
         Load flows and find maximum values for normalisation
         """
@@ -350,8 +352,7 @@ if 'conditional' in task:
         bin_size = 400  # determined from the _convergence_ mode.
         top = 5         # how many contributors to plot
         
-        # insert loop over links here
-        for link in [0]:#range(len(F)):
+        for link in range(len(F)):
             plt.figure()
             ax = plt.subplot(111)
             Fmax = np.max(np.abs(F[link,:lapse]))
@@ -410,3 +411,75 @@ if 'conditional' in task:
             plt.savefig('./figures/conditional-'+str(lapse)+'-'+str(link)+'.png')
             plt.close('all')
         print 'Saved results to: ./figures/conditional-lapse-link.png'
+
+    if 'country' in task:
+        """
+        Figures of how important each country is for the flow on each link
+        """
+        print "Calculating weighted sum of each country's conditional usage."
+
+        # Load data
+        N = EU_Nodes_usage('linear.npz')
+        F = abs(np.load('./results/linear-flows.npy'))
+        export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
+        bin_size = 400  # determined from the _convergence_ mode.
+        N_usages = np.zeros((len(N),len(F))) # empty array for weighted sums of conditional usages
+
+        for node in range(len(N)):
+            for link in range(len(F)):
+                # Stacking and sorting data
+                F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
+                exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
+                F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+                F_matrix.sort(axis=0)
+                
+                # Calculate weigthed sums of usages and save for later use
+                M,bin_sum = bin_maker(bin_size,F_matrix,summed=1)
+                N_usages[node,link] = bin_sum
+
+        usage_sums = np.sum(N_usages,0) # total usage of each link
+
+        # plot each nodes usage of each link normed to the total usage of the link
+        for node in range(len(N)):
+            plt.figure()
+            ax = plt.subplot(111)
+
+            # plot N_usages[node,:] element wise divided by usage_sums
+            # one bar for each link
+            links = np.linspace(0,49,50)
+            plt.bar(links,np.divide(N_usages[node,:],usage_sums),width=1)
+            
+            node_id = str(N[node].label)
+            ax.set_title(node_id+' usage of links normalised to total individual link usage')
+            ax.set_xlabel(r'Link')
+            ax.set_ylabel(r'$U_{nl}/\sum_n U_{nl}$')
+            plt.savefig('./figures/country-importance-'+str(node)+'.png')
+            plt.close('all')
+        print 'Saved results to: ./figures/country-importance-node.png'
+
+        print "Calculating link importance for country's network usage"
+        network_usages = np.sum(N_usages,1) # each country's total network usage
+        # plot each nodes usage of each link normed to the country's total network usage
+        for node in range(len(N)):
+            plt.figure()
+            ax = plt.subplot(111)
+
+            # plot N_usages[node,:] element wise divided by usage_sums
+            # one bar for each link
+            links = np.linspace(0,49,50)
+            plt.bar(links,np.divide(N_usages[node,:],network_usages[node]),width=1)
+            
+            node_id = str(N[node].label)
+            ax.set_title(node_id+' usage of links normalised to total network usage')
+            ax.set_xlabel(r'Link')
+            ax.set_ylabel(r'$U_{nl}/\sum_l U_{nl}$')
+            plt.savefig('./figures/link-importance-'+str(node)+'.png')
+            plt.close('all')
+        print 'Saved results to: ./figures/link-importance-node.png'
+
+
+
+
+        # compare each nodes total usage of the network to the others normed to the average usage of the network
+        # plot sum(N_usages[node,:])/sum(usage_sums)/len(N)
+        # one bar for each node
