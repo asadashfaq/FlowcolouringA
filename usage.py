@@ -185,26 +185,24 @@ def bin_maker(bin_size,F_matrix,summed=None):
 
     H_temp = []
     H = np.zeros((nbins,4)) # [#nodes, mean usage, min usage, max usage]
-    bin_id = 0
-    for t in range(lapse):
-        if F_matrix[t,0] < (bin_id+1)*bin_size:
-            H_temp.append(F_matrix[t,1])
-        else:
-            if len(H_temp)>0:
-                H[bin_id,0] = len(H_temp)
-                H[bin_id,1] = sum(H_temp)/len(H_temp)
-                H[bin_id,2] = min(H_temp)
-                H[bin_id,3] = max(H_temp)
-                bin_id += 1
-                H_temp = []
-            else: # no data in the bin
-                H[bin_id,0] = 0
-                H[bin_id,1] = 0
-                H[bin_id,2] = 0
-                H[bin_id,3] = 0
-                bin_id += 1
-                H_temp = []
+    for b in range(int(nbins)):
+        for t in range(lapse):
+            if b*bin_size <= F_matrix[t,0] < (b+1)*bin_size:
+                H_temp.append(F_matrix[t,1])
+        if len(H_temp)>0:
+            H[b,0] = len(H_temp)
+            H[b,1] = sum(H_temp)/len(H_temp)
+            H[b,2] = min(H_temp)
+            H[b,3] = max(H_temp)
+        else: # no data in the bin
+            H[b,0] = 0
+            H[b,1] = 0
+            H[b,2] = 0
+            H[b,3] = 0
+        H_temp=[]
+
     if summed:
+        bin_means = np.multiply(bin_means,bin_size)
         bin_sum = sum(np.multiply(H[:,1],bin_means))
         return np.array([bin_means,H[:,1]]),bin_sum
     else:
@@ -299,11 +297,11 @@ if 'conditional' in task:
         # Plot data as scatter background
         plt.figure()
         ax = plt.subplot(111)
-        plt.plot(F_vert,exp_vert,'.k',alpha=.2)
+        plt.plot(F_vert,exp_vert,'.k',alpha=.2,markeredgewidth=0,markeredgecolor=None)
 
         # Plot 99% quantile of flow
         qq = get_q(abs(F[0,:lapse]),.99)
-        plt.plot([qq,qq],[0,np.ceil(max(exp_vert)/500)*500],'--k',label=r'$99\%$')
+        plt.plot([qq,qq],[0,np.ceil(max(exp_vert)/500)*500],'--k',label=r'$99\%$q')
         plt.axis([0,np.ceil(max(F_vert)/1000)*1000,0,np.ceil(max(exp_vert)/500)*500])
     
         # Get rid of large variables in memory
@@ -312,11 +310,17 @@ if 'conditional' in task:
         F = []
         F_vert = []
 
+        # Determine bin sizes to be used
+        if 'new' in task:
+            bin_sizes = np.multiply(np.divide(range(2,22,2),100.),qq)
+            names = bin_sizes.astype('|S4')
+        else:
+            bin_sizes = np.linspace(100,1000,10)    # bin sizes to be tested
+            names = ['100','200','300','400','500','600','700','800','900','1000']
+
         # Calculate and plot conditional usages
         run = 0
-        bin_sizes = np.linspace(100,1000,10)    # bin sizes to be tested
         colors = ['#ff0000','#ff5500','#ffaa00','#ffff00','#aaff00','#00ff00','#00ffff','#00aaff','#0055ff','#0000ff']
-        names = ['100','200','300','400','500','600','700','800','900','1000']
         for bin_size in bin_sizes:
             bin_means,H = bin_maker(bin_size,F_matrix)
             plt.plot(bin_means,H[:,1],'-',color=str(colors[run]),label=names[run],lw=1.5)
@@ -333,10 +337,15 @@ if 'conditional' in task:
         handles, labels = ax.get_legend_handles_labels()
         handles = np.append(handles[1:],handles[0])
         labels = np.append(labels[1:],labels[0])
-        ax.legend(handles,labels,loc='center left', bbox_to_anchor=(1,0.5),title='Bin size')
-         
-        plt.savefig('./figures/convergence-'+str(lapse)+'.pdf')
-        print 'Saved result to: ./figures/convergence-'+str(lapse)+'.pdf'
+        ax.legend(handles,labels,loc='center left', bbox_to_anchor=(1,0.5),title='Bin size [MW]')
+
+        # Save figure
+        if 'new' in task:
+            plt.savefig('./figures/convergence-new.pdf')
+            print 'Saved result to: ./figures/convergence-new.pdf'
+        else:
+            plt.savefig('./figures/convergence.pdf')
+            print 'Saved result to: ./figures/convergence.pdf'
 
     if 'usage' in task:
         """
