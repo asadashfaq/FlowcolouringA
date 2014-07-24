@@ -385,13 +385,16 @@ if 'conditional' in task:
                 max_users.append(i)
                 Bin_sums[i] = 0 # = np.delete(Bin_sums,i)
                 names.append(str(N[i].label))
-    
+
             colors = ['#ff0000','#ff5500','#ffaa00','#ffff00','#aaff00','#00ff00','#00ffff','#00aaff','#0055ff','#0000ff']
             p1 = plt.plot(Bin_means[max_users[0]],Total_H[max_users[0]],'-',color=str(colors[0]),label=str(names[0]),lw=1.5)
-            p2 = plt.plot(Bin_means[max_users[1]],Total_H[max_users[1]],'-',color=str(colors[2]),label=str(names[1]),lw=2)
-            p3 = plt.plot(Bin_means[max_users[2]],Total_H[max_users[2]],'-',color=str(colors[3]),label=str(names[2]),lw=2)
-            p4 = plt.plot(Bin_means[max_users[3]],Total_H[max_users[3]],'-',color=str(colors[4]),label=str(names[3]),lw=2)
-            p5 = plt.plot(Bin_means[max_users[4]],Total_H[max_users[4]],'-',color=str(colors[8]),label=str(names[4]),lw=2)
+            p2 = plt.plot(Bin_means[max_users[1]],Total_H[max_users[1]],'-',color=str(colors[2]),label=str(names[1]),lw=1.5)
+            p3 = plt.plot(Bin_means[max_users[2]],Total_H[max_users[2]],'-',color=str(colors[3]),label=str(names[2]),lw=1.5)
+            p4 = plt.plot(Bin_means[max_users[3]],Total_H[max_users[3]],'-',color=str(colors[4]),label=str(names[3]),lw=1.5)
+            p5 = plt.plot(Bin_means[max_users[4]],Total_H[max_users[4]],'-',color=str(colors[8]),label=str(names[4]),lw=1.5)
+
+            # Plot average usage
+            avg = plt.plot(Bin_means[0],np.sum(Total_H,0)/len(N),'-k',label='Avg.',lw=1.5)
             
             label = link_label(link,N)
             ax.set_title('Top 5 users of the '+str(label)+' link with bin size '+str(bin_size)+' MW')
@@ -404,8 +407,8 @@ if 'conditional' in task:
             ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
             
             handles, labels = ax.get_legend_handles_labels()
-            handles = np.append(handles[-5:],handles[-6])
-            labels = np.append(labels[-5:],labels[-6])
+            handles = np.append(handles[-6:],handles[-7])
+            labels = np.append(labels[-6:],labels[-7])
             ax.legend(handles,labels,loc='center left', bbox_to_anchor=(1,0.5),title='Country')
             
             plt.savefig('./figures/conditional-'+str(lapse)+'-'+str(link)+'.png')
