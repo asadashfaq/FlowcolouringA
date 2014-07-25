@@ -202,8 +202,8 @@ def bin_maker(bin_size,F_matrix,summed=None):
         H_temp=[]
 
     if summed:
-        bin_means = np.multiply(bin_means,bin_size)
-        bin_sum = sum(np.multiply(H[:,1],bin_means))
+        part_sum = np.multiply(bin_means,bin_size)
+        bin_sum = sum(np.multiply(H[:,1],part_sum))
         return np.array([bin_means,H[:,1]]),bin_sum
     else:
         return bin_means,H
@@ -278,16 +278,16 @@ if 'conditional' in task:
     print 'Lapse: 70128'
     lapse = 70128
 
-    if 'converge' in task:
+    if (('converge' in task) and ('convergence' not in task)):
         """
         Apply a number of bin sizes to investigate convergence
         """
-        print 'Checking convergence'
+        print 'Checking convergence of bin sizes on a single link'
 
         # Load data
         F = abs(np.load('./results/linear-flows.npy')) # [link, flow], len = lapse
         export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy') # Dimension: link x node x lapse
-    
+
         # Stacking and sorting data
         F_vert = np.reshape(F[0,:lapse],(len(F[0,:lapse]),1))
         exp_vert = np.reshape(export_usage[0,0,:lapse],(len(export_usage[0,0,:lapse]),1))
@@ -347,6 +347,92 @@ if 'conditional' in task:
             plt.savefig('./figures/convergence.pdf')
             print 'Saved result to: ./figures/convergence.pdf'
 
+    if 'convergence' in task:
+        """
+        Apply a number of bin sizes to investigate convergence on a number of links
+        """
+        print 'Checking convergence of bin sizes on different links'
+
+        # Load data
+        N = EU_Nodes_usage('linear.npz')
+        F = abs(np.load('./results/linear-flows.npy'))
+        export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
+        top = 5         # how many contributors to plot
+
+        bin_percentages = np.divide(range(4,16,2),100.)
+        for link in [1,10,17,19,46]:
+            """
+            Links have been chosen from importance. See 'link_namer.py'
+            The links are: AT-CZ, NL-GB, FR-DE, FR-ES, SE-DK
+            """
+            print link
+            Fmax = np.max(np.abs(F[link,:lapse]))
+            qq = get_q(abs(F[link,:lapse]),.99)
+            bin_sizes = np.multiply(bin_percentages,qq)
+            bin_names = bin_sizes.astype('|S4')
+            for index,bin_size in enumerate(bin_sizes):
+                print bin_size
+                plt.figure()
+                ax = plt.subplot(111)
+                Bin_means = []
+                Total_H = []
+                Bin_sums = np.array([])
+                for node in range(len(N)):
+                    # Stacking and sorting data
+                    F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
+                    exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
+                    F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+                    F_matrix.sort(axis=0)
+            
+                    # Calculate conditional usages
+                    M,bin_sum = bin_maker(bin_size,F_matrix,summed=1) # M = [[bin_means],[conditional usages]]
+                    Bin_means.append(M[0])
+                    Total_H.append(M[1])
+                    Bin_sums = np.append(Bin_sums,bin_sum)
+                    p0 = plt.plot(M[0],M[1],'-',color='#545454',alpha=.2,label='background',lw=1.5)
+            
+                # Plot 99% quantile of link flow
+                pq = plt.plot([qq,qq],[0,Fmax],'--k',label='99%')
+                
+                # Plot top 5 contributors' conditional usages for each link.
+                max_users = []
+                names = []
+                for k in range(top):
+                    i = Bin_sums.argmax()
+                    max_users.append(i)
+                    Bin_sums[i] = 0 # = np.delete(Bin_sums,i)
+                    names.append(str(N[i].label))
+    
+                colors = ['#ff0000','#ff5500','#ffaa00','#ffff00','#aaff00','#00ff00','#00ffff','#00aaff','#0055ff','#0000ff']
+                p1 = plt.plot(Bin_means[max_users[0]],Total_H[max_users[0]],'-',color=str(colors[0]),label=str(names[0]),lw=1.5)
+                p2 = plt.plot(Bin_means[max_users[1]],Total_H[max_users[1]],'-',color=str(colors[2]),label=str(names[1]),lw=1.5)
+                p3 = plt.plot(Bin_means[max_users[2]],Total_H[max_users[2]],'-',color=str(colors[3]),label=str(names[2]),lw=1.5)
+                p4 = plt.plot(Bin_means[max_users[3]],Total_H[max_users[3]],'-',color=str(colors[4]),label=str(names[3]),lw=1.5)
+                p5 = plt.plot(Bin_means[max_users[4]],Total_H[max_users[4]],'-',color=str(colors[8]),label=str(names[4]),lw=1.5)
+    
+                # Plot average usage
+                avg = plt.plot(Bin_means[0],np.sum(Total_H,0)/len(N),'-k',label='Avg.',lw=1.5)
+                
+                label = link_label(link,N)
+                ax.set_title('Top 5 users of the '+str(label)+' link with bin size '+bin_names[index]+' MW')
+                ax.set_xlabel(r'$F_l$ [MW]')
+                ax.set_ylabel(r'$\left\langle H_{ln}|F_l\right\rangle$ [MW]')
+                plt.axis([0,np.ceil(Fmax/1000)*1000,0,np.ceil(np.max(np.max(Total_H))/500)*500])
+        
+                # Shrink x-axis to make room for legend
+                box = ax.get_position()
+                ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
+                
+                handles, labels = ax.get_legend_handles_labels()
+                handles = np.append(handles[-6:],handles[-7])
+                labels = np.append(labels[-6:],labels[-7])
+                ax.legend(handles,labels,loc='center left', bbox_to_anchor=(1,0.5),title='Country')
+                
+                plt.savefig('./figures/convergence-'+str(link)+'-'+str(bin_percentages[index]*100)+'.png')
+                plt.close('all')
+            print 'Saved results to: ./figures/convergence-link-bin_percentage.png'
+
+
     if 'usage' in task:
         """
         Calculate conditional usages for all nodes and plot the top 5 contributors for each node
@@ -357,11 +443,12 @@ if 'conditional' in task:
         N = EU_Nodes_usage('linear.npz')
         F = abs(np.load('./results/linear-flows.npy'))
         export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
-
-        bin_size = 400  # determined from the _convergence_ mode.
         top = 5         # how many contributors to plot
-        
+
+        #bin_size = .12*qq  # percentage is determined in the _convergence_ mode.
+        bin_size=400
         for link in range(len(F)):
+            print link
             plt.figure()
             ax = plt.subplot(111)
             Fmax = np.max(np.abs(F[link,:lapse]))
@@ -383,7 +470,7 @@ if 'conditional' in task:
                 p0 = plt.plot(M[0],M[1],'-',color='#545454',alpha=.2,label='background',lw=1.5)
         
             # Plot 99% quantile of link flow
-            qq = get_q(abs(F[link,:lapse]),.99)
+            qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
             pq = plt.plot([qq,qq],[0,Fmax],'--k',label='99%')
             
             # Plot top 5 contributors' conditional usages for each link.
