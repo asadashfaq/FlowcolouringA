@@ -359,19 +359,18 @@ if 'conditional' in task:
         export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
         top = 5         # how many contributors to plot
 
-        bin_percentages = np.divide(range(4,16,2),100.)
+        bin_percentages = np.divide(range(2,16,2),100.)
         for link in [1,10,17,19,46]:
             """
             Links have been chosen from importance. See 'link_namer.py'
             The links are: AT-CZ, NL-GB, FR-DE, FR-ES, SE-DK
             """
-            print link
+            print link,'/ [1, 10, 17, 19, 46]'
             Fmax = np.max(np.abs(F[link,:lapse]))
             qq = get_q(abs(F[link,:lapse]),.99)
             bin_sizes = np.multiply(bin_percentages,qq)
             bin_names = bin_sizes.astype('|S4')
             for index,bin_size in enumerate(bin_sizes):
-                print bin_size
                 plt.figure()
                 ax = plt.subplot(111)
                 Bin_means = []
@@ -445,10 +444,12 @@ if 'conditional' in task:
         export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
         top = 5         # how many contributors to plot
 
-        #bin_size = .12*qq  # percentage is determined in the _convergence_ mode.
-        bin_size=400
         for link in range(len(F)):
-            print link
+            print link,'/ 49'
+            # Get 99% quantile of link flow and determine bin size
+            qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
+            bin_size = .04*qq  # percentage is determined in the _convergence_ mode.
+            bin_name = bin_size.astype('|S4')
             plt.figure()
             ax = plt.subplot(111)
             Fmax = np.max(np.abs(F[link,:lapse]))
@@ -470,7 +471,6 @@ if 'conditional' in task:
                 p0 = plt.plot(M[0],M[1],'-',color='#545454',alpha=.2,label='background',lw=1.5)
         
             # Plot 99% quantile of link flow
-            qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
             pq = plt.plot([qq,qq],[0,Fmax],'--k',label='99%')
             
             # Plot top 5 contributors' conditional usages for each link.
@@ -493,7 +493,7 @@ if 'conditional' in task:
             avg = plt.plot(Bin_means[0],np.sum(Total_H,0)/len(N),'-k',label='Avg.',lw=1.5)
             
             label = link_label(link,N)
-            ax.set_title('Top 5 users of the '+str(label)+' link with bin size '+str(bin_size)+' MW')
+            ax.set_title('Top 5 users of the '+str(label)+' link with bin size '+bin_name+' MW')
             ax.set_xlabel(r'$F_l$ [MW]')
             ax.set_ylabel(r'$\left\langle H_{ln}|F_l\right\rangle$ [MW]')
             plt.axis([0,np.ceil(Fmax/1000)*1000,0,np.ceil(np.max(np.max(Total_H))/500)*500])
