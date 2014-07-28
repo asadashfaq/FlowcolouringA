@@ -530,9 +530,7 @@ if 'conditional' in task:
 
         for node in range(len(N)):
             names.append(str(N[node].label))
-            print node
             for link in range(len(F)):
-                print link
                 # Get 99% quantile of link flow and determine bin size
                 qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
                 bin_size = .04*qq  # percentage is determined in the _convergence_ mode.
@@ -548,7 +546,8 @@ if 'conditional' in task:
         
         # save results to file for faster and better plotting in usage_plotting.py
         np.save('N_usages.npy',N_usages)
-        print 'saved N_usages to N_usages.npy'
+        print 'Saved N_usages to N_usages.npy'
+        print 'Making figures'
         usage_sums = np.sum(N_usages,0) # total usage of each link
 
         # plot each nodes usage of each link normed to the total usage of the link
