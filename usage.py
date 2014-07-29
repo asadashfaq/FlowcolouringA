@@ -10,6 +10,7 @@ from aurespf.tools import *
 from EUgrid import *
 from link_colour_less import track_flows, get_link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
+from link_namer import node_namer,link_dict
 
 """
 Script to create various plots of nodes' usages of links for three export schemes:
@@ -18,14 +19,15 @@ Script to create various plots of nodes' usages of links for three export scheme
 - Market (RND)
 
 Call the program with only one of the following command line arguments:
-- solve:                    solve the network and save solutions
-- usage:                    calculate nodes' usages of each link
-- plot:                     produce figures of usage
-- conditional converge:     check convergence of usages with _fixed_ bin sizes on a single link (old, deprecated)
-- conditional converge new: check convergence of usages with _percentage of 99% quantile_ bin sizes on a single link (newer, deprecated)
-- conditional convergence:   check convergence of usages with _percentage of 99% quantile_ bin sizes on different links (newest, best)
-- conditional usage:        calculate and produce figures of conditional average usages of each link
-- conditional country:      figure of each node's weighted usage of all links
+- solve:                        solve the network and save solutions
+- usage:                        calculate nodes' usages of each link
+- plot:                         produce figures of usage
+- conditional converge:         check convergence of usages with _fixed_ bin sizes on a single link (old, deprecated)
+- conditional converge new:     check convergence of usages with _percentage of 99% quantile_ bin sizes on a single link (newer, deprecated)
+- conditional convergence:      check convergence of usages with _percentage of 99% quantile_ bin sizes on different links (newest, best)
+- conditional usage:            calculate and produce figures of conditional average usages of each link
+- conditional country solve:    calculate each node's weighted usage of all links
+- conditional country plot:     figure of each node's weighted usage and comparison between nodes
 
 Example calls:
 python usage.py solve
@@ -215,7 +217,7 @@ def bin_maker(bin_size,F_matrix,summed=None):
 """
 Solving flows for different export schemes
 """
-if 'solve' in task:
+if (('solve' in task) and ('conditional' not in task)):
     print 'Mode selected: Solving network flows'
     lapse = 365*24  # number of hours to include
     print 'Lapse: '+str(lapse)+' hours'
@@ -246,7 +248,7 @@ if (('usage' in task) and ('conditional' not in task)):
 """
 Scatterplots of usages
 """
-if 'plot' in task:
+if (('plot' in task) and ('conditional' not in task)):
     print 'Mode selected: Plotting figures of usages'
     lapse = 365*24  # number of hours to include
     print 'Lapse: '+str(lapse)+' hours'
@@ -295,8 +297,8 @@ if 'conditional' in task:
         F_vert = np.reshape(F[0,:lapse],(len(F[0,:lapse]),1))
         exp_vert = np.reshape(export_usage[0,0,:lapse],(len(export_usage[0,0,:lapse]),1))
         F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
-        F_matrix.sort(axis=0)
-    
+        F_matrix[F_matrix[:,0].argsort()]
+
         # Plot data as scatter background
         plt.figure()
         ax = plt.subplot(111)
@@ -384,7 +386,7 @@ if 'conditional' in task:
                     F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
                     exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
                     F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
-                    F_matrix.sort(axis=0)
+                    F_matrix[F_matrix[:,0].argsort()]
             
                     # Calculate conditional usages
                     M,bin_sum = bin_maker(bin_size,F_matrix,summed=1) # M = [[bin_means],[conditional usages]]
@@ -451,7 +453,7 @@ if 'conditional' in task:
             print link,'/ 49'
             # Get 99% quantile of link flow and determine bin size
             qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
-            bin_size = .04*qq  # percentage is determined in the _convergence_ mode.
+            bin_size = .08*qq  # percentage is determined in the _convergence_ mode.
             bin_name = bin_size.astype('|S4')
             plt.figure()
             ax = plt.subplot(111)
@@ -464,7 +466,7 @@ if 'conditional' in task:
                 F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
                 exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
                 F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
-                F_matrix.sort(axis=0)
+                F_matrix[F_matrix[:,0].argsort()]
         
                 # Calculate conditional usages
                 M,bin_sum = bin_maker(bin_size,F_matrix,summed=1) # M = [[bin_means],[conditional usages]]
@@ -518,85 +520,132 @@ if 'conditional' in task:
         """
         Figures of how important each country is for the flow on each link
         """
-        print "Calculating weighted sum of each country's conditional usage."
-
+        
         # Load data
         N = EU_Nodes_usage('linear.npz')
         F = abs(np.load('./results/linear-flows.npy'))
-        export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
-        N_usages = np.zeros((len(N),len(F))) # empty array for weighted sums of conditional usages
-        links = range(len(F))
-        names = []
+        
+        if 'solve' in task:
+            print "Calculating weighted sum of each country's conditional usage."
+            N_usages = np.zeros((len(N),len(F))) # empty array for weighted sums of conditional usages
+            export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
+            for node in range(len(N)):
+                for link in range(len(F)):
+                    # Get 99% quantile of link flow and determine bin size
+                    qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
+                    bin_size = .04*qq  # percentage is determined in the _convergence_ mode.
+                    # Stacking and sorting data
+                    F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
+                    exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
+                    F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+                    F_matrix[F_matrix[:,0].argsort()]
+                    
+                    # Calculate weigthed sums of usages and save for later use
+                    M,bin_sum = bin_maker(bin_size,F_matrix,summed=1)
+                    N_usages[node,link] = bin_sum
+            
+            # save results to file for faster and better plotting in usage_plotting.py
+            np.save('N_usages.npy',N_usages)
+            print 'Saved N_usages to N_usages.npy'
+        
+        if 'plot' in task:
+            print 'Making figures'
+            N_usages = np.load('N_usages.npy')
+            usage_sums = np.sum(N_usages,0) # total usage of each link
+            links = range(len(F))
+            names = []
+            link_dic = link_dict(N,F)
 
-        for node in range(len(N)):
-            names.append(str(N[node].label))
-            for link in range(len(F)):
-                # Get 99% quantile of link flow and determine bin size
-                qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
-                bin_size = .04*qq  # percentage is determined in the _convergence_ mode.
-                # Stacking and sorting data
-                F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
-                exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
-                F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
-                F_matrix.sort(axis=0)
+            # plot each nodes usage of each link normed to the total usage of the link
+            for node in range(len(N)):
+                names.append(str(N[node].label))
+                plt.figure()
+                ax = plt.subplot(111)
+    
+                plt.bar(links,np.divide(N_usages[node,:],usage_sums),width=1,color="#0000ff")
+                # plot directly connected links in another color
+                for link in link_dic[str(N[node].label)]:
+                    plt.bar(link,np.divide(N_usages[node,link],usage_sums[link]),width=1,color="#ff0000")
+
+                node_id = str(N[node].label)
+                ax.set_title(node_id+' percentage usage of links')
+                ax.set_xlabel(r'Link')
+                ax.set_ylabel(r'$U_{nl}/\sum_n U_{nl}$')
+                plt.savefig('./figures/country-importance-'+str(node)+'.png')
+                plt.close('all')
+            print 'Saved results to: ./figures/country-importance-node.png'
+
+            # plot each nodes usage of each link normed to the country's total network usage
+            network_usages = np.sum(N_usages,1) # each country's total network usage
+            for node in range(len(N)):
+                plt.figure()
+                ax = plt.subplot(111)
+    
+                plt.bar(links,np.divide(N_usages[node,:],network_usages[node]),width=1)
                 
-                # Calculate weigthed sums of usages and save for later use
-                M,bin_sum = bin_maker(bin_size,F_matrix,summed=1)
-                N_usages[node,link] = bin_sum
-        
-        # save results to file for faster and better plotting in usage_plotting.py
-        np.save('N_usages.npy',N_usages)
-        print 'Saved N_usages to N_usages.npy'
-        print 'Making figures'
-        usage_sums = np.sum(N_usages,0) # total usage of each link
-
-        # plot each nodes usage of each link normed to the total usage of the link
-        for node in range(len(N)):
+                node_id = str(N[node].label)
+                ax.set_title(node_id+' usage of links normalised to total network usage')
+                ax.set_xlabel(r'Link')
+                ax.set_ylabel(r'$U_{nl}/\sum_l U_{nl}$')
+                plt.savefig('./figures/link-importance-'+str(node)+'.png')
+                plt.close('all')
+            print 'Saved results to: ./figures/link-importance-node.png'
+    
+            # compare each nodes total usage of the network to the others normalised to the average usage of the network
+            avg_usage = sum(network_usages)/len(network_usages)
+            node_network_usage = np.divide(network_usages,avg_usage)
+            node_network_usage = np.reshape(node_network_usage,(len(node_network_usage),1))
+            node_ids = np.array(range(len(N))).reshape((len(N),1))
+            data = np.hstack([node_network_usage,node_ids])
+            data_sort = data[data[:,0].argsort()]
+            names_sort = [names[int(i)] for i in data_sort[:,1]]
+            names_sort = names_sort[::-1]
+            data_sort = data_sort[:,0][::-1]
+ 
             plt.figure()
             ax = plt.subplot(111)
+            nodes = range(len(N))
+            plt.bar(nodes,data_sort,width=1)
+            plt.plot([0,len(N)],[sum(node_network_usage)/len(N),sum(node_network_usage)/len(N)],'--k',lw=2)
+    
+            ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
+            ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
+            plt.axis([0,len(N),0,1.05*max(np.divide(network_usages,avg_usage))])
 
-            plt.bar(links,np.divide(N_usages[node,:],usage_sums),width=1)
-            
-            node_id = str(N[node].label)
-            ax.set_title(node_id+' usage of links normalised to total individual link usage')
-            ax.set_xlabel(r'Link')
-            ax.set_ylabel(r'$U_{nl}/\sum_n U_{nl}$')
-            plt.savefig('./figures/country-importance-'+str(node)+'.png')
+            ax.set_title('Network usage compared to average usage')
+            ax.set_xlabel(r'Country')
+            ax.set_ylabel(r'Network usage $(MW_T/\left\langle MW_T\right\rangle)$')
+            plt.savefig('./figures/network-usage.pdf')
             plt.close('all')
-        print 'Saved results to: ./figures/country-importance-node.png'
+            print 'Saved results to: ./figures/network-usage.pdf'
+            
+            # compare each nodes total usage of the network to the others normalised to the average usage of the network and the node's mean load
+            avg_usage = sum(network_usages)/len(network_usages)
+            node_mean_load = [n.mean for n in N]
+            EU_mean_load = sum(node_mean_load)
+            network_usages = np.divide(network_usages,avg_usage)
+            norm = np.divide(node_mean_load,EU_mean_load)
+            node_network_usage = np.multiply(network_usages,norm)
+            node_network_usage = np.reshape(node_network_usage,(len(node_network_usage),1))
+            data = np.hstack([node_network_usage,node_ids])
+            data_sort = data[data[:,0].argsort()]
+            names_sort = [names[int(i)] for i in data_sort[:,1]]
+            names_sort = names_sort[::-1]
+            data_sort = data_sort[:,0][::-1]
 
-        # plot each nodes usage of each link normed to the country's total network usage
-        print "Calculating link importance for country's network usage"
-        network_usages = np.sum(N_usages,1) # each country's total network usage
-        for node in [0]: # range(len(N)):
             plt.figure()
             ax = plt.subplot(111)
+            nodes = range(len(N))
+            plt.bar(nodes,data_sort,width=1)
+            plt.plot([0,len(N)],[sum(node_network_usage)/len(N),sum(node_network_usage)/len(N)],'--k',lw=2)
 
-            plt.bar(links,np.divide(N_usages[node,:],network_usages[node]),width=1)
-            
-            node_id = str(N[node].label)
-            ax.set_title(node_id+' usage of links normalised to total network usage')
-            ax.set_xlabel(r'Link')
-            ax.set_ylabel(r'$U_{nl}/\sum_l U_{nl}$')
-            plt.savefig('./figures/link-importance-'+str(node)+'.png')
+            ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
+            ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
+            plt.axis([0,len(N),0,1.05*max(np.multiply(network_usages,norm))])
+
+            ax.set_title('Network usage compared to mean load')
+            ax.set_xlabel(r'Country')
+            ax.set_ylabel(r'Network usage $(MW_T/\left\langle MW_T\right\rangle)(\left\langle L_n\right\rangle/\left\langle L_{EU}\right\rangle)$')
+            plt.savefig('./figures/network-usage-scaled.pdf')
             plt.close('all')
-        print 'Saved results to: ./figures/link-importance-node.png'
-
-        # compare each nodes total usage of the network to the others normalised to the average usage of the network
-        avg_usage = sum(network_usages)/len(network_usages)
-        plt.figure()
-        ax = plt.subplot(111)
-
-        nodes = range(len(N))
-        plt.bar(nodes,np.divide(network_usages,avg_usage),width=1)
-        plt.plot([0,30],[1,1],'--k',lw=2)
-
-        ax.set_xticks(np.linspace(0,len(N),len(N)+1))
-        ax.set_xticklabels(names,rotation=60,ha="right",va="top")
-        
-        ax.set_title('Comparing network usages for weighted sums of link usages')
-        ax.set_xlabel(r'Node')
-        ax.set_ylabel(r'Network usage normalised to avg. network usage')
-        plt.savefig('./figures/network-usage.png')
-        plt.close('all')
-        print 'Saved results to: ./figures/network-usage.png'
+            print 'Saved results to: ./figures/network-usage-scaled.pdf'
