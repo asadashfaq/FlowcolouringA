@@ -681,11 +681,11 @@ if 'conditional' in task:
             ax = plt.subplot(111)
             nodes = range(len(N))
             plt.bar(nodes,data_sort,width=1)
-            plt.plot([0,len(N)],[sum(node_network_usage)/len(N),sum(node_network_usage)/len(N)],'--k',lw=2)
+#            plt.plot([0,len(N)],[sum(node_network_usage)/len(N),sum(node_network_usage)/len(N)],'--k',lw=2)
     
             ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
             ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
-#            plt.axis([0,len(N),0,1.05*max(np.divide(network_usages,avg_usage))])
+            plt.axis([0,len(N),0,1.05*max(data_sort)])
 
             ax.set_title('Network usage compared to link capacities and mean load')
             ax.set_xlabel(r'Country')
