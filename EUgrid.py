@@ -20,10 +20,16 @@ def EU_Nodes_homo(load_filename=None, full_load=False,alph=0):# for homogenous a
 
 def EU_Nodes_gamma2(load_filename=None, full_load=False):
     return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=np.ones(30)*2)
+
 def EU_Nodes_log(load_filename=None, full_load=False,year=0): # used to create a nodes object with the alphas and gammas calculated from Sarahs logistic fit function
     return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=np.load("./alphas/alpha"+str(year)+".npy"), gammas=np.load("./gammas/gamma"+str(year-2014)+".npy"))
+
 def EU_Nodes_Ben(load_filename=None, full_load=False,alphas=None,gammas=None):
     return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=np.ones(30))
+
+def EU_Nodes_usage(load_filename=None, full_load=False):
+    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=np.ones(30)*.7, gammas=np.ones(30))
+
 def linfo():
     link_info = open("line_info")
     LI = []

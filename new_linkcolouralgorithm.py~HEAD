@@ -9,8 +9,11 @@ from localutils import *
 from figutils import AtoKh_old
 from time import time
 from drawnet import draw_powmix_network
+
 from EUgrid import *
 import networkx as nx
+
+
 
 def get_neighbours(n,matr=np.genfromtxt("./settings/eadmat.txt")):
     """ matr should be = np.genfromtxt("./settings/eadmat.txt")"""
@@ -155,8 +158,13 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 						receiving_node=k
 				# if sending_node and receiving_node are at the ends of the link we are looking at, create arrays with the flows being imported and exported from and to each country					
 				if (sending_node==start and receiving_node==end) or (sending_node==end and receiving_node==start):
-					link_mix_import[:,t]=receiving_node.power_mix_ex[:,t]*abs(F[l[0],t])/(sum(receiving_node.power_mix_ex[:,t])+0.000000000001)
-					link_mix_export[:,t]=sending_node.power_mix[:,t]*abs(F[l[0],t])/(sum(sending_node.power_mix[:,t])+0.000000000001)
+					if sum(receiving_node.power_mix_ex[:,t])==0:
+					    link_mix_import[:,t]=0
+					elif sum(sending_node.power_mix[:,t])==0:
+					    link_mix_export[:,t]=0
+					else:
+					    link_mix_import[:,t]=receiving_node.power_mix_ex[:,t]*abs(F[l[0],t])/sum(receiving_node.power_mix_ex[:,t])
+					    link_mix_export[:,t]=sending_node.power_mix[:,t]*abs(F[l[0],t])/sum(sending_node.power_mix[:,t])
 					
 				#adding the flow over the link	for each timestep									
 					total_flow_link+=abs(F[l[0],t])
@@ -479,8 +487,10 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	today_cap_cost=0
 	counter=0
 	loads=[]
+	tot_today=0
 	tot_usage=0
 	tot_usage_rel=0
+	tot_today_kms=0
 	link_kms=[686,250,217,523,766,278,397,82,914,175,358,577,289,201,262,342,436,879,1109,1053,418,483,464,520,520,808,534,524,298,328,1052,503,753,691,305,371,117,642,446,281,291,317,163,812,356,591,523,491,277,263]
 	link_prizes=[400,400,400,400,400,400,1500,1500,1500,400,1500,400,400,400,400,1500,400,400,400,400,400,1500,1500,400,400,1500,400,400,400,400,1500,400,400,400,400,400,400,400,400,400,400,400,400,1500,400,400,1500,400,400,400]
 	
@@ -489,6 +499,8 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	
 	for i in range(len(e)):
 	    capacities_today.append(max(r[i*2:i*2+2]))
+	    tot_today+=max(r[i*2:i*2+2])
+	    tot_today_kms+=max(r[i*2:i*2+2])*link_kms[i]
 	for l in range(len(F)):
 	    capacities_year.append(max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99))))
 	    total_capacity+=max(abs(np.percentile(F[l],1)),abs(np.percentile(F[l],99)))
@@ -503,7 +515,10 @@ def costplot(links,linksflow,N,F,Graf=None,alph=None,new=False,mode="linear",cop
 	    loads.append(n.mean)
 	loadssort=sorted(loads,reverse=True)  	   
 	
-		
+	np.save("total_cap",total_capacity)
+	np.save("total_cap_kms",total_capacity_kms)
+	np.save("total_cap_today",tot_today)
+	np.save("total_cap_kms_today",tot_today_kms)	
 	    
 	for n in N:
 	    cap=0	    
@@ -1250,3 +1265,383 @@ def track_new_exports(N,F,admat='./settings/eadmat.txt',lapse=None): # tracks th
 			          
 
 	return N    
+def outliers(N,linksmix1,linksmixx,quantile): #linksmix 1 are the usage of the links for unconstrained flows for gamma=1, linksmixx are the usage of the links with capacities gained as the x'th quantile of the capacities from the unconstrained flows.
+# quantile is the x'th quantile we are investigating
+
+    linksmixdiffim=np.zeros(len(N))
+    linksmixdiffex=np.zeros(len(N))
+    E = [n.label for n in N]
+    F = [n.label for n in N]
+    j=np.arange(len(N))
+    for n in N:
+	linksmixdiffim[n.id]=linksmix1['uim'][n.id].sum()-linksmixx['uim'][n.id].sum()
+	linksmixdiffex[n.id]=linksmix1['uex'][n.id].sum()-linksmixx['uex'][n.id].sum()
+    
+    #sortedmixim=sorted(linksmixdiffim,reverse=True)
+    #sortedmixex=sorted(linksmixdiffex,reverse=True)
+    sortedmixim=sorted(linksmixdiffim)
+    sortedmixex=sorted(linksmixdiffex)
+    for n in N:
+	for h in N: 
+	    if linksmixdiffim[n.id]==sortedmixim[h.id]:
+		E[h.id]=n.label
+    for n in N:
+	for h in N:
+	    if linksmixdiffex[n.id]==sortedmixex[h.id]:
+		F[h.id]=n.label
+			
+		
+		
+    plt.ion()
+    plt.show()	
+    p1=plt.bar(np.arange(30),sortedmixim,width=0.7,color=au.oran)
+    plt.xlim(j[0]-0.5)	
+    plt.xticks(j+0.4,E,rotation=90)
+
+    savefig("./figures/outliers/"+str(quantile)+"im.pdf")
+    plt.close()
+    
+    
+    
+    plt.ion()
+    plt.show()	
+    p1=plt.bar(np.arange(30),sortedmixex,width=0.7,color=au.oran)
+    plt.xlim(j[0]-0.5)	
+    plt.xticks(j+0.4,F,rotation=90)
+    
+    
+    savefig("./figures/outliers/"+str(quantile)+"ex.pdf")
+    plt.close()
+    
+    
+def outlierslinks(N,linksmix1,linksmixx=None,quantile=None,ports="ex_and_im",mode=None):  #linksmix 1 are the usage of the links for unconstrained flows for gamma=1, linksmixx are the usage of the links with capacities gained as the x'th quantile of the capacities from the unconstrained flows.
+# quantile is the x'th quantile we are investigating 
+    
+    if mode=="compa":
+	linkusages=[]
+	usages=[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.70,0.75,0.8,0.85,0.9,0.95,1.0,1.25,1.5,1.75,2.0]
+	for i in usages:
+	   linkusages.append(np.load("./results/ABC/linkusage_tc_"+str(i)+".npz"))
+	boxplotim=np.zeros((5,len(usages)))
+	boxplotex=np.zeros((5,len(usages)))
+	boxplot=np.zeros((5,len(usages)))
+	boksplotlabelim=[]
+	boksplotlabelex=[]
+	boksplotlabel=[]
+	
+    f,g,h,j,e=au.AtoKh(EU_Nodes())
+    c=np.ones(len(e)+1)
+    #c=c*100
+    width=1.0
+    
+    boksplotlabelim=[]
+    boksplotlabelex=[]
+    boksplotlabel=[]
+    totdiffimall=np.zeros(len(N))
+    totdiffexall=np.zeros(len(N))
+    totdiffall=np.zeros(len(N))
+    
+    
+    q=np.arange(len(e)+1)
+    
+    E = [i[0] for i in e]
+    E.append("All links")
+    fig=plt.figure(figsize=(18,10))
+    linksmixdiffim=np.zeros((len(E),len(N)))
+    linksmixdiffex=np.zeros((len(E),len(N)))
+    linksmixdiff=np.zeros((len(E),len(N)))
+    sortedmixim=np.zeros(len(e))
+    sortedmixex=np.zeros(len(e))
+    sortedmix=np.zeros(len(e))
+    maxdiffim=np.zeros(len(e))
+    if mode != "compa":
+	boxplotim=np.zeros((5,len(e)+1))
+	boxplotex=np.zeros((5,len(e)+1))
+	boxplot=np.zeros((5,len(e)+1))
+	if mode== "rol":
+	    
+	    for s in range(len(e)):
+		for n in N:
+		    linksmixdiffim[s][n.id]=linksmix1['uim'][n.id][s]-linksmixx['uim'][n.id][s]
+		    linksmixdiffex[s][n.id]=linksmix1['uex'][n.id][s]-linksmixx['uex'][n.id][s]
+		    linksmixdiff[s][n.id]=(linksmixdiffim[s][n.id]+linksmixdiffex[s][n.id])/2
+		    totdiffimall[n.id]+=linksmixdiffim[s][n.id]
+		    totdiffexall[n.id]+=linksmixdiffex[s][n.id]
+		    totdiffall[n.id]+=linksmixdiff[s][n.id]
+		sortedmixim=sorted(linksmixdiffim[s],reverse=True)
+		sortedmixex=sorted(linksmixdiffex[s],reverse=True)
+		sortedmix=sorted(linksmixdiff[s],reverse=True)
+		totdiffim=np.array(sortedmixim).sum()
+		totdiffex=np.array(sortedmixex).sum()
+		totdiff=np.array(sortedmix).sum()
+		
+		
+		#c[s]=round(totdiffim,1)
+		
+		
+		for p in range(5):
+			boxplotim[p,s]=sortedmixim[p]/totdiffim
+			boxplotex[p,s]=sortedmixex[p]/totdiffex
+			boxplot[p,s]=sortedmix[p]/totdiff
+			for h in N:
+			    if ports =="im":
+				if sortedmixim[p]==linksmixdiffim[s][h.id]:
+				    boksplotlabelim=np.append(boksplotlabelim,str(h.label))
+			    if ports== "ex":
+				if sortedmixex[p]==linksmixdiffex[s][h.id]:
+				    boksplotlabelex=np.append(boksplotlabelex,str(h.label))
+			    if ports=="ex_and_im":
+				if sortedmix[p]==linksmixdiff[s][h.id]:
+				    boksplotlabel=np.append(boksplotlabel,str(h.label))
+				
+				
+				    
+	    totdiffimallsorted=sorted(totdiffimall,reverse=True)
+	    totdiffexallsorted=sorted(totdiffexall,reverse=True)
+	    totdiffallsorted=sorted(totdiffall,reverse=True)
+	    totdiffexallsum=totdiffexall.sum()
+	    totdiffimallsum=totdiffimall.sum()
+	    totdiffallsum=totdiffall.sum()
+	    for p in range(5):
+			boxplotim[p,50]=totdiffimallsorted[p]/totdiffimallsum
+			boxplotex[p,50]=totdiffexallsorted[p]/totdiffimallsum
+			boxplot[p,50]=totdiffallsorted[p]/totdiffallsum
+			
+			for h in N:
+			    if ports=="im":    
+				if totdiffimallsorted[p]==totdiffimall[h.id]:
+				    boksplotlabelim=np.append(boksplotlabelim,str(h.label))
+			    if ports =="ex":
+				if totdiffexallsorted[p]==totdiffexall[h.id]:
+				    boksplotlabelex=np.append(boksplotlabelex,str(h.label))
+			    if ports =="ex_and_im":
+				if totdiffallsorted[p]==totdiffall[h.id]:
+				    boksplotlabel=np.append(boksplotlabel,str(h.label))
+				    
+				
+	    
+
+	elif mode == "normal":	
+	    for s in range(len(e)):
+		for n in N:
+		    linksmixdiffim[s][n.id]=linksmix1[n.id][s]-linksmixx['uim'][n.id][s]
+		    linksmixdiffex[s][n.id]=linksmix1[n.id][s]-linksmixx['uex'][n.id][s]
+		    linksmixdiff[s][n.id]=(linksmixdiffim[s][n.id]+linksmixdiffex[s][n.id])/2
+		    totdiffimall[n.id]+=linksmixdiffim[s][n.id]
+		    totdiffexall[n.id]+=linksmixdiffex[s][n.id]
+		    totdiffall[n.id]+=linksmixdiff[s][n.id]
+		sortedmixim=sorted(linksmixdiffim[s],reverse=True)
+		sortedmixex=sorted(linksmixdiffex[s],reverse=True)
+		sortedmix=sorted(linksmixdiff[s],reverse=True)
+		totdiffim=np.array(sortedmixim).sum()
+		totdiffex=np.array(sortedmixex).sum()
+		totdiff=np.array(sortedmix).sum()
+		
+		
+		#c[s]=round(totdiffim,1)
+		
+		
+		for p in range(5):
+			boxplotim[p,s]=sortedmixim[p]/totdiffim
+			boxplotex[p,s]=sortedmixex[p]/totdiffex
+			boxplot[p,s]=sortedmix[p]/totdiff
+			for h in N:
+			    if ports =="im":
+				if sortedmixim[p]==linksmixdiffim[s][h.id]:
+				    boksplotlabelim=np.append(boksplotlabelim,str(h.label))
+			    if ports== "ex":
+				if sortedmixex[p]==linksmixdiffex[s][h.id]:
+				    boksplotlabelex=np.append(boksplotlabelex,str(h.label))
+			    if ports=="ex_and_im":
+				if sortedmix[p]==linksmixdiff[s][h.id]:
+				    boksplotlabel=np.append(boksplotlabel,str(h.label))
+				
+				
+				    
+	    totdiffimallsorted=sorted(totdiffimall,reverse=True)
+	    totdiffexallsorted=sorted(totdiffexall,reverse=True)
+	    totdiffallsorted=sorted(totdiffall,reverse=True)
+	    totdiffexallsum=totdiffexall.sum()
+	    totdiffimallsum=totdiffimall.sum()
+	    totdiffallsum=totdiffall.sum()
+	    for p in range(5):
+			boxplotim[p,50]=totdiffimallsorted[p]/totdiffimallsum
+			boxplotex[p,50]=totdiffexallsorted[p]/totdiffimallsum
+			boxplot[p,50]=totdiffallsorted[p]/totdiffallsum
+			
+			for h in N:
+			    if ports=="im":    
+				if totdiffimallsorted[p]==totdiffimall[h.id]:
+				    boksplotlabelim=np.append(boksplotlabelim,str(h.label))
+			    if ports =="ex":
+				if totdiffexallsorted[p]==totdiffexall[h.id]:
+				    boksplotlabelex=np.append(boksplotlabelex,str(h.label))
+			    if ports =="ex_and_im":
+				if totdiffallsorted[p]==totdiffall[h.id]:
+				    boksplotlabel=np.append(boksplotlabel,str(h.label))
+
+	maxi=max(c)
+	#totdiffimallsum=totdiffimall.sum()
+	#c[50]=round(totdiffimallsum/50,1)
+	print maxi
+	if ports== "im":
+	    a=boxplotim
+	    b=boksplotlabelim
+	if ports =="ex":
+	    a=boxplotex
+	    b=boksplotlabelex
+	if ports =="ex_and_im":
+	    a=boxplot
+	    b=boksplotlabel
+	
+	
+	for s in range(len(e)+1):
+		plt.text(s+width/8,c[s]+0.004,str(c[s]),color='b')
+		plt.text(s+width/8,c[s]-a[0,s]+0.004,b[s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]+0.004,b[1+s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]-a[2,s]+0.004,b[2+s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]-a[2,s]-a[3,s]+0.004,b[3+s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]-a[2,s]-a[3,s]-a[4,s]+0.004,b[4+s*5],color='w')
+		
+	print "yoho"
+	plt.ion()
+	plt.show()
+	p1=plt.bar(range(51),c,width,color=au.blue)
+	print "hey"
+	p2=plt.bar(range(51),c-a[0,:],width,color=au.red)
+	print "hey2"
+	p3=plt.bar(range(51),c-a[0,:]-a[1,:],width,color=au.green)
+	p4=plt.bar(range(51),c-a[0,:]-a[1,:]-a[2,:],width,color=au.orange)
+	p5=plt.bar(range(51),c-a[0,:]-a[1,:]-a[2,:]-a[3,:],width,color=au.aqua)
+	p6=plt.bar(range(51),c-a[0,:]-a[1,:]-a[2,:]-a[3,:]-a[4,:],width,color=au.purple)
+	print "badabim"
+	print q+width/2.
+	print E
+	plt.xticks(q+width/2.,E,rotation=90)
+	print "bomdidum"
+       # plt.yticks(np.arange(0,350000,5))
+	print "yodido"
+	subplots_adjust(left=None, bottom=0.2, right=None, top=None, wspace=None, hspace=None)
+	print "opfe"
+	plt.legend( (p1[0], p2[0],p3[0],p4[0],p5[0],p6[0]), ('Primary user', 'Secondary user','Tertiary user','Quaternary user',"Quinary user", 'The rest'), 'upper right',fancybox=True,prop={'size':10})
+	print "yo"
+
+	savefig("./figures/old_linear_outlierdiagram_quant="+str(quantile)+str(ports)+".pdf")
+    
+    #close()
+    
+    if mode == "compa":
+	q=np.arange(len(linkusages))
+	c=np.ones(len(linkusages))
+	E=[]
+	for i in range(len(linkusages)):
+	    
+	    E.append(str(usages[i]))
+	    for s in range(len(e)):
+		for n in N:
+		    linksmixdiffim[n.id]=linksmix1[n.id][s]-linkusages[i]['uim'][n.id][s]
+		    linksmixdiffex[s][n.id]=linksmix1[n.id][s]-linkusages[i]['uex'][n.id][s]
+		    linksmixdiff[s][n.id]=(linksmixdiffim[s][n.id]+linksmixdiffex[s][n.id])/2
+		    totdiffimall[n.id]+=linksmixdiffim[s][n.id]
+		    totdiffexall[n.id]+=linksmixdiffex[s][n.id]
+		    totdiffall[n.id]+=linksmixdiff[s][n.id]
+		sortedmixim=sorted(linksmixdiffim[s],reverse=True)
+		sortedmixex=sorted(linksmixdiffex[s],reverse=True)
+		sortedmix=sorted(linksmixdiff[s],reverse=True)
+		totdiffim=np.array(sortedmixim).sum()
+		totdiffex=np.array(sortedmixex).sum()
+		totdiff=np.array(sortedmix).sum()
+		
+		
+		#c[s]=round(totdiffim,1)
+		
+		
+		#for p in range(5):
+			#boxplotim[p,s]=sortedmixim[p]/totdiffim
+			#boxplotex[p,s]=sortedmixex[p]/totdiffex
+			#boxplot[p,s]=sortedmix[p]/totdiff
+			#for h in N:
+			    #if ports =="im":
+				#if sortedmixim[p]==linksmixdiffim[s][h.id]:
+				    #boksplotlabelim=np.append(boksplotlabelim,str(h.label))
+			    #if ports== "ex":
+				#if sortedmixex[p]==linksmixdiffex[s][h.id]:
+				    #boksplotlabelex=np.append(boksplotlabelex,str(h.label))
+			    #if ports=="ex_and_im":
+				#if sortedmix[p]==linksmixdiff[s][h.id]:
+				    #boksplotlabel=np.append(boksplotlabel,str(h.label))
+				
+				
+				    
+	    totdiffimallsorted=sorted(totdiffimall,reverse=True)
+	    totdiffexallsorted=sorted(totdiffexall,reverse=True)
+	    totdiffallsorted=sorted(totdiffall,reverse=True)
+	    totdiffexallsum=totdiffexall.sum()
+	    totdiffimallsum=totdiffimall.sum()
+	    totdiffallsum=totdiffall.sum()
+	    for p in range(5):
+			boxplotim[p,i]=totdiffimallsorted[p]/totdiffimallsum
+			boxplotex[p,i]=totdiffexallsorted[p]/totdiffimallsum
+			boxplot[p,i]=totdiffallsorted[p]/totdiffallsum
+			
+			for h in N:
+			    if ports=="im":    
+				if totdiffimallsorted[p]==totdiffimall[h.id]:
+				    boksplotlabelim=np.append(boksplotlabelim,str(h.label))
+			    if ports =="ex":
+				if totdiffexallsorted[p]==totdiffexall[h.id]:
+				    boksplotlabelex=np.append(boksplotlabelex,str(h.label))
+			    if ports =="ex_and_im":
+				if totdiffallsorted[p]==totdiffall[h.id]:
+				    boksplotlabel=np.append(boksplotlabel,str(h.label))
+
+	maxi=max(c)
+	#totdiffimallsum=totdiffimall.sum()
+	#c[50]=round(totdiffimallsum/50,1)
+	print maxi
+	if ports== "im":
+	    a=boxplotim
+	    b=boksplotlabelim
+	if ports =="ex":
+	    a=boxplotex
+	    b=boksplotlabelex
+	if ports =="ex_and_im":
+	    a=boxplot
+	    b=boksplotlabel
+	
+	
+	for s in range(len(usages)):
+		plt.text(s+width/8,c[s]+0.004,str(c[s]),color='b')
+		plt.text(s+width/8,c[s]-a[0,s]+0.004,b[s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]+0.004,b[1+s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]-a[2,s]+0.004,b[2+s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]-a[2,s]-a[3,s]+0.004,b[3+s*5],color='w')
+		plt.text(s+width/8.,c[s]-a[0,s]-a[1,s]-a[2,s]-a[3,s]-a[4,s]+0.004,b[4+s*5],color='w')
+		
+	print "yoho"
+	plt.ion()
+	plt.show()
+	p1=plt.bar(range(len(usages)),c,width,color=au.blue)
+	print "hey"
+	p2=plt.bar(range(len(usages)),c-a[0,:],width,color=au.red)
+	print "hey2"
+	p3=plt.bar(range(len(usages)),c-a[0,:]-a[1,:],width,color=au.green)
+	p4=plt.bar(range(len(usages)),c-a[0,:]-a[1,:]-a[2,:],width,color=au.orange)
+	p5=plt.bar(range(len(usages)),c-a[0,:]-a[1,:]-a[2,:]-a[3,:],width,color=au.aqua)
+	p6=plt.bar(range(len(usages)),c-a[0,:]-a[1,:]-a[2,:]-a[3,:]-a[4,:],width,color=au.purple)
+	print "badabim"
+	print q+width/2.
+	print E
+	plt.xticks(q+width/2.,E,rotation=90)
+	print "bomdidum"
+       # plt.yticks(np.arange(0,350000,5))
+	print "yodido"
+	subplots_adjust(left=None, bottom=0.2, right=None, top=None, wspace=None, hspace=None)
+	print "opfe"
+	plt.legend( (p1[0], p2[0],p3[0],p4[0],p5[0],p6[0]), ('Primary user', 'Secondary user','Tertiary user','Quaternary user',"Quinary user", 'The rest'), 'upper right',fancybox=True,prop={'size':10})
+	print "yo"
+
+	savefig("./figures/old_linear_outlierdiagram_quant="+str(quantile)+str(ports)+str(mode)+".pdf")
+	
+
+	    

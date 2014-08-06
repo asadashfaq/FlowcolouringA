@@ -1,23 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 17 14:28:29 2013
-
-@author: anders
-"""
-
-import csv
-#import time
+#! /usr/bin/env/python
 import sys
 from pylab import *
-from scipy.optimize import brentq
-from scipy.optimize import fmin
-#import datetime as dt
-from localutils import *
-from figutils import AtoKh_old
+import datetime as dt
 from time import time
-from drawnet import draw_powmix_network
 from EUgrid import *
-from new_linkcolouralgorithm import *
+from aurespf.tools import AtoKh_old
+
 def get_neighbours(n,matr=np.genfromtxt("./settings/eadmat.txt")):
     """ matr should be = np.genfromtxt("./settings/eadmat.txt")"""
     neighbours=[]
@@ -80,15 +68,12 @@ def track_node_links_usage(links,N=None,ports="ex_and_im",new=False,mode="linear
 		n.link_usages_normalized=np.append(n.link_usages_normalized,n.link_usages[:]/total_usage*100) # calculates node n's usage of the links compared to node n's total usage of the links		
 		total_link_usage_node_rel=np.append(total_link_usage_node_rel,n.link_usages_normalized) # stores them in an array with the 50 first entries storing the relative linkusages for node 0 and the 50 next for node 1 and so on.
 		total_link_usage_node=np.append(total_link_usage_node,n.link_usages)
-		
-		
 		total_usages.append(total_usage)
 		
 		
 		print n.link_usages_normalized
 		print sum(n.link_usages_normalized)
 		#print cost
-	total_link_usage_node=[total_link_usage_node[i:(i+1)*50] for i in range(len(N))]
 	if copper:
 		if mode=="square":
 			if new:

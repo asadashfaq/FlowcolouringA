@@ -1,14 +1,8 @@
+#! /usr/bin/env/python
 import csv
-#import time
 import sys
 from pylab import *
-from scipy.optimize import brentq
-from scipy.optimize import fmin
-#import datetime as dt
-from localutils import *
-from figutils import AtoKh_old
 from time import time
-from drawnet import draw_powmix_network
 from EUgrid import *
 import networkx as nx
 
