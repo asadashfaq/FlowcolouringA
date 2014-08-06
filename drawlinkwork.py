@@ -2022,3 +2022,4 @@ def histogram_of_linkflow(l,F,n=None,links=None, ports="ex and im",alph=None,cop
 		savefig("./figures/histogram_old_random_constr"+str(l)+"_"+str(n)+"alpha="+str(alph)+"_"+str(ports)+"ports.pdf")
 plt.show()
 	
+#bombedum
