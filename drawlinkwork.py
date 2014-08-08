@@ -6,9 +6,10 @@ from res_classes import *
 #from classes import *
 import networkx as nx
 from res_tools import get_q#, ISO2LONG, biggestpair
+#from tools import get_q#, ISO2LONG, biggestpair
 import decimal
 from EUgrid import *
-from new_linkcolour_algorithm import get_neighbours
+from new_linkcolouralgorithm import get_neighbours
 from matplotlib.colors import LinearSegmentedColormap
  
 
@@ -79,7 +80,7 @@ def nlargest(X,n=2):
             b=i
     return b
     
-def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,mode="linear",N=None,title=None,alph=None,copper=True, modified=True,lapse=None): 
+def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,mode="linear",N=None,title=None,alph=None,copper=True, modified=True,lapse=None,hour=None): 
 ## links is the new_node_links_rel file or node_links_rel or variants of these.
 #n0 is the countrynumber and the function draws the relative usage of the different links compared to the countrys total usage of links.
 #Mode can be "linear", "square", "random" or "capped".
@@ -140,6 +141,28 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 		    print alphas_remove		
 		    s= sum(alphas)
 		    print s
+		elif hour!=None:
+		    t=hour
+		    if N[n0].power_mix[:,t].sum()<1:
+			alpha=0
+		    else:
+			alpha+=(N[n0].power_mix[:,t]/(sum(N[n0].power_mix[:,t])+0.000000000001*0.000000000001)*N[n0].get_import()[t])	    
+		    tot_im+=N[n0].get_import()[t]
+		   				    
+		    if tot_im<=1:
+			    alpha=0
+		    else:
+			alphas=alpha/tot_im
+		    
+		    for n in N:
+			if alphas[n.id]<=0.01:
+			    alphas_remove.append(n.label)
+		   
+		    	
+		    s= sum(alphas)
+		    v=max(alphas)
+		    print v
+		    print s		
 		else:
 		    for t in range(lapse):
 			alpha+=(N[n0].power_mix[:,t]/(sum(N[n0].power_mix[:,t])+0.000000000001*0.000000000001)*N[n0].get_import()[t])	    
@@ -189,6 +212,28 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 		    print alphas_remove		
 		    s= sum(alphas)
 		    print s
+		elif hour!=None:
+		    t=hour
+		    if N[n0].power_mix_ex[:,t].sum()<1:
+			alpha=0
+		    else:
+			alpha+=(N[n0].power_mix_ex[:,t]/(sum(N[n0].power_mix_ex[:,t])+0.000000000001*0.000000000001)*N[n0].get_export()[t])	    
+		    tot_ex+=N[n0].get_export()[t]
+		   				    
+		    if tot_ex<=1:
+			    alpha=0
+		    else:
+			alphas=alpha/tot_ex
+		    
+		    for n in N:
+			if alphas[n.id]<=0.01:
+			    alphas_remove.append(n.label)
+		   
+		    	
+		    s= sum(alphas)
+		    v=max(alphas)
+		    print v
+		    print s		
 		else:
 		    for t in range(lapse):
 			alpha+=N[n0].power_mix_ex[:,t]/(sum(N[n0].power_mix_ex[:,t])+0.000000000001*0.000000000001)*N[n0].get_export()[t]	    
@@ -305,21 +350,38 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 ########################################	
 	testcmap=LinearSegmentedColormap.from_list("yellow_white_blue",[(1,1,0),(1,1,1),(0,0,1)])
 	#cmap=mpl.cm.YlBu
-	norm=mpl.colors.Normalize(vmin=0,vmax=0.5) #The biggest user 
+	if hour !=None:
+	    norm=mpl.colors.Normalize(vmin=0,vmax=1.0) #The biggest user 
 
-	node_c=[]
-    #ax4.arrow(0.15,0.35,0.0,-0.2,fc='k',ec='k',head_width=0.05,head_length=0.1)
-	for n in N:
-		node_c.append(au_cmap(  alphas[n.id]/0.5    ))
+	    node_c=[]
+	#ax4.arrow(0.15,0.35,0.0,-0.2,fc='k',ec='k',head_width=0.05,head_length=0.1)
+	    for n in N:
+		    node_c.append(au_cmap(  alphas[n.id]  ))
+	else:
+	    norm=mpl.colors.Normalize(vmin=0,vmax=0.50) #The biggest user 
+
+	    node_c=[]
+	#ax4.arrow(0.15,0.35,0.0,-0.2,fc='k',ec='k',head_width=0.05,head_length=0.1)
+	    for n in N:
+		    node_c.append(au_cmap(  alphas[n.id]/0.5  ))
 	node_c[n0] = (0,0,0,1)
 	
 	K,h,ListF=AtoKh_old(N)    
 
 	x=len(ListF)
 	
-	m=max(linksrel[n0*x:(n0+1)*x])
-	#print m
-	p=m**(0.1)
+	if hour!=None:
+	    m=0
+	    for j in range(x):
+		q=linksrel[n0][j][hour]
+		if q>m:
+		    m=q
+	    p=m**(0.1)
+	    
+	else:	
+	    m=max(linksrel[n0*x:(n0+1)*x])
+	    #print m
+	    p=m**(0.1)
 	if maxi!=0:
 	    #p=maxi**(0.1)
 	    p=p+maxi**(0.1)-p
@@ -334,7 +396,16 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 	k=round(k,2)
 	
 	for l in ListF:
-		w=linksrel[n0*x+l[2]]		
+		w=linksrel[n0][l[2]][hour]
+		if hour!=None:
+		    if ports =="ex":
+			if N[n0].get_export()[t]<1:
+			    w=0
+			    p=1
+		    if ports == "im":
+			if N[n0].get_import()[t]<1:
+			    p=1
+			    w=0
 		G.add_edge(l[0], l[1] , weight= w)
 		
   
@@ -418,6 +489,7 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 	e10=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>=p**10-0.001]
 	e100=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=p and u not in alphas_remove and v not in alphas_remove]
 #    ax1.text(-0.05,1.05,"(a)",fontsize=12)
+	
 	if modified:
 	    nx.draw_networkx_edges(G,pos,edgelist=e100,width=1.0,edge_color='c',alpha=1.0,style='dotted')
 	else:
@@ -435,7 +507,22 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 	nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')	
 
 #    nx.draw_networkx_labels(G,pos,font_size=8,font_color='k',font_family='sans-serif')
-
+	if hour !=None:
+	    
+	    time=hour/24.0
+	    hours=int(time)
+	    rest=time-hours
+	    time_of_day=int(round(rest*24))
+	    ax1.text(0.20,1.2, "Time of day:"+str(time_of_day), fontsize=9)	
+	    if hour<10:
+		hour="0000"+str(hour)
+	    if 9<hour<100:
+		hour="000"+str(hour)
+	    if 99<hour<1000:
+		hour="00"+str(hour)
+	    if 999<hour<10000:
+		hour="0"+str(hour)
+		
 	ax1.axis('off')
 	
 	ax4= fig.add_axes([-0.075,0.075,1.5,.15]) #For displaying graph
@@ -550,7 +637,7 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 		else:
 		    if mode =="linear":
 			#ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,copper,alpha="+str(alph), fontsize=9)
-			savefig("./figures/old_linear_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+"_"+str(ports)+"ports_alpha="+str(alph)+".pdf")
+			savefig("./figures/old_linear_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+"country_"+str(ports)+"ports_alpha="+str(alph)+"hour"+str(hour)+".pdf")
 		    elif mode == "square":
 			#ax4.text(0.10,1.5, "Linkusage rel to the countryflow for "+str(N[n0].label)+","+str(ports)+"ports,old,square,copper,alpha="+str(alph), fontsize=9)
 			savefig("./figures/old_squared_link_usage_relative_to_countryflow_copper"+str(N[n0].id)+"_"+str(ports)+"ports_alpha="+str(alph)+".pdf")
@@ -594,10 +681,10 @@ def draw_node_links_rel_network(n0,linksrel,maxi=0,ports="ex_and_im",new=False,m
 	
 		
 	
-	show() # 
+	close() # 
 	return Graf
 
-def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex_and_im",N=None,F=None,title=None,alph=None,copper=True,modified=True,lapse=None): 
+def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex_and_im",N=None,F=None,title=None,alph=None,copper=True,modified=True,lapse=None,hour=None): 
 ## links is the new_links_mix file or links_mix or variants of these, linksflow is the links_flow file or variants of this, n0 is the countrynumber
 # and it draws the countrys relative usage of the different links compared to the different flows over these links.
 	#set new=True if you use new_links_mix
@@ -615,6 +702,8 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 	colours=[]
 	alpha=np.zeros(len(N))
 	tot_im_and_ex=np.zeros(len(N))
+	tot_im=np.zeros(len(N))
+	tot_ex=np.zeros(len(N))
 	alphas_remove=[]	
 	for n in N:
 		G.add_node(str(n.label))
@@ -629,19 +718,53 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
     
 	x=len(N)
 	m=0
-	for i in range(len(ListF)):
+	if hour == None:
+	    for i in range(len(ListF)):
+		    
+		    j=links[n0+i*x]/linksflow[i]*100
+		    if j>m:
+			    m=j
+	    p=m**(0.1)
+	    
+	    k=decimal.Decimal(str(p))
+	    k=round(k,2)
+	    
+	    for l in ListF:
+		    w=links[x*l[2]+n0]/linksflow[l[2]]*100	
+		    G.add_edge(l[0], l[1] , weight= w)
+	else:
+	    if ports=="ex_and_im":
+	    
+		m=50.0
+		p=m**(0.1)
 		
-		j=links[n0+i*x]/linksflow[i]*100
-		if j>m:
-			m=j
-	p=m**(0.1)
-	
-	k=decimal.Decimal(str(p))
-	k=round(k,2)
-	
-	for l in ListF:
-		w=links[x*l[2]+n0]/linksflow[l[2]]*100	
-		G.add_edge(l[0], l[1] , weight= w)
+		
+		k=decimal.Decimal(str(p))
+		k=round(k,2)
+		
+		for l in ListF:
+		    if links[l[2]][n0][hour]+linksflow[l[2]][n0][hour]<0.01:
+			w=0.00001
+		    else:		
+			w=(links[l[2]][n0][hour]+linksflow[l[2]][n0][hour])/2/abs(F[l[2]][hour])*100	
+		
+		    G.add_edge(l[0], l[1] , weight= w)
+	    if ports=="ex"or ports =="im":
+		m=50.0
+		p=m**(0.1)
+		
+		
+		k=decimal.Decimal(str(p))
+		k=round(k,2)
+		
+		for l in ListF:
+		    if links[l[2]][n0][hour]<0.01:
+			w=0.00001
+		    else:		
+			w=links[l[2]][n0][hour]/abs(F[l[2]][hour])*100	
+		
+		    G.add_edge(l[0], l[1] , weight= w)
+		
 	##################################################### nodes usage #########################################
 	if ports == "im":
 	    if new:
@@ -673,7 +796,28 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 			    alphas_remove.append(n.label)
 		   	
 		    s= sum(alphas)
+		elif hour!=None:
+		    t=hour
+		    for n in N:
+			if n.power_mix_ex[:,t].sum()<=1:
+			     n.power_mix_ex[:,t]=0
+			else:					
+				n.power_mix_ex[n.id,t]=0	
+				alpha[n.id]+=N[n.id].power_mix_ex[n0,t]/(sum(N[n.id].power_mix_ex[:,t])+0.00000000000000000000001)*N[n.id].get_export()[t]
+		    for n in N:
+			tot_ex[n.id]=N[n.id].get_export()[t]				    
+			if tot_ex[n.id]==0:
+			    tot_ex[n.id]=1
+		    alphas=alpha/tot_ex	
 		    
+		    for n in N:
+			if alphas[n.id]<=0.01:
+			    alphas_remove.append(n.label)
+		   
+		    	
+		    s= sum(alphas)
+		    print s			    
+		        
 		else:
 		    for t in range(lapse):
 			alpha+=(N[n0].power_mix[:,t]/(sum(N[n0].power_mix[:,t])+0.000000000001*0.000000000001)*N[n0].get_import()[t])	    
@@ -720,6 +864,27 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 		    	
 		    s= sum(alphas)
 		    
+		elif hour!=None:
+		    t=hour
+		    for n in N:
+			if n.power_mix[:,t].sum()<=1:
+			     n.power_mix[:,t]=0
+			else:					
+				n.power_mix[n.id,t]=0	
+				alpha[n.id]+=N[n.id].power_mix[n0,t]/(sum(N[n.id].power_mix[:,t])+0.00000000000000000000001)*N[n.id].get_import()[t]
+		    for n in N:
+			tot_im[n.id]=N[n.id].get_import()[t]				    
+			if tot_im[n.id]==0:
+			    tot_im[n.id]=1
+		    alphas=alpha/tot_im		
+		    
+		    for n in N:
+			if alphas[n.id]<=0.01:
+			    alphas_remove.append(n.label)
+		   
+		    	
+		    s= sum(alphas)
+		    print s			    
 		else:
 		    for t in range(lapse):
 			alpha+=N[n0].power_mix_ex[:,t]/(sum(N[n0].power_mix_ex[:,t])+0.000000000001*0.000000000001)*N[n0].get_export()[t]	    
@@ -735,7 +900,7 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 		    s= sum(alphas)
 		
 	elif ports == "ex_and_im":
-	    ############################ we find how much our node im- and exports with the different countrys relative the these countrys total im- and export from other countries ###################################
+	    ############################ we find how much our node im- and exports with the different countries relative to these countries total im- and export from other countries ###################################
 	    if new:
 		
 		for t in range(lapse):
@@ -785,8 +950,35 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 		    print s
 		    		
 		    
-		else:
+		elif hour!=None:
+		    t=hour
+		    for n in N:
+			if n.power_mix[:,t].sum()<=1:
+			    n.power_mix[:,t]=0
+			elif n.power_mix_ex[:,t].sum()<=1:
+			    n.power_mix_ex[:,t]=0
+			else:
+				n.power_mix[n.id,t]=0	
+				n.power_mix_ex[n.id,t]=0	
+				alpha[n.id]+=N[n.id].power_mix[n0,t]/(sum(N[n.id].power_mix[:,t])+0.00000000000000000000001)*N[n.id].get_import()[t]+N[n.id].power_mix_ex[n0,t]/(sum(N[n.id].power_mix_ex[:,t])+0.000000000001*0.000000000001)*N[n.id].get_export()[t]
+		    for n in N:
+			tot_im_and_ex[n.id]=N[n.id].get_import()[t]+N[n.id].get_export()[t]
+				    
+		    #for n in N:
+			#alphas[n.id]=(alpha[n.id])
 		    
+		    alphas=alpha/tot_im_and_ex	
+			
+		    
+		    for n in N:
+			if alphas[n.id]<=0.01:
+			    alphas_remove.append(n.label)
+		   
+		    	
+		    s= sum(alphas)
+		    print s		
+			
+		else:
 		    for t in range(lapse):
 			if mod(t,100)==0 and t>0: 
 			    print "\r",round(100.0*(t/float(lapse)),2),"%",
@@ -920,7 +1112,12 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 	nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.5,edge_color='b',alpha=0.9)
 	nx.draw_networkx_edges(G,pos,edgelist=e9,width=5.0,edge_color='k',alpha=1.0)
 	nx.draw_networkx_edges(G,pos,edgelist=e10,width=5.0,edge_color='r',alpha=1.0)
-	nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')	
+	nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')
+	
+	if hour !=None:
+	    ax1.text(0.20,1.2, "Time of day:"+str(hour), fontsize=9)	
+	    if hour<10:
+		hour="0"+str(hour) 	
 	
 	
 	
@@ -954,6 +1151,7 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 	ax4.text(0.45*1.05+0.01,0.5,"$\leq$"+str(round(p**9,2))+"$\%$",fontsize=9,rotation=-60)
 	ax4.text(0.50*1.05+0.01,0.5,r"<"+str(round(p**10,2))+"$\%$",fontsize=9,rotation=-60)
 	ax4.text(0.55*1.05+0.01,0.5,r"="+str(round(p**10,2))+"$\%$",fontsize=9,rotation=-60)
+	
 	ax4.axis([0.0,1.0,0.0,1.2])
 	
 	ax4.axis("off")
@@ -989,7 +1187,7 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 		else:
 		    if mode =="linear":
 			#ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,linear,copper,alpha="+str(alph), fontsize=9)
-			savefig("./figures/new_linear_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+			savefig("./figures/new_linear_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+"_"+str(ports)+"ports"+str(hour)+"hour_alpha="+str(alph)+".pdf")
 		    elif mode == "square":
 			#ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,new,square,copper,alpha="+str(alph), fontsize=9)
 			savefig("./figures/new_squared_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
@@ -1051,8 +1249,8 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 			#savefig("./figures/old_capped_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
 		else:
 		    if mode =="linear":
-			#ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,copper,alpha="+str(alph), fontsize=9)
-			savefig("./figures/old_linear_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
+			
+			savefig("./figures/old_linear_link_usage_relative_to_linkflow_copper_"+str(ports)+"ports_"+str(N[n0].id)+"country0"+str(hour)+"_hour_alpha="+str(alph)+".pdf")
 		    elif mode == "square":
 			#ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+str(ports)+",ports,old,square,copper,alpha="+str(alph), fontsize=9)
 			savefig("./figures/old_squared_link_usage_relative_to_linkflow_copper"+str(N[n0].id)+","+str(ports)+"ports,alpha="+str(alph)+".pdf")
@@ -1067,7 +1265,7 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 		if modified:
 		    if mode =="linear":
 			#ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,linear,constr,modified,alpha="+str(alph), fontsize=9)
-			savefig("./figures/old_linear_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
+			savefig("./figures/old_linear_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+"_"+str(ports)+"ports_modified_alpha="+str(alph)+".pdf")
 		    elif mode == "square":
 			#ax4.text(0.10,1.5, "Linkusage rel to the flow over the link for "+str(N[n0].label)+","+str(ports)+"ports,old,square,constr,modified,alpha="+str(alph), fontsize=9)
 			savefig("./figures/old_squared_link_usage_relative_to_linkflow_constr"+str(N[n0].id)+","+str(ports)+"ports,modified,alpha="+str(alph)+".pdf")
@@ -1093,7 +1291,8 @@ def draw_node_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex
 	ax4.axis('off')
 	
 
-	show() # display
+	#show() # display
+	close()
 def draw_links_network(n0,links,linksflow,new=False,mode="linear",ports="ex and im",N=None,F=None,title=None,alph=None,copper=True,modified=False): 
 ## links is the new_links_mix file or links_mix or variants of these, linksflow is the links_flow file or variants of this, n0 is the countrynumber
 # and it draws the countrys relative usage of the different links compared to the different flows over these links.
@@ -1748,6 +1947,13 @@ def histogram_of_linkflow(l,F,n=None,links=None, ports="ex and im",alph=None,cop
     fig=plt.figure(figsize=(18,10))
     counter=0
     linksnew=[]
+    a=np.percentile(F[l],1)
+    b=np.percentile(F[l],99)
+    for t in range(len(F[0])):
+	if abs(F[l][t])<1:
+	    linksnew.append(t)
+    
+    new_F=np.delete(F[l],linksnew)
    # for t in range(70128):
 	#if links[l][n][t]>1:
 	    #linksnew.append(links[l][n][t])
@@ -1757,9 +1963,14 @@ def histogram_of_linkflow(l,F,n=None,links=None, ports="ex and im",alph=None,cop
 
     plt.ion()
     plt.show()
-    #plt.hist(linksnew,normed=1,bins=np.linspace(min(linksnew),max(linksnew),100))
-    plt.hist(F[l],normed=1,bins=np.linspace(min(F[l]),max(F[l]),100))	
     ax=plt.gca()
+    #plt.hist(linksnew,normed=1,bins=np.linspace(min(linksnew),max(linksnew),100))
+    plt.hist(new_F,bins=np.linspace(min(F[l]),max(F[l]),100))	
+    plt.axvline(a,linestyle="dashed")
+    plt.axvline(b,linestyle="dashed")
+    ax.text(a,-100,"1th_quantile",fontsize=9)
+    ax.text(b,-100,"99th_quantile",fontsize=9)
+    
     labels = ax.get_xticks().tolist()
     labels[0]="1"
     ax.set_xticklabels(labels)
@@ -1790,7 +2001,7 @@ def histogram_of_linkflow(l,F,n=None,links=None, ports="ex and im",alph=None,cop
     else:
 	if copper:
 	    if mode == "linear":
-		plt.title("Histogram of the " +str(ports)+ "ports over link " + str(e[l][0:1])+",old,linear,copper,alpha="+str(alph), fontsize=15)
+		plt.title("Histogram of the flow over link " + str(e[l][0:1])+",old,linear,copper,alpha="+str(alph), fontsize=15)
 		print("mojn")
 		savefig("./figures/histogram_old_linear_copper"+str(l)+"_"+str(n)+"alpha="+str(alph)+"_"+str(ports)+"ports.pdf")
 	    elif mode=="square":
@@ -1811,3 +2022,4 @@ def histogram_of_linkflow(l,F,n=None,links=None, ports="ex and im",alph=None,cop
 		savefig("./figures/histogram_old_random_constr"+str(l)+"_"+str(n)+"alpha="+str(alph)+"_"+str(ports)+"ports.pdf")
 plt.show()
 	
+#bombedum

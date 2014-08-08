@@ -80,12 +80,15 @@ def track_node_links_usage(links,N=None,ports="ex_and_im",new=False,mode="linear
 		n.link_usages_normalized=np.append(n.link_usages_normalized,n.link_usages[:]/total_usage*100) # calculates node n's usage of the links compared to node n's total usage of the links		
 		total_link_usage_node_rel=np.append(total_link_usage_node_rel,n.link_usages_normalized) # stores them in an array with the 50 first entries storing the relative linkusages for node 0 and the 50 next for node 1 and so on.
 		total_link_usage_node=np.append(total_link_usage_node,n.link_usages)
+		
+		
 		total_usages.append(total_usage)
 		
 		
 		print n.link_usages_normalized
 		print sum(n.link_usages_normalized)
 		#print cost
+	total_link_usage_node=[total_link_usage_node[i:(i+1)*50] for i in range(len(N))]
 	if copper:
 		if mode=="square":
 			if new:
