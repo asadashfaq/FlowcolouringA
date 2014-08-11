@@ -27,14 +27,22 @@ The output should contain solutions for:
 
 """
 
-def bin_maker(F_matrix,99q):
+"""
+Initialisation
+"""
+if len(sys.argv)<2:
+    raise Exception('Not enough inputs!')
+else:
+    task = str(sys.argv[1:])
+
+def bin_maker(F_matrix,q):
     """
     Create a lot of bins to calculate each nodes average usage of a link. The
     last bin should be placed such that its right side is aligned with the 99%
     quantile of the flow on the link. This value is set as the capacity of the
     link.
     """
-    bin_max = np.ceil(99q) # last bin ends at 99% quantile
+    bin_max = np.ceil(q) # last bin ends at 99% quantile
     nbins = 12 # this number is not at all arbitrary
     bin_size = bin_max/nbins
     bin_means = np.linspace(.5*bin_size,bin_max-(.5*bin_size),nbins) # mean values of bins
@@ -54,7 +62,7 @@ def bin_maker(F_matrix,99q):
         H_temp=[]
 
     # move events further to the right to the last bin
-    b = 11
+    b = nbins-1
     for t in range(lapse):
         if b*bin_size <= F_matrix[t,0]:
                 H_temp.append(F_matrix[t,1])
@@ -65,62 +73,82 @@ def bin_maker(F_matrix,99q):
             H[b,0] = 0
             H[b,1] = 0
         H_temp=[]
+    return H,bin_means
 
-    # save bin sums and number of events
-
-
-#    if summed:
-#        part_sum = np.multiply(bin_means,bin_size)
-#        bin_sum = sum(np.multiply(H[:,1],part_sum))
-#        return np.array([bin_means,H[:,1]]),bin_sum
-#    else:
-#        return bin_means,H
-
-
-def bin_CDF:(flow,bins)
+def bin_CDF(bin_id,H,bin_means):
     """
     Cumulative distribution function to be used on the bins created in the
     bin_maker.
     """
+    if bin_id == 0:
+        return 0
+    else:
+        i = 0
+        P = 0
+        while bin_means[i] <= bin_id:
+            P += H[0,i]
+            i += 1
+        P = P/sum(H[0,:])
+        return P
 
-    # input a certain flow and a bin series
-    # sum the bins until the given flow is reached
+def bin_prob(bin_id,H):
+    """
+    Probability of occurence of given flow
+    """
+    return H[bin_id,0]/sum(H[:,0])
 
+def node_stake(H,bin_means):
+    """
+    Calculate a node's stake in a specific link
+    """
+    flows = np.append([0],bin_means)
+    nbins = len(bin_means)
+    c = 0 # node stake
+    for i in range(nbins-1):
+        c += (flows[i+1]-flows[i])/(1-bin_CDF(i,H,bin_means))
+        for j in range(i+1,nbins):
+            c += bin_prob(j,H)*H[j,1]
+    return c
 
-lapse = 10 # number of hours to include
-
-# pick one of three transmission paradigms
-N = EU_Nodes_usage('linear.npz')
-F = abs(np.load('./results/linear-flows.npy'))
-
-# Do everything below for both import and export usages
-direction = ['import','export']
-# for loop over direction
-Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy') # change linear, export
-
-# Calculate usages and save to file
-Node_usages = np.zeros((len(N),len(F))) # empty array for calculated usages
-export_usage = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy') # change linear
-for node in [0]: # range(len(N)):
-    print node+1,'/ '+str(len(N))
-    for link in [0]: #range(len(F)):
-        # Get 99% quantile of link flow and determine bin size
-        qq = get_q(abs(F[link,:lapse]),.99) # Get 99% quantile of link flow to determine bin size
-        bin_size = .08*qq  # percentage is determined in the _convergence_ mode.
-        # Stacking and sorting data
-        F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
-        exp_vert = np.reshape(export_usage[link,node,:lapse],(len(export_usage[link,node,:lapse]),1))
-        F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
-        F_matrix[F_matrix[:,0].argsort()]
-        
-        # Calculate weigthed sums of usages and save for later use
-        M,bin_sum = bin_maker(bin_size,F_matrix,summed=1)
-        Node_usages[node,link] = bin_sum
-
-# save results to file for faster and better plotting in usage_plotting.py
-np.save('Node_usages_linear_export.npy',Node_usages)
-print 'Saved N_usages to N_usages.npy'
-
+if 'solve' in task:
+    """
+    Calculate nodes' stakes and save results to file.
+    """
+    lapse = 1000 # number of hours to include
+    
+    # pick one of three transmission paradigms
+    N = EU_Nodes_usage('linear.npz')
+    F = abs(np.load('./results/linear-flows.npy'))
+    
+    # Do everything below for both import and export usages
+    direction = ['import','export']
+    # for loop over direction
+    Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy') # change linear, export
+    
+    # Calculate usages and save to file
+    Node_stakes = np.zeros((len(N),len(F))) # empty array for calculated usages
+    quantiles = np.zeros(len(F))
+    for node in range(len(N)):
+        print node+1,'/ '+str(len(N))
+        for link in range(len(F)):
+            # Get 99% quantile of link flow to determine bin size
+            q = get_q(abs(F[link,:lapse]),.99)
+            # Stacking and sorting data
+            F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
+            exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
+            F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+            F_matrix[F_matrix[:,0].argsort()]
+            
+            H,bin_means = bin_maker(F_matrix,q)
+            Node_stakes[node,link] = node_stake(H,bin_means)
+            if node == 0:
+                quantiles[link] = q
+            
+    # save results to file for faster and better plotting in usage_plotting.py
+    np.save('Node_stakes_linear_export.npy',Node_stakes)
+    print 'Saved N_stakes to Node_stakes_linear_export.npy'
+    np.save('quantiles.npy',quantiles)
+    print 'Saved 99% quantiles to quantiles.npy'
 
 
 # plotting mode
