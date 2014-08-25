@@ -35,7 +35,7 @@ if len(sys.argv)<2:
 else:
     task = str(sys.argv[1:])
 
-def bin_maker(F_matrix,q):
+def bin_maker(F_matrix,q,lapse):
     """
     Create a lot of bins to calculate each nodes average usage of a link. The
     last bin should be placed such that its right side is aligned with the 99%
@@ -61,41 +61,38 @@ def bin_maker(F_matrix,q):
             H[b,1] = 0
         H_temp=[]
 
-    # move events further to the right to the last bin
+    # move events further to the right of the 99% quantile to the last bin and keep their value
     b = nbins-1
     for t in range(lapse):
         if b*bin_size <= F_matrix[t,0]:
-                H_temp.append(F_matrix[t,1])
-        if len(H_temp)>0:
-            H[b,0] = len(H_temp)
-            H[b,1] = sum(H_temp)/len(H_temp)
-        else: # no data in the bin
-            H[b,0] = 0
-            H[b,1] = 0
-        H_temp=[]
+            H_temp.append(F_matrix[t,1])
+    if len(H_temp)>0:
+        H[b,0] = len(H_temp)
+        H[b,1] = sum(H_temp)/len(H_temp)
+    else: # no data in the bin
+        H[b,0] = 0
+        H[b,1] = 0
+    H_temp=[]
     return H,bin_means
-
-def bin_CDF(bin_id,H,bin_means):
-    """
-    Cumulative distribution function to be used on the bins created in the
-    bin_maker.
-    """
-    if bin_id == 0:
-        return 0
-    else:
-        i = 0
-        P = 0
-        while bin_means[i] <= bin_id:
-            P += H[0,i]
-            i += 1
-        P = P/sum(H[0,:])
-        return P
 
 def bin_prob(bin_id,H):
     """
     Probability of occurence of given flow
     """
     return H[bin_id,0]/sum(H[:,0])
+
+def bin_CDF(bin_id,H,bin_means):
+    """
+    Cumulative distribution function to be used on the bins created in the
+    bin_maker.
+    """
+    i = 0
+    P = 0
+    while i <= bin_id:
+        P += H[i,0]
+        i += 1
+    P = P/sum(H[:,0])
+    return P
 
 def node_stake(H,bin_means):
     """
@@ -127,26 +124,24 @@ if 'solve' in task:
     
     # Calculate usages and save to file
     Node_stakes = np.zeros((len(N),len(F))) # empty array for calculated usages
-    quantiles = np.zeros(len(F))
+    # Get 99% quantile of link flow to determine bin size
+    quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
+
     for node in range(len(N)):
         print node+1,'/ '+str(len(N))
         for link in range(len(F)):
-            # Get 99% quantile of link flow to determine bin size
-            q = get_q(abs(F[link,:lapse]),.99)
             # Stacking and sorting data
             F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
             exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
             F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
             F_matrix[F_matrix[:,0].argsort()]
             
-            H,bin_means = bin_maker(F_matrix,q)
+            H,bin_means = bin_maker(F_matrix,quantiles[link],lapse)
             Node_stakes[node,link] = node_stake(H,bin_means)
-            if node == 0:
-                quantiles[link] = q
             
     # save results to file for faster and better plotting in usage_plotting.py
     np.save('Node_stakes_linear_export.npy',Node_stakes)
-    print 'Saved N_stakes to Node_stakes_linear_export.npy'
+    print 'Saved Node_stakes to Node_stakes_linear_export.npy'
     np.save('quantiles.npy',quantiles)
     print 'Saved 99% quantiles to quantiles.npy'
 
@@ -156,4 +151,5 @@ if 'solve' in task:
 # collect usages to compare all nodes
 
 # aggregate results from import and export usages and compare all nodes
+
 
