@@ -12,8 +12,8 @@ from new_linkcolouralgorithm_less import track_link_usage_total
 from link_namer import node_namer,link_dict
 
 """
-Script to calculate nodes' usages (stakes) of links using the all new and
-improved model to rule all previous models.
+Script to calculate nodes' usages of links using the all new and improved model
+to rule all previous models.
 
 In time this script should incorporate three transmission paradigms:
 - localised / linear / selfish
@@ -21,9 +21,9 @@ In time this script should incorporate three transmission paradigms:
 - market
 
 The output should contain solutions for:
-- import stakes
-- export stakes
-- combined stakes
+- import usages
+- export usages
+- combined usages
 
 """
 
@@ -45,7 +45,7 @@ def bin_maker(F_matrix,q,lapse):
     bin_max = np.ceil(q) # last bin ends at 99% quantile
     nbins = 12 # this number is not at all arbitrary
     bin_size = bin_max/nbins
-    bin_edges = np.linspace(bin_size,bin_max),nbins) # value at the right side of each bin, last bin is 99% quantile
+    bin_edges = np.linspace(bin_size,bin_max,nbins) # value at the right side of each bin, last bin is 99% quantile
 
     H_temp = []
     H = np.zeros((nbins,2)) # [number of events, mean usage]
@@ -94,6 +94,26 @@ def bin_CDF(bin_id,H):
     P = P/sum(H[:,0])
     return P
 
+def node_contrib(H,bin_edges):
+    """
+    Calculate a node's contribution to a specific links capacity
+    """
+    flows = np.append([0],bin_edges)
+    nbins = len(bin_edges)
+    C = 0 # total contribution
+    for i in range(nbins-1):
+        c1,c2 = 0,0 # partial contributions
+        if i == 0:
+            c1 += (flows[i+1]-flows[i])
+        else:
+            c1 += (flows[i+1]-flows[i])/(1-bin_CDF(i-1,H))
+        l = i+1
+        while l < nbins:
+            c2 += bin_prob(l,H)*H[l,1]
+            l += 1
+        C += c1*c2
+    return C
+
 def node_stake(H,bin_edges):
     """
     Calculate a node's stake in a specific link
@@ -107,9 +127,10 @@ def node_stake(H,bin_edges):
             c += bin_prob(j,H)*H[j,1]
     return c
 
+
 if 'solve' in task:
     """
-    Calculate nodes' stakes and save results to file.
+    Calculate nodes' contributions and save results to file.
     """
     lapse = 1000 # number of hours to include
     
@@ -123,7 +144,7 @@ if 'solve' in task:
     Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy') # change linear, export
     
     # Calculate usages and save to file
-    Node_stakes = np.zeros((len(N),len(F))) # empty array for calculated usages
+    Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
     # Get 99% quantile of link flow to determine bin size
     quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
 
@@ -137,19 +158,17 @@ if 'solve' in task:
             F_matrix[F_matrix[:,0].argsort()]
             
             H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse)
-            Node_stakes[node,link] = node_stake(H,bin_edges)
+            Node_contributions[node,link] = node_contrib(H,bin_edges)
             
     # save results to file for faster and better plotting in usage_plotting.py
-    np.save('Node_stakes_linear_export.npy',Node_stakes)
-    print 'Saved Node_stakes to Node_stakes_linear_export.npy'
+    np.save('Node_contrib_linear_export.npy',Node_contributions)
+    print 'Saved Node_contributions to Node_contrib_linear_export.npy'
     np.save('quantiles.npy',quantiles)
     print 'Saved 99% quantiles to quantiles.npy'
 
 
 # plotting mode
-# calculate double integral
 # collect usages to compare all nodes
 
 # aggregate results from import and export usages and compare all nodes
-
 
