@@ -109,7 +109,7 @@ def node_contrib(H,bin_edges):
             c1 += (flows[i+1]-flows[i])/(1-bin_CDF(i-1,H))
         l = i+1
         while l < nbins:
-            c2 += bin_prob(l,H)*H[l,1]
+            c2 += bin_prob(l,H)*H[l,1]/flows[l]
             l += 1
         C += c1*c2
     return C
