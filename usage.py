@@ -45,7 +45,7 @@ def bin_maker(F_matrix,q,lapse):
     bin_max = np.ceil(q) # last bin ends at 99% quantile
     nbins = 12 # this number is not at all arbitrary
     bin_size = bin_max/nbins
-    bin_edges = np.linspace(bin_size,bin_max,nbins) # value at the right side of each bin, last bin is 99% quantile
+    bin_means = np.linspace(.5*bin_size,bin_max-(.5*bin_size),nbins) # value at the right side of each bin, last bin is 99% quantile
 
     H_temp = []
     H = np.zeros((nbins,2)) # [number of events, mean usage]
@@ -73,7 +73,7 @@ def bin_maker(F_matrix,q,lapse):
         H[b,0] = 0
         H[b,1] = 0
     H_temp=[]
-    return H,bin_edges
+    return H,bin_means
 
 def bin_prob(bin_id,H):
     """
@@ -94,12 +94,13 @@ def bin_CDF(bin_id,H):
     P = P/sum(H[:,0])
     return P
 
-def node_contrib(H,bin_edges):
+def node_contrib(H,bin_means):
     """
     Calculate a node's contribution to a specific links capacity
     """
-    flows = np.append([0],bin_edges)
-    nbins = len(bin_edges)
+    flows = np.append([0],bin_means)
+    bin_size = flows[2]-flows[1]
+    nbins = len(bin_means)
     C = 0 # total contribution
     for i in range(nbins-1):
         c1,c2 = 0,0 # partial contributions
@@ -113,19 +114,6 @@ def node_contrib(H,bin_edges):
             l += 1
         C += c1*c2
     return C
-
-def node_stake(H,bin_edges):
-    """
-    Calculate a node's stake in a specific link
-    """
-    flows = np.append([0],bin_edges)
-    nbins = len(bin_edges)
-    c = 0 # node stake
-    for i in range(nbins-1):
-        c += (flows[i+1]-flows[i])/(1-bin_CDF(i,H))
-        for j in range(i+1,nbins):
-            c += bin_prob(j,H)*H[j,1]
-    return c
 
 
 if 'solve' in task:
@@ -157,8 +145,8 @@ if 'solve' in task:
             F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
             F_matrix[F_matrix[:,0].argsort()]
             
-            H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse)
-            Node_contributions[node,link] = node_contrib(H,bin_edges)
+            H,bin_means = bin_maker(F_matrix,quantiles[link],lapse)
+            Node_contributions[node,link] = node_contrib(H,bin_means)
             
     # save results to file for faster and better plotting in usage_plotting.py
     np.save('Node_contrib_linear_export.npy',Node_contributions)
@@ -171,4 +159,3 @@ if 'solve' in task:
 # collect usages to compare all nodes
 
 # aggregate results from import and export usages and compare all nodes
-
