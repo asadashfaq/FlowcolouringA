@@ -218,7 +218,28 @@ if 'plot' in task:
         ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
         ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
         ax.set_title('Usage of link '+label)
-        ax.set_xlabel('Node')
         ax.set_ylabel(r'Usage, $C_n$')
         plt.savefig('./figures/node-usage-'+str(link)+'.png')
-    print('Saved figures to ./figures/link-usage-link.png')
+    print('Saved figures to ./figures/node-usage-link.png')
+
+    # Compare node transmission to mean load
+    print('Plotting node comparison')
+    Total_usage = np.sum(N_usages,1)
+    node_mean_load = [n.mean for n in N]
+    normed_usage = Total_usage/node_mean_load
+    normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
+    node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
+    data = np.hstack([normed_usage,node_ids,node_mean_load])
+    data_sort = data[data[:,2].argsort()]
+    # flip order so largest is first
+    data_sort = data_sort[:,0][::-1]
+
+    plt.figure()
+    ax = plt.subplot(111)
+    plt.bar(nodes,data_sort,width=1,color="#0000ff")
+    ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
+    ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
+    ax.set_title('Comparison of total network usage')
+    ax.set_ylabel(r'[MW$_T$/MW$_L$]')
+    plt.savefig('./figures/network-usage.png')
+    print('Saved figures to ./figures/network-usage.png')
