@@ -35,6 +35,13 @@ if len(sys.argv)<2:
 else:
     task = str(sys.argv[1:])
 
+def link_label(num,N):
+    """
+    Translate link number into a string like: 'Country1-Country2'.
+    """
+    label = get_link_direction(num,N)
+    return str(label[0].label)+'-'+str(label[1].label)
+
 def bin_maker(F_matrix,q,lapse):
     """
     Create a lot of bins to calculate each nodes average usage of a link. The
@@ -120,6 +127,7 @@ if 'solve' in task:
     """
     Calculate nodes' contributions and save results to file.
     """
+    print('Solving')
     lapse = 70128 # number of hours to include
     
     # pick one of three transmission paradigms
@@ -150,12 +158,67 @@ if 'solve' in task:
             
     # save results to file for faster and better plotting in usage_plotting.py
     np.save('Node_contrib_linear_export.npy',Node_contributions)
-    print 'Saved Node_contributions to Node_contrib_linear_export.npy'
+    print('Saved Node_contributions to Node_contrib_linear_export.npy')
     np.save('quantiles.npy',quantiles)
-    print 'Saved 99% quantiles to quantiles.npy'
+    print('Saved 99% quantiles to quantiles.npy')
 
 
-# plotting mode
-# collect usages to compare all nodes
+if 'plot' in task:
+    """
+    Create various plots of usage and save figures to ./figures/
+    """
+    print('Getting ready to plot')
 
-# aggregate results from import and export usages and compare all nodes
+    # Load data and results
+    N = EU_Nodes_usage('linear.npz')
+    F = abs(np.load('./results/linear-flows.npy'))
+    N_usages = np.load('Node_contrib_linear_export.npy')
+    quantiles = np.load('quantiles.npy')
+    link_dic = link_dict(N,F)
+    links = range(len(F))
+    nodes = range(len(N))
+    names = [] # array for node labels
+
+    # For every node, plot usage of every link, C_n
+    print('Plotting node usages')
+    for node in nodes:
+        node_id = str(N[node].label)
+        names.append(node_id)
+        plt.figure()
+        ax = plt.subplot(111)
+        plt.bar(links,np.divide(N_usages[node,:],quantiles),width=1,color="#0000ff")
+        # highlight directly connected links
+        for link in link_dic[node_id]:
+            plt.bar(link,np.divide(N_usages[node,link],quantiles[link]),width=1,color="#ff0000")
+        ax.set_title(node_id+' usage of links')
+        ax.set_xlabel('Link')
+        ax.set_ylabel(r'Usage, $C_n$')
+        plt.savefig('./figures/link-usage-'+str(node)+'.png')
+    print('Saved figures to ./figures/link-usage-node.png')
+
+    # For every link, plot each node's usage, C_n
+    print('Plotting usage of each link')
+    node_ids = np.array(range(len(N))).reshape((len(N),1))
+    node_mean_load = [n.mean for n in N]
+    node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
+    for link in links:
+        label = link_label(link,N)
+        # sort node names for x-axis
+        Usages = np.reshape(N_usages[:,link],(len(N_usages),1))
+        data = np.hstack([Usages,node_ids,node_mean_load])
+        data_sort = data[data[:,2].argsort()]
+        names_sort = [names[int(i)] for i in data_sort[:,1]]
+        # flip order so largest is first
+        names_sort = names_sort[::-1]
+        data_sort = data_sort[:,0][::-1]
+        
+        plt.figure()
+        ax = plt.subplot(111)
+        plt.bar(nodes,np.divide(data_sort,quantiles[link]),width=1,color="#0000ff")
+        ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
+        ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
+        ax.set_title('Usage of link '+label)
+        ax.set_xlabel('Node')
+        ax.set_ylabel(r'Usage, $C_n$')
+        plt.savefig('./figures/node-usage-'+str(link)+'.png')
+    print('Saved figures to ./figures/link-usage-link.png')
