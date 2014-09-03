@@ -42,7 +42,7 @@ def link_label(num,N):
     label = get_link_direction(num,N)
     return str(label[0].label)+'-'+str(label[1].label)
 
-def bin_maker(F_matrix,q,lapse):
+def bin_maker(F_matrix,q,lapse,nbins=None):
     """
     Create a lot of bins to calculate each nodes average usage of a link. The
     last bin should be placed such that its right side is aligned with the 99%
@@ -50,7 +50,8 @@ def bin_maker(F_matrix,q,lapse):
     link.
     """
     bin_max = np.ceil(q) # last bin ends at 99% quantile
-    nbins = 12 # this number is not at all arbitrary
+    if not nbins:
+        nbins = 12 # this number is not at all arbitrary
     bin_size = bin_max/nbins
     bin_edges = np.linspace(bin_size,bin_max,nbins) # value at the right side of each bin, last bin is 99% quantile
 
@@ -122,6 +123,76 @@ def node_contrib(H,bin_edges):
         C += c1*c2
     return C
 
+def convergence(test):
+    """
+    Calculate usages and save to file
+    """
+    Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
+    for node in range(len(N)):
+        for link in range(len(F)):
+            # Stacking and sorting data
+            F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
+            exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
+            F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+            F_matrix[F_matrix[:,0].argsort()]
+            H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse,nbins=test)
+            Node_contributions[node,link] = node_contrib(H,bin_edges)
+    # save results to file 
+    np.save('./convergence/Node_contrib_'+str(test)+'.npy',Node_contributions)
+
+
+if 'converge' in task:
+    """
+    Check for convergence with altering bin size
+    """
+    lapse = 70128 # number of hours to include
+    test_bins = range(10,31,2) # how many bins to test
+    print('Geting ready to test convergence')
+    print('Lapse: '+str(lapse)+', Number of runs: '+str(len(test_bins)))
+
+
+    
+    # Pick a transmission paradigm
+    N = EU_Nodes_usage('linear.npz')
+    F = abs(np.load('./results/linear-flows.npy'))
+    Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
+    # Get 99% quantile of link flow
+    quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
+    np.save('./convergence/quantiles.npy',quantiles)
+
+    # Calculate usages
+    print('Populating workers')
+    p = Pool(6)
+    p.map(convergence,test_bins)
+
+    # Compare results
+    print('Comparing results')
+    mins = np.zeros(len(test_bins))
+    means = np.zeros(len(test_bins))
+    maxs = np.zeros(len(test_bins))
+    quantiles = np.load('./convergence/quantiles.npy')
+    index = 0
+    for i in test_bins:
+        N_usages = np.load('./convergence/Node_contrib_'+str(i)+'.npy')
+        Total = np.sum(N_usages,0)/quantiles
+        mins[index] = Total.min()
+        means[index] = Total.mean()
+        maxs[index] = Total.max()
+        index+=1
+
+    # Plot comparison
+    print('Plotting results')
+    np.savez('./convergence/results.npz',mins,means,maxs)
+    print('Saved results to ./convergence/results.npz')
+    plt.figure()
+    plt.plot(test_bins,mins,'-r',lw=2)
+    plt.plot(test_bins,means,'-k',lw=2)
+    plt.plot(test_bins,maxs,'-b',lw=2)
+    plt.xlabel('Number of bins')
+    plt.ylabel(r'$C/T^{99\%}$')
+    plt.title('Convergence check for different bin sizes')
+    plt.savefig('./figures/convergence.png')
+    print('Saved results to ./figures/convergence.png')
 
 if 'solve' in task:
     """
@@ -141,7 +212,7 @@ if 'solve' in task:
     
     # Calculate usages and save to file
     Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
-    # Get 99% quantile of link flow to determine bin size
+    # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
 
     for node in range(len(N)):
@@ -156,7 +227,7 @@ if 'solve' in task:
             H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse)
             Node_contributions[node,link] = node_contrib(H,bin_edges)
             
-    # save results to file for faster and better plotting in usage_plotting.py
+    # save results to file 
     np.save('Node_contrib_linear_export.npy',Node_contributions)
     print('Saved Node_contributions to Node_contrib_linear_export.npy')
     np.save('quantiles.npy',quantiles)
@@ -224,6 +295,7 @@ if 'plot' in task:
 
     # Compare node transmission to mean load
     print('Plotting node comparison')
+    # sort node names for x-axis
     Total_usage = np.sum(N_usages,1)
     node_mean_load = [n.mean for n in N]
     normed_usage = Total_usage/node_mean_load
@@ -241,5 +313,6 @@ if 'plot' in task:
     ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
     ax.set_title('Comparison of total network usage')
     ax.set_ylabel(r'[MW$_T$/MW$_L$]')
+    plt.axis([0,len(N),0,1.05*max(data_sort)])
     plt.savefig('./figures/network-usage.png')
     print('Saved figures to ./figures/network-usage.png')
