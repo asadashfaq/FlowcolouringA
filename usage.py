@@ -12,19 +12,23 @@ from new_linkcolouralgorithm_less import track_link_usage_total
 from link_namer import node_namer,link_dict
 
 """
-Script to calculate nodes' usages of links using the all new and improved model
+Script to calculate nodes' usage of links using the all new and improved model
 to rule all previous models.
 
-In time this script should incorporate three transmission paradigms:
+This script incorporates three transmission paradigms referred to as _modes_ below:
 - localised / linear / selfish
 - synchronised / square / cooperative
-- market
+- market / RND
 
-The output should contain solutions for:
+The output contain solutions for:
 - import usages
 - export usages
-- combined usages
+- combined import/export usages
 
+How to call the script with only one of the following command line arguments:
+- converge:     check convergence of different bin sizes
+- solve:        calculate usages for all modes and save to './results/'
+- plot:         create various figures from './results/ and save to './figures/'
 """
 
 """
@@ -34,6 +38,15 @@ if len(sys.argv)<2:
     raise Exception('Not enough inputs!')
 else:
     task = str(sys.argv[1:])
+
+modes = ['linear','square','RND']   # The three export schemes
+lapse = 70128   # number of hours to include
+N_bins = 16     # number of bins. Determined from the convergence mode
+
+print('Initialisation')
+print('Modes: '+str(modes))
+print('Lapse: '+str(lapse))
+print('Number of bins: '+str(N_bins))
 
 def link_label(num,N):
     """
@@ -140,22 +153,61 @@ def convergence(test):
     # save results to file 
     np.save('./convergence/Node_contrib_'+str(test)+'.npy',Node_contributions)
 
+def solver(mode,verbose=None):
+    """
+    Calculate nodes' contribution for a single mode and save results to file.
+    Set verbose to True to follow the progress in the command line. Not recommended for multi processing.
+    """
+    # pick one of three transmission paradigms
+    if verbose:
+        print('Mode: '+mode)
+    N = EU_Nodes_usage(mode+'.npz')
+    F = abs(np.load('./results/'+mode+'-flows.npy'))
+    # Get 99% quantile of link flow
+    quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
+    
+    # Do everything below for both import and export usages
+    for direction in ['import','export']:
+        if verbose:
+            print('Direction: '+direction)
+        Usages = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_'+direction+'_all_alpha=same.npy') # change linear, export
+        print('Loaded '+mode+' usages')
+        
+        # Calculate usages and save to file
+        Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
+        for node in range(len(N)):
+            if verbose:
+                print node+1,'/ '+str(len(N))
+            for link in range(len(F)):
+                # Stacking and sorting data
+                F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
+                exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
+                F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
+                F_matrix[F_matrix[:,0].argsort()]
+                
+                H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse,N_bins)
+                Node_contributions[node,link] = node_contrib(H,bin_edges)
+                
+        # save results to file 
+        np.save('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
+        print('Saved Node_contributions to ./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+        if direction == 'import':
+            np.save('./results/quantiles_'+mode+'_'+str(lapse)+'.npy',quantiles)
+            print('Saved 99% quantiles to ./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
 
 if 'converge' in task:
     """
     Check for convergence with altering bin size
     """
-    lapse = 70128 # number of hours to include
     test_bins = range(10,31,2) # how many bins to test
     print('Geting ready to test convergence')
     print('Lapse: '+str(lapse)+', Number of runs: '+str(len(test_bins)))
 
-
-    
     # Pick a transmission paradigm
     N = EU_Nodes_usage('linear.npz')
     F = abs(np.load('./results/linear-flows.npy'))
     Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
+    print('Loaded '+mode+' usages')
     # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
     np.save('./convergence/quantiles.npy',quantiles)
@@ -194,44 +246,15 @@ if 'converge' in task:
     plt.savefig('./figures/convergence.png')
     print('Saved results to ./figures/convergence.png')
 
+
 if 'solve' in task:
     """
     Calculate nodes' contributions and save results to file.
     """
     print('Solving')
-    lapse = 70128 # number of hours to include
-    
-    # pick one of three transmission paradigms
-    N = EU_Nodes_usage('linear.npz')
-    F = abs(np.load('./results/linear-flows.npy'))
-    
-    # Do everything below for both import and export usages
-    direction = ['import','export']
-    # for loop over direction
-    Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy') # change linear, export
-    
-    # Calculate usages and save to file
-    Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
-    # Get 99% quantile of link flow
-    quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
-
-    for node in range(len(N)):
-        print node+1,'/ '+str(len(N))
-        for link in range(len(F)):
-            # Stacking and sorting data
-            F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
-            exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
-            F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
-            F_matrix[F_matrix[:,0].argsort()]
-            
-            H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse)
-            Node_contributions[node,link] = node_contrib(H,bin_edges)
-            
-    # save results to file 
-    np.save('Node_contrib_linear_export.npy',Node_contributions)
-    print('Saved Node_contributions to Node_contrib_linear_export.npy')
-    np.save('quantiles.npy',quantiles)
-    print('Saved 99% quantiles to quantiles.npy')
+    p = Pool(len(modes))
+    print('Populating '+str(len(modes))+' workers')
+    p.map(solver,modes)
 
 
 if 'plot' in task:
