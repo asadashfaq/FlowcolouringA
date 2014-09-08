@@ -28,6 +28,7 @@ The output contain solutions for:
 How to call the script with only one of the following command line arguments:
 - converge:     check convergence of different bin sizes
 - solve:        calculate usages for all modes and save to './results/'
+- combined:     calculate usages for combined import/export and save to './results/'
 - plot:         create various figures from './results/ and save to './figures/'
 """
 
@@ -46,7 +47,6 @@ N_bins = 16     # number of bins. Determined from the convergence mode
 
 print('Initialisation')
 print('Modes: '+str(modes))
-print('Directions: '+str(directions))
 print('Lapse: '+str(lapse))
 print('Number of bins: '+str(N_bins))
 
@@ -168,11 +168,17 @@ def solver(mode,verbose=None):
     # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
     
-    # Do everything below for both import and export usages
+    # Do everything below for both import and export usages unless we want the combined case
     for direction in directions:
         if verbose:
             print('Direction: '+direction)
-        Usages = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_'+direction+'_all_alpha=same.npy') # change linear, export
+        if 'combined' in directions:
+            Usages1 = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_import_all_alpha=same.npy')
+            Usages2 = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_export_all_alpha=same.npy')
+            Usages = Usages1+Usages2
+            Usages1,Usages2 = None,None
+        else:
+            Usages = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_'+direction+'_all_alpha=same.npy')
         print('Loaded '+mode+' usages')
         
         # Calculate usages and save to file
@@ -193,7 +199,7 @@ def solver(mode,verbose=None):
         # save results to file 
         np.save('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
         print('Saved Node_contributions to ./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
-        if direction == 'import':
+        if ((direction == 'import') or ('combined' in directions)):
             np.save('./results/quantiles_'+mode+'_'+str(lapse)+'.npy',quantiles)
             print('Saved 99% quantiles to ./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
 
@@ -277,7 +283,7 @@ def plotter(mode):
         ax.set_ylabel(r'[MW$_T$/MW$_L$]')
         plt.axis([0,len(N),0,1.05*max(data_sort)])
         plt.savefig('./figures/'+mode+'/network-usage-'+direction+'.png')
-        print('Saved figures to ./figures/'+mode+'/network-usage'+direction+'.png')
+        print('Saved figures to ./figures/'+mode+'/network-usage-'+direction+'.png')
 
 
 if 'converge' in task:
@@ -292,7 +298,7 @@ if 'converge' in task:
     N = EU_Nodes_usage('linear.npz')
     F = abs(np.load('./results/linear-flows.npy'))
     Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
-    print('Loaded '+mode+' usages')
+    print('Loaded import usages')
     # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
     np.save('./convergence/quantiles.npy',quantiles)
@@ -307,6 +313,7 @@ if 'converge' in task:
     mins = np.zeros(len(test_bins))
     means = np.zeros(len(test_bins))
     maxs = np.zeros(len(test_bins))
+    stds = np.zeros(len(test_bins))
     quantiles = np.load('./convergence/quantiles.npy')
     index = 0
     for i in test_bins:
@@ -315,16 +322,19 @@ if 'converge' in task:
         mins[index] = Total.min()
         means[index] = Total.mean()
         maxs[index] = Total.max()
+        stds[index] = Total.std()
         index+=1
+    np.savez('./convergence/results.npz',mins=mins,means=means,maxs=maxs,stds=stds)
+    print('Saved results to ./convergence/results.npz')
 
     # Plot comparison
     print('Plotting results')
-    np.savez('./convergence/results.npz',mins,means,maxs)
-    print('Saved results to ./convergence/results.npz')
     plt.figure()
-    plt.plot(test_bins,mins,'-r',lw=2)
-    plt.plot(test_bins,means,'-k',lw=2)
-    plt.plot(test_bins,maxs,'-b',lw=2)
+    plt.plot(test_bins,mins,'-k',lw=2)
+    plt.plot(test_bins,means,'-b',lw=2)
+    plt.plot(test_bins,maxs,'-k',lw=2)
+    plt.plot(test_bins,means+stds,'--k')
+    plt.plot(test_bins,means-stds,'--k')
     plt.xlabel('Number of bins')
     plt.ylabel(r'$C/T^{99\%}$')
     plt.title('Convergence check for different bin sizes')
@@ -340,11 +350,23 @@ if 'solve' in task:
     print('Populating '+str(len(modes))+' workers')
     p.map(solver,modes)
 
+if 'combined' in task:
+    """
+    Calculate nodes' contributions for the combination of import and export and save results to file.
+    """
+    print('Solving the combined case')
+    directions = ['combined']
+    p = Pool(len(modes))
+    print('Populating '+str(len(modes))+' workers')
+    p.map(solver,modes)
+
 if 'plot' in task:
     """
     Create various plots of usage and save figures to ./figures/
     """
     print('Getting ready to plot')
+    #directions = ['import','export','combined']
+    directions = ['combined']
     p = Pool(len(modes))
     print('Populating '+str(len(modes))+' workers')
     p.map(plotter,modes)
