@@ -227,7 +227,7 @@ if (('solve' in task) and ('conditional' not in task)):
     Nodes = EU_Nodes_usage()
     
     for m in modes:
-        print 'Solving: '+str(modes[m])
+        print 'Solving: '+m
         N,F = au.solve(Nodes,mode=m+' copper verbose',lapse=lapse)
         N.save_nodes(m)
         np.save('./results/'+m+'-flows',F)
