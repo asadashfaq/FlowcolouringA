@@ -67,6 +67,7 @@ def calc_usage(m):
     export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
     """
     N2,power_mixes_total = track_flows(N,F,lapse=lapse)
+    N2.save_nodes(m) # save node object including powermix
 
     """
     track_link_usage_total tracks each nodes usage of all links. The results
@@ -237,7 +238,7 @@ Calculate powermixes and nodes' usages of links and save results to file.
 """
 if (('usage' in task) and ('conditional' not in task)):
     print 'Mode selected: Calculate usages.'
-    lapse = 365*24  # number of hours to include
+    lapse = 70128  # number of hours to include
     print 'Lapse: '+str(lapse)+' hours.'
     print 'Running on 3 cores.'
     p = Pool(3)
