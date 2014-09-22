@@ -219,7 +219,7 @@ Solving flows for different export schemes
 """
 if (('solve' in task) and ('conditional' not in task)):
     print 'Mode selected: Solving network flows'
-    lapse = 365*24  # number of hours to include
+    lapse = 70128  # number of hours to include
     print 'Lapse: '+str(lapse)+' hours'
     alphas = np.ones(30)*.7
     gammas = np.ones(30)
@@ -250,7 +250,7 @@ Scatterplots of usages
 """
 if (('plot' in task) and ('conditional' not in task)):
     print 'Mode selected: Plotting figures of usages'
-    lapse = 365*24  # number of hours to include
+    lapse = 70128  # number of hours to include
     print 'Lapse: '+str(lapse)+' hours'
     top = 5
     for m in modes:
