@@ -1,12 +1,13 @@
 import sys
 import numpy as np
 from pylab import plt
-import multiprocessing as mp
+from multiprocessing import Pool
 from aurespf.tools import *
 from matplotlib.colors import LinearSegmentedColormap
 import networkx as nx
 import matplotlib as mpl
 from EUgrid import EU_Nodes_usage
+from link_namer import node_namer, link_dict
 
 """
 Script that makes network figures of a country's usage for import, export and
@@ -15,15 +16,19 @@ the combination
 
 if len(sys.argv)>1:
     task = str(sys.argv[1:])
+else:
+    raise Exception('Not enough inputs!')
 
-colwidth = (3.425)
-dcolwidth = (2*3.425+0.236)
+modes = ['linear' ,'square', 'RND']
+directions = ['import', 'export', 'combined']
 
 def drawnet_usage(N=None,mode='linear',direction='combined'):
     """
     Make network figures of a node's usage of links for both import, export and
     combined. Adapted from drawnet() in aurespf.plotting
     """
+    colwidth = (3.425)
+    dcolwidth = (2*3.425+0.236)
     
     if N==None:
         N=EU_Nodes_usage()
@@ -100,9 +105,16 @@ def drawnet_usage(N=None,mode='linear',direction='combined'):
     
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05,0.08,0.9,.08])
-        
         cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='vhorizontal')
-        ax1.set_xlabel(mode+' '+direction+r" usage $C_n/C^{\,99\%}$")
+        
+        # Label just above color bar
+        if mode == 'linear':
+            scheme = 'Most localised'
+        elif mode == 'square':
+            scheme = 'Synchronised'
+        else:
+            scheme = 'Market'
+        ax1.set_xlabel(scheme+' '+direction+r" usage $C_n/C^{\,99\%}$")
         ax1.xaxis.set_label_position('top') 
         
         ax2 = fig.add_axes([-0.05,0.15,1.1,0.95])
@@ -129,13 +141,74 @@ def drawnet_usage(N=None,mode='linear',direction='combined'):
         plt.savefig("./figures/network_figures/"+mode+"/"+str(n.id)+'_'+str(direction)+".png")
 
 
-if 'plot' in task:
+def bars(mode):
+    """
+    Make a lot of figures for a single mode and put them in ./figures/mode/
+    """
+    # Load data and results
+    N = EU_Nodes_usage(mode+'.npz')
+    F = abs(np.load('./results/'+mode+'-flows.npy'))
+    quantiles = np.load('./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
+    names = node_namer(N) # array of node labels
+    links = range(len(F))
+    nodes = range(len(N))
+
+    for direction in directions:
+        N_usages = np.load('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+    
+        # Compare node transmission to mean load
+        print('Plotting node comparison - '+mode+' - '+direction)
+        # sort node names for x-axis
+        Total_usage = np.sum(N_usages,1)
+        node_ids = np.array(range(len(N))).reshape((len(N),1))
+        node_mean_load = [n.mean for n in N]
+        
+        # Calculate node proportional
+        EU_load = np.sum(node_mean_load)
+        Total_caps = sum(quantiles)
+        Node_proportional = node_mean_load/EU_load*Total_caps/node_mean_load
+
+        # Calculate usage and sort countries by mean load
+        normed_usage = Total_usage/node_mean_load
+        normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
+        node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
+        data = np.hstack([normed_usage,node_ids,node_mean_load])
+        data_sort = data[data[:,2].argsort()]
+        names_sort = [names[int(i)] for i in data_sort[:,1]]
+        # flip order so largest is first
+        names_sort = names_sort[::-1]
+        data_sort = data_sort[:,0][::-1]
+
+        plt.figure()
+        ax = plt.subplot(111)
+        # Plot node proportional
+        plt.rc('lines', lw=2)
+        plt.rc('lines', dash_capstyle = 'round')
+        plt.plot(np.linspace(0,len(N)+1,len(N)),Node_proportional,'--k')
+        
+        # Plot usage
+        plt.bar(nodes,data_sort,width=1,color="#0000ff")
+        ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
+        ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
+        ax.set_title('Network usage '+mode+' '+direction)
+        ax.set_ylabel(r'[MW$_T$/MW$_L$]')
+        plt.axis([0,len(N),0,1.05*max(data_sort)])
+        #plt.savefig('./figures/'+mode+'/network-usage-'+direction+'.png')
+        plt.savefig('./figures/'+mode+'-network-usage-'+direction+'.png')
+        print('Saved figures to ./figures/'+mode+'-network-usage-'+direction+'.png')
+
+
+if 'network' in task:
     print 'Plotting network figures'
-    modes = ['linear' ,'square', 'RND']
-    directions = ['import', 'export', 'combined']
     N = EU_Nodes_usage()
     for mode in modes:
         print 'Mode: ',mode
         for direction in directions:
             print 'Direction: ',direction
             drawnet_usage(N,mode,direction)
+
+if 'total' in task:
+    print 'Plotting total network usage'
+    lapse = 70128
+    p = Pool(3)
+    p.map(bars,modes)
