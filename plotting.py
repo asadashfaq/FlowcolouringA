@@ -141,23 +141,24 @@ def drawnet_usage(N=None,mode='linear',direction='combined'):
         plt.savefig("./figures/network_figures/"+mode+"/"+str(n.id)+'_'+str(direction)+".png")
 
 
-def bars(mode):
+def bars(mode, verbose=None):
     """
     Make a lot of figures for a single mode and put them in ./figures/mode/
     """
     # Load data and results
-    N = EU_Nodes_usage(mode+'.npz')
     F = abs(np.load('./results/'+mode+'-flows.npy'))
     quantiles = np.load('./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
     names = node_namer(N) # array of node labels
     links = range(len(F))
-    nodes = range(len(N))
+    nodes = np.linspace(0.5,58.5,30)
+    nodes_shift = nodes+.5
 
     for direction in directions:
         N_usages = np.load('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
     
         # Compare node transmission to mean load
-        print('Plotting node comparison - '+mode+' - '+direction)
+        if verbose:
+            print('Plotting node comparison - '+mode+' - '+direction)
         # sort node names for x-axis
         Total_usage = np.sum(N_usages,1)
         node_ids = np.array(range(len(N))).reshape((len(N),1))
@@ -168,47 +169,79 @@ def bars(mode):
         Total_caps = sum(quantiles)
         Node_proportional = node_mean_load/EU_load*Total_caps/node_mean_load
 
+        # Calculate link proportional
+        # For each node: find directly connected links and sum half their capacity
+        link_proportional = np.zeros(len(N))
+        for n in N:
+            node_id = n.id
+            node_label = str(n.label)
+            for link in link_dic[node_label]:
+                link_proportional[node_id] += quantiles[link]*.5
+            link_proportional[node_id] = link_proportional[node_id]/n.mean
+        link_proportional = np.reshape(link_proportional,(len(link_proportional),1))
+
         # Calculate usage and sort countries by mean load
         normed_usage = Total_usage/node_mean_load
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
         node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
-        data = np.hstack([normed_usage,node_ids,node_mean_load])
+        data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional])
         data_sort = data[data[:,2].argsort()]
         names_sort = [names[int(i)] for i in data_sort[:,1]]
         # flip order so largest is first
         names_sort = names_sort[::-1]
+        link_proportional = data_sort[:,3][::-1]
         data_sort = data_sort[:,0][::-1]
 
-        plt.figure()
+        plt.figure(figsize=(10, 4), facecolor='w', edgecolor='k')
         ax = plt.subplot(111)
+        green = '#009900'
+        blue = '#000099'
+
         # Plot node proportional
         plt.rc('lines', lw=2)
         plt.rc('lines', dash_capstyle = 'round')
-        plt.plot(np.linspace(0,len(N)+1,len(N)),Node_proportional,'--k')
-        
-        # Plot usage
-        plt.bar(nodes,data_sort,width=1,color="#0000ff")
-        ax.set_xticks(np.linspace(1,len(N)+1,len(N)+1))
-        ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top")
-        ax.set_title('Network usage '+mode+' '+direction)
-        ax.set_ylabel(r'[MW$_T$/MW$_L$]')
-        plt.axis([0,len(N),0,1.05*max(data_sort)])
-        #plt.savefig('./figures/'+mode+'/network-usage-'+direction+'.png')
-        plt.savefig('./figures/'+mode+'-network-usage-'+direction+'.png')
-        print('Saved figures to ./figures/'+mode+'-network-usage-'+direction+'.png')
+        plt.plot(np.linspace(0,len(N)*2+2,len(N)),Node_proportional,'--k')
+        # Plot link proportional
+        plt.bar(nodes,link_proportional,width=1,color=green,edgecolor='none')
+        # Plot usage proportional
+        plt.bar(nodes_shift,data_sort,width=1,color=blue,edgecolor='none')
 
+        # Magic with ticks and labels
+        ax.set_xticks(np.linspace(2,len(N)*2+2,len(N)+1))
+        ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top",fontsize=10.5)
+        ax.xaxis.grid(False)
+        ax.xaxis.set_tick_params(width=0)
+        ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+        plt.axis([0,len(N)*2+.5,0,1.1*max(link_proportional)])
+
+        # Legend
+        artists = [plt.Line2D([0,0],[0,0],ls='dashed',lw=2.0,c='k'), plt.Rectangle((0,0),0,0,ec=green,fc=green), plt.Rectangle((0,0),0,0,ec=blue,fc=blue)]
+        LABS = ['node proportional M$^1$','link proportional M$^2$','usage proportional M$^3$']
+        leg = plt.legend(artists, LABS,loc='upper left',ncol=len(artists), columnspacing=0.6,borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight = 1.2)
+        leg.get_frame().set_alpha(0)
+        leg.get_frame().set_edgecolor('white')
+        ltext = leg.get_texts()
+        plt.setp(ltext, fontsize=9.5)    # the legend text fontsize
+
+        plt.savefig('./figures/'+mode+'/network-usage-'+direction+'.png', bbox_inches='tight')
+        if verbose:
+            print('Saved figures to ./figures/'+mode+'/network-usage-'+direction+'.png')
 
 if 'network' in task:
-    print 'Plotting network figures'
+    print('Plotting network figures')
     N = EU_Nodes_usage()
     for mode in modes:
-        print 'Mode: ',mode
+        print('Mode: '+mode)
         for direction in directions:
-            print 'Direction: ',direction
+            print('Direction: '+direction)
             drawnet_usage(N,mode,direction)
 
 if 'total' in task:
-    print 'Plotting total network usage'
+    print('Plotting total network usage')
     lapse = 70128
+    N = EU_Nodes_usage()
+    print('Building link dictionary')
+    link_dic = link_dict(N) # dictionary of links directly connected to each node
+    print('Plotting')
     p = Pool(3)
     p.map(bars,modes)
