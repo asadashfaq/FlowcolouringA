@@ -41,19 +41,22 @@ else:
 networks = ['regions', 'superRegions']
 schemes = ['linear', 'square', 'RND']
 lapse = 70128  # number of hours to include
-    
-def networkSolver(network):
-    print('Solving :'+str(network))
-    if network == 'regions':
-        Nodes = EU_Nodes_regions()
-    elif network == 'superRegions':
-        Nodes = EU_Nodes_superRegions()
 
-    for scheme in schemes:
-        print 'Solving: '+scheme
-        N,F = au.solve(Nodes,mode=scheme+' copper',lapse=lapse)
-        N.save_nodes(scheme,path='./sensitivity/'+network+'-')
-        np.save('./sensitivity/'+network+'-'+scheme+'-flows',F)
+def regionSolver(scheme):
+    print('Solving regions')
+    Nodes = EU_Nodes_regions()
+
+    N,F = au.solve(Nodes,mode=scheme+' copper',lapse=lapse)
+    N.save_nodes(scheme,path='./sensitivity/regions-')
+    np.save('./sensitivity/regions-'+scheme+'-flows',F)
+
+def sRegionSolver(scheme):
+    print('Solving super regions')
+    Nodes = EU_Nodes_superRegions()
+
+    N,F = au.solve(Nodes,mode=scheme+' copper',lapse=lapse)
+    N.save_nodes(scheme,path='./sensitivity/superRegions-')
+    np.save('./sensitivity/superRegions-'+scheme+'-flows',F)
 
 def calc_usage(network):
     """
@@ -87,8 +90,9 @@ if 'solve' in task:
     print 'Mode selected: Solving network flows'
     print 'Lapse: '+str(lapse)+' hours'
     
-    p = Pool(2)
-    p.map(networkSolver,networks)
+    p = Pool(3)
+    p.map(regionSolver,schemes)
+    p.map(sRegionSolver,schemes)
 
 
 """
