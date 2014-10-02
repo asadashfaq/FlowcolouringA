@@ -37,7 +37,7 @@ def get_link_direction(n,N): #getting the first country-node in the link-label a
 	return [start_node,end_node]
 
 
-def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copper=True): 
+def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copper=True,sensitivity=False): 
 #tracks the usage of each link for each country, 
 #alph sets the value of homogenous alphas.
 #Mode can be "linear", "square", "random" or "capped".
@@ -64,8 +64,15 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 	    else:
 		 file=open('old_'+str(mode)+'_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
 		
-	    
-	
+	# Check what kind of network is being used for naming savefiles see line 273
+	if len(N.files) == 30:
+		network = ''
+	elif len(N.files) == 8:
+		network = 'superRegions'
+	else:
+		network = 'regions'
+
+
 	matr=np.genfromtxt(N.pathadmat)
        
 	a,b,c,d,e=au.AtoKh(EU_Nodes())     
@@ -263,29 +270,30 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 
 	else:
 	    if copper:
-		
-		    
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_boxplot_alpha='+str(alph),boxplot) 
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_mix_alpha='+str(alph),links)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_flow_alpha='+str(alph),linksflow)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_cost_alpha='+str(alph),cost)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_ex_alpha='+str(alph),links_ex)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_links_im_alpha='+str(alph),links_im)		
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_maxlex_alpha='+str(alph),maxlex)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_maxlim_alpha='+str(alph),maxlim)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_minlex_alpha='+str(alph),minlex)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_minlim_alpha='+str(alph),minlim)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_meanlex_alpha='+str(alph),meanlex)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_meanlim_alpha='+str(alph),meanlim)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_quant99lex_alpha='+str(alph),quant99lex)
-		    np.save('linkcolouring/old_'+str(mode)+'_copper_quant99lim_alpha='+str(alph),quant99lim)
+			if sensitivity:
+				np.save('./sensitivity/linkcolouring/'+network+'-old_'+str(mode)+'_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
+				np.save('./sensitivity/linkcolouring/'+network+'-old_'+str(mode)+'_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
+			else:
+				np.save('linkcolouring/old_'+str(mode)+'_copper_boxplot_alpha='+str(alph),boxplot) 
+				np.save('linkcolouring/old_'+str(mode)+'_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_links_mix_alpha='+str(alph),links)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_links_flow_alpha='+str(alph),linksflow)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_cost_alpha='+str(alph),cost)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_links_ex_alpha='+str(alph),links_ex)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_links_im_alpha='+str(alph),links_im)		
+				np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_import_all_alpha='+str(alph),link_mix_import_all)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_export_all_alpha='+str(alph),link_mix_export_all)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_export_variance_all_alpha='+str(alph),link_mix_export_variance_all)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_link_mix_import_variance_all_alpha='+str(alph),link_mix_import_variance_all)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_maxlex_alpha='+str(alph),maxlex)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_maxlim_alpha='+str(alph),maxlim)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_minlex_alpha='+str(alph),minlex)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_minlim_alpha='+str(alph),minlim)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_meanlex_alpha='+str(alph),meanlex)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_meanlim_alpha='+str(alph),meanlim)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_quant99lex_alpha='+str(alph),quant99lex)
+				np.save('linkcolouring/old_'+str(mode)+'_copper_quant99lim_alpha='+str(alph),quant99lim)
 			
-		    
 		
 	    else:
 		
