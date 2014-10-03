@@ -19,15 +19,21 @@ saveFileEnding = '_merge'   # file ending of saved merged data
 
 # for region in offRegions:
 for region in offRegions:
+    if region == 'GB_W': continue
     # Load data
-    if ((region != 'GB_E') and (region != 'GB_W')):
+    if region != 'GB_E':
         onshore = np.load('./data/regions/'+prefix+region+'.npz')
+        offshore = np.load('./data/regions/'+prefix+region+offEnding+'.npz')
+        offshoreGW = offshore['Gw']
     else:
         onshore = np.load('./data/regions/'+prefix+'GB_S.npz')
+        offshoreE = np.load('./data/regions/'+prefix+region+offEnding+'.npz')
+        offshoreW = np.load('./data/regions/'+prefix+'GB_W'+offEnding+'.npz')
+        offshoreGW = offshoreE['Gw']+offshoreW['Gw']
+        region = 'GB_S'
 
     # Merge data
-    offshore = np.load('./data/regions/'+prefix+region+offEnding+'.npz')
-    Gw = onshore['Gw']+offshore['Gw']
+    Gw = onshore['Gw']+offshoreGW
     Gs = onshore['Gs']
     L = onshore['L']
     t = onshore['t']
