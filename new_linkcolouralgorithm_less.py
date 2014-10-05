@@ -27,7 +27,7 @@ def get_links(node_id,matr=np.genfromtxt("./settings/eadmat.txt")):
 	return links
     
 def get_link_direction(n,N): #getting the first country-node in the link-label as start and the second as end
-	a,b,c,d,e=au.AtoKh(EU_Nodes()) 
+	a,b,c,d,e=au.AtoKh(N) 
 	
 	for k in N:
 		if str(k.label)==e[n][0][0:2]: start_node=k
@@ -65,9 +65,9 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 		 file=open('old_'+str(mode)+'_constr_link_usage_total_alpha='+str(alph)+'.dat','w+')
 		
 	# Check what kind of network is being used for naming savefiles see line 273
-	if len(N.files) == 30:
+	if len(N) == 30:
 		network = ''
-	elif len(N.files) == 8:
+	elif len(N) == 8:
 		network = 'superRegions'
 	else:
 		network = 'regions'
@@ -75,7 +75,7 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 
 	matr=np.genfromtxt(N.pathadmat)
        
-	a,b,c,d,e=au.AtoKh(EU_Nodes())     
+	a,b,c,d,e=au.AtoKh(N)     
 	f,g,list_F=au.AtoKh_old(N)
 	
 	boxplot=np.zeros((4,len(e)))
@@ -214,14 +214,16 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 				if a[i]==total_link_mix_percentage[h.id]:
 				    boksplotlabel=np.append(boksplotlabel,str(h.label))
 				    
-	maxlex=np.array(maxlex).reshape((50,30))
-	maxlim=np.array(maxlim).reshape((50,30))
-	minlex=np.array(minlex).reshape((50,30))
-	minlim=np.array(minlim).reshape((50,30))
-	meanlex=np.array(meanlex).reshape((50,30))
-	meanlim=np.array(meanlim).reshape((50,30))
-	quant99lex=np.array(quant99lex).reshape((50,30))
-	quant99lim=np.array(quant99lim).reshape((50,30))
+	numNodes = len(N)
+	numLinks = len(F)
+	maxlex=np.array(maxlex).reshape((numLinks,numNodes))
+	maxlim=np.array(maxlim).reshape((numLinks,numNodes))
+	minlex=np.array(minlex).reshape((numLinks,numNodes))
+	minlim=np.array(minlim).reshape((numLinks,numNodes))
+	meanlex=np.array(meanlex).reshape((numLinks,numNodes))
+	meanlim=np.array(meanlim).reshape((numLinks,numNodes))
+	quant99lex=np.array(quant99lex).reshape((numLinks,numNodes))
+	quant99lim=np.array(quant99lim).reshape((numLinks,numNodes))
 	
 	if new:
 	    if copper:
