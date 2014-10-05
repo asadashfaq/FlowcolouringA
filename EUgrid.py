@@ -44,7 +44,7 @@ def EU_Nodes_usage(load_filename=None, full_load=False):
 
 # Nodes object containing 50 regions, alphas=.7, gammas=1
 def EU_Nodes_regions(load_filename=None, full_load=False):
-    return au.Nodes(admat='./settings/regionadmat.txt', path='./data/regions/', prefix = "ISET_region_", files=mergedRegions, load_filename=load_filename, full_load=full_load, alphas=np.ones(len(regions))*.7, gammas=np.ones(len(regions)))
+    return au.Nodes(admat='./settings/mergedadmat.txt', path='./data/regions/', prefix = "ISET_region_", files=mergedRegions, load_filename=load_filename, full_load=full_load, alphas=np.ones(len(mergedRegions))*.7, gammas=np.ones(len(mergedRegions)))
 
 # Nodes object containing 8 super regions, alphas=.7, gammas=1
 def EU_Nodes_superRegions(load_filename=None, full_load=False):
