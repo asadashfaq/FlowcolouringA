@@ -74,7 +74,11 @@ def calc_usage(network):
         N2 is a new nodes object containing individual powermixes for import and
         export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
         """
-        N2,power_mixes_total = track_flows(N,F,lapse=lapse)
+        if network == 'regions':
+            admat = './settings/mergedadmat.txt'
+        elif network == 'superRegions':
+            admat = './settings/superregionadmat.txt'
+        N2,power_mixes_total = track_flows(N,F,admat=admat,lapse=lapse)
     
         """
         track_link_usage_total tracks each nodes usage of all links. The results
@@ -101,7 +105,5 @@ Calculate powermixes and nodes' usages of links and save results to file.
 if 'usage' in task:
     print 'Mode selected: Calculate usages.'
     print 'Lapse: '+str(lapse)+' hours.'
-    print 'Running on 3 cores.'
-    p = Pool(2)
-    p.map(calc_usage,networks)
-
+    for network in networks:
+        calc_usage(network)
