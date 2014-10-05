@@ -38,7 +38,7 @@ if len(sys.argv)<2:
 else:
     task = str(sys.argv[1:])
 
-networks = ['regions', 'superRegions']
+networks = ['superRegions','regions']
 schemes = ['linear', 'square', 'RND']
 lapse = 70128  # number of hours to include
 
@@ -85,7 +85,7 @@ def calc_usage(network):
         are saved to files '..._links_ex_...' and '..._links_im_...'.
         """
         boxplot,boxplotlabel = track_link_usage_total(N2,F,mode=scheme,alph='same',lapse=lapse,sensitivity=True)
-        return
+    return
 
 """
 Solving flows for different export schemes
