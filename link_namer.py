@@ -1,25 +1,39 @@
 #! /usr/bin/env/python
 from __future__ import division
+import re
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import aurespf.solvers as au
 from aurespf.tools import get_q
-from aurespf.tools import *
 from EUgrid import *
-from link_colour_less import track_flows, get_link_direction
+from link_colour_less import track_flows #, link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
 
 """
 Script to print link IDs  and labels.
 """
 
+def link_direction(num,N):
+	"""
+	Adapted from Anders' version. Compatible with names of variable length
+	"""
+	a, b, c, d, e = au.AtoKh(N)
+
+	link_label = re.split('\W+',e[num][0])
+	for k in N:
+		if str(k.label) == link_label[0]: start_node=k
+	for k in N:
+		if str(k.label) == link_label[2]: end_node=k
+	
+	return [start_node,end_node]
+
 def link_label(num,N):
     """
     Translate link number into a string like: 'Country1-Country2'.
     """
-    label = get_link_direction(num,N)
+    label = link_direction(num,N)
     return str(label[0].label)+'-'+str(label[1].label)
 
 def link_namer(N=None,F=None):
@@ -57,7 +71,7 @@ def link_dict(N=None,F=None):
         F = np.load('./results/linear-flows.npy')
     ldict = {}
     for link in range(len(F)):
-        label = get_link_direction(link,N)
+        label = link_direction(link,N)
         for l in label:
             if str(l.label) in ldict:
                 ldict[str(l.label)].append(link)
