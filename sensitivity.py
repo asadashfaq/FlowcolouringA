@@ -28,8 +28,8 @@ The output contain solutions for:
 All ouput files are saved to ./sensitivity/
 
 Call the script using only one of the following command line arguments:
-- solve: solve network and save solutions
-
+- solve:    solve network and save solutions
+- trace:    run flow tracing and save results
 
 """
 
@@ -38,7 +38,7 @@ if len(sys.argv)<2:
 else:
     task = str(sys.argv[1:])
 
-networks = ['superRegions','regions']
+networks = ['regions','superRegions']
 schemes = ['linear', 'square', 'RND']
 lapse = 70128  # number of hours to include
 
@@ -98,12 +98,11 @@ if 'solve' in task:
     p.map(regionSolver,schemes)
     p.map(sRegionSolver,schemes)
 
-
 """
 Calculate powermixes and nodes' usages of links and save results to file.
 """
-if 'usage' in task:
-    print 'Mode selected: Calculate usages.'
+if 'trace' in task:
+    print 'Mode selected: Flowtraving.'
     print 'Lapse: '+str(lapse)+' hours.'
     for network in networks:
         calc_usage(network)

@@ -8,8 +8,6 @@ from multiprocessing import Pool
 import aurespf.solvers as au
 from aurespf.tools import get_q
 from EUgrid import *
-from link_colour_less import track_flows #, link_direction
-from new_linkcolouralgorithm_less import track_link_usage_total
 
 """
 Script to print link IDs  and labels.
