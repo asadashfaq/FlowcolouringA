@@ -5,6 +5,7 @@ from pylab import *
 from time import time
 from EUgrid import *
 import networkx as nx
+import link_namer as ln
 
 def get_neighbours(n,matr=np.genfromtxt("./settings/eadmat.txt")):
     """ matr should be = np.genfromtxt("./settings/eadmat.txt")"""
@@ -112,9 +113,12 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 		link_mix_export=np.zeros((len(N),lapse))		
 		link_mix_import=np.zeros((len(N),lapse))	
 		total_link_mix_percentage=np.zeros((len(N)))
-		#getting the first country-node in the link-label as start and the second as end
-		start=get_link_direction(n,N)[0]
-		end=get_link_direction(n,N)[1]
+
+        #getting the first country-node in the link-label as start and the second as end
+		linkDirection = ln.link_direction(n,N)
+		start = linkDirection[0]
+		end = linkDirection[1]
+        
 		# determining the links connected to start
 		start.links=get_links(start.id,matr) 
 
