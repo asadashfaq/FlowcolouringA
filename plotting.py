@@ -6,7 +6,7 @@ from aurespf.tools import *
 from matplotlib.colors import LinearSegmentedColormap
 import networkx as nx
 import matplotlib as mpl
-from EUgrid import EU_Nodes_usage
+from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import node_namer, link_dict
 
 """
@@ -146,15 +146,35 @@ def bars(mode, verbose=None):
     Make a lot of figures for a single mode and put them in ./figures/mode/
     """
     # Load data and results
-    F = abs(np.load('./results/'+mode+'-flows.npy'))
-    quantiles = np.load('./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
+    if len(N) == 8:
+        F = np.load('./sensitivity/superRegions-'+mode+'-flows.npy')
+        quantiles = np.load('./sensitivity/superRegions-quantiles_'+mode+'_'+str(lapse)+'.npy')
+        network = 'superRegions'
+        nNodes = 8
+    elif len(N) == 30:
+        F = abs(np.load('./results/'+mode+'-flows.npy'))
+        quantiles = np.load('./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
+        nNodes = 30
+    elif len(N) == 50:
+        F = np.load('./sensitivity/regions-'+mode+'-flows.npy')
+        quantiles = np.load('./sensitivity/regions-quantiles_'+mode+'_'+str(lapse)+'.npy')
+        network = 'regions'
+        nNodes = 50
+    else:
+        raise Exception('Wrong network!')
+
     names = node_namer(N) # array of node labels
     links = range(len(F))
-    nodes = np.linspace(0.5,58.5,30)
+    nodes = np.linspace(0.5,2*nNodes-1.5,nNodes)
     nodes_shift = nodes+.5
 
     for direction in directions:
-        N_usages = np.load('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+        if network == 'regions':
+            N_usages = np.load('./sensitivity/regions-Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+        elif network == 'superRegions':
+            N_usages = np.load('./sensitivity/superRegions-Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+        else:
+            N_usages = np.load('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
     
         # Compare node transmission to mean load
         if verbose:
@@ -212,7 +232,8 @@ def bars(mode, verbose=None):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
-        plt.axis([0,len(N)*2+.5,0,1.1*max(link_proportional)])
+        maxes = [max(link_proportional), max(data_sort)]
+        plt.axis([0,nNodes*2+.5,0,1.1*max(maxes)])
 
         # Legend
         artists = [plt.Line2D([0,0],[0,0],ls='dashed',lw=2.0,c='k'), plt.Rectangle((0,0),0,0,ec=green,fc=green), plt.Rectangle((0,0),0,0,ec=blue,fc=blue)]
@@ -223,9 +244,14 @@ def bars(mode, verbose=None):
         ltext = leg.get_texts()
         plt.setp(ltext, fontsize=9.5)    # the legend text fontsize
 
-        plt.savefig('./figures/'+mode+'/network-usage-'+direction+'.png', bbox_inches='tight')
-        if verbose:
-            print('Saved figures to ./figures/'+mode+'/network-usage-'+direction+'.png')
+        if network == 'regions':
+            plt.savefig('./sensitivity/figures/'+mode+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
+        elif network == 'superRegions':
+            plt.savefig('./sensitivity/figures/'+mode+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
+        else:
+            plt.savefig('./figures/'+mode+'/network-usage-'+direction+'.png', bbox_inches='tight')
+            if verbose:
+                print('Saved figures to ./figures/'+mode+'/network-usage-'+direction+'.png')
 
 if 'network' in task:
     print('Plotting network figures')
@@ -236,7 +262,7 @@ if 'network' in task:
             print('Direction: '+direction)
             drawnet_usage(N,mode,direction)
 
-if 'total' in task:
+if (('total' in task) and ('sensitivity' not in task)):
     print('Plotting total network usage')
     lapse = 70128
     N = EU_Nodes_usage()
@@ -245,3 +271,19 @@ if 'total' in task:
     print('Plotting')
     p = Pool(3)
     p.map(bars,modes)
+
+if (('total' in task) and ('sensitivity' in task)):
+    print('Plotting total network usage for different networks')
+    lapse = 70128
+    N = EU_Nodes_superRegions()
+    nLinks = np.zeros(10)
+    link_dic = link_dict(N,nLinks)
+    bars(modes[0])
+    #p = Pool(3)
+    #p.map(bars,modes)
+
+#    N = EU_Nodes_regions()
+#    nLinks = np.zeros(94)
+#    link_dic = link_dict(N,nLinks)
+#    for mode in modes:
+#        bars(mode)

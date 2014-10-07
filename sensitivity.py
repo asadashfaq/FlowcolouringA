@@ -141,7 +141,7 @@ def calc_contribution(network,scheme,verbose=None):
         # save results to file 
         np.save('./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
         print('Saved Node_contributions to ./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
-        if ((direction == 'import') or ('combined' in directions)):
+        if direction == 'import':
             np.save('./sensitivity/'+network+'-quantiles_'+scheme+'_'+str(lapse)+'.npy',quantiles)
             print('Saved 99% quantiles to ./sensitivity/'+network+'-quantiles_'+scheme+'_'+str(lapse)+'.npy')
 
