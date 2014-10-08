@@ -12,6 +12,12 @@ from link_namer import node_namer, link_dict
 """
 Script that makes network figures of a country's usage for import, export and
 the combination
+
+Call the script using only one of the following command line arguments:
+- network:                  network figures with coloured links, only works for N=30
+- total:                    barplots comparing total network usage for different export schemes
+- total sensitivity:        same as above, but for N=8 and N=50 networks
+- sensitivity compare:   compare different networks in the same figure
 """
 
 if len(sys.argv)>1:
@@ -227,13 +233,21 @@ def bars(mode, verbose=None):
         plt.bar(nodes_shift,data_sort,width=1,color=blue,edgecolor='none')
 
         # Magic with ticks and labels
-        ax.set_xticks(np.linspace(2,len(N)*2+2,len(N)+1))
-        ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top",fontsize=10.5)
+        if network == 'regions':
+            ax.set_xticks(np.linspace(2,len(N)*2+2,len(N)+1))
+            ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top",fontsize=7)
+        elif network == 'superRegions':
+            ax.set_xticks(np.linspace(1.5,len(N)*2+1.5,len(N)+1))
+            ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top",fontsize=12)
+        else:
+            ax.set_xticks(np.linspace(2,len(N)*2+2,len(N)+1))
+            ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top",fontsize=10.5)
+
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
         maxes = [max(link_proportional), max(data_sort)]
-        plt.axis([0,nNodes*2+.5,0,1.1*max(maxes)])
+        plt.axis([0,nNodes*2+.5,0,1.15*max(maxes)])
 
         # Legend
         artists = [plt.Line2D([0,0],[0,0],ls='dashed',lw=2.0,c='k'), plt.Rectangle((0,0),0,0,ec=green,fc=green), plt.Rectangle((0,0),0,0,ec=blue,fc=blue)]
@@ -278,12 +292,14 @@ if (('total' in task) and ('sensitivity' in task)):
     N = EU_Nodes_superRegions()
     nLinks = np.zeros(10)
     link_dic = link_dict(N,nLinks)
-    bars(modes[0])
-    #p = Pool(3)
-    #p.map(bars,modes)
+    for mode in modes:
+        bars(mode)
 
-#    N = EU_Nodes_regions()
-#    nLinks = np.zeros(94)
-#    link_dic = link_dict(N,nLinks)
-#    for mode in modes:
-#        bars(mode)
+    N = EU_Nodes_regions()
+    nLinks = np.zeros(94)
+    link_dic = link_dict(N,nLinks)
+    for mode in modes:
+        bars(mode)
+
+#if (('sensitivity' in task) and ('compare' in task)):
+
