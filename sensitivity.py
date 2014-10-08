@@ -114,7 +114,7 @@ def calc_contribution(network,scheme,verbose=None):
     for direction in directions:
         if verbose:
             print('Direction: '+direction)
-        if 'combined' in directions:
+        if direction == 'combined':
             Usages1 = np.load('./sensitivity/linkcolouring/'+network+'-old_'+scheme+'_copper_link_mix_import_all_alpha=same.npy')
             Usages2 = np.load('./sensitivity/linkcolouring/'+network+'-old_'+scheme+'_copper_link_mix_export_all_alpha=same.npy')
             Usages = Usages1+Usages2
