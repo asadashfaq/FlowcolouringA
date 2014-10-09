@@ -18,13 +18,10 @@ def link_direction(num,N):
 	Adapted from Anders' version. Compatible with names of variable length
 	"""
 	a, b, c, d, e = au.AtoKh(N)
-
 	link_label = re.split('\W+',e[num][0])
 	for k in N:
 		if str(k.label) == link_label[0]: start_node=k
-	for k in N:
 		if str(k.label) == link_label[2]: end_node=k
-	
 	return [start_node,end_node]
 
 def link_label(num,N):
