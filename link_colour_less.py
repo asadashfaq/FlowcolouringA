@@ -177,14 +177,14 @@ def track_flows(N,F,admat='./settings/eadmat.txt',mode=None,lapse=None): #tracks
 		for n in N:
             
             ## Add the nodes own contribution/source strength.
-		    if mode =="random":			
-			n.power_mix[n.id,t] = n.exports[t]
-			n.power_mix_ex[n.id,t]=n.imports[t]
-			#print n.power_mix[n.id,t]
+		    if mode =="random":
+				n.power_mix[n.id,t] = n.exports[t]
+				n.power_mix_ex[n.id,t]=n.imports[t]
+                #print n.power_mix[n.id,t]
 			
 		    else:
-			n.power_mix[n.id,t]=n.get_export()[t]
-			n.power_mix_ex[n.id,t]=n.get_import()[t]
+				n.power_mix[n.id,t]=n.get_export()[t]
+				n.power_mix_ex[n.id,t]=n.get_import()[t]
             
 		    for l in n.links:
 	    
