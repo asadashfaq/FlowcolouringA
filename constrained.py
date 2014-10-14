@@ -17,7 +17,17 @@ from europe_plusgrid import *
 Script to investigate the transition of a node's usage of the links as
 the transmission is constrained
 
+All ouput files are saved to ./constrained/
+
+Call the script using only one of the following command line arguments:
+- trace:    run flow tracing and save results
+
 """
+
+if len(sys.argv)<2:
+    raise Exception('Not enough inputs')
+else:
+    task = str(sys.argv[1:])
 
 def calc_usage(N,F,lapse,direction,b):
     """
@@ -42,8 +52,12 @@ def caller(direction):
         F = np.load('./ConstrainedFlowData/Europe_aHE_'+str(b)+'q99_DC_'+direction+'_flows.npy')
         calc_usage(N,F,lapse,direction,b)
 
-lapse = 8760 # 280512
-N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz')
-directions = ['lin', 'sqr']
-p = Pool(2)
-p.map(caller,directions)
+"""
+Calculate powermixes and nodes' usages of links and save results to file.
+"""
+if 'trace' in task:
+	lapse = 8760 # 280512
+	N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz')
+	directions = ['lin', 'sqr']
+	p = Pool(2)
+	p.map(caller,directions)
