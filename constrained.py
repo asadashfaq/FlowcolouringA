@@ -48,7 +48,8 @@ def calc_usage(N,F,lapse,direction,b):
     return
 
 def caller(direction):
-    for b in np.linspace(0.05,1.5,30):
+#    for b in np.linspace(0.05,1.5,30):
+    for b in np.linspace(0.05,1.45,15):
         F = np.load('./ConstrainedFlowData/Europe_aHE_'+str(b)+'q99_DC_'+direction+'_flows.npy')
         calc_usage(N,F,lapse,direction,b)
 
@@ -56,7 +57,7 @@ def caller(direction):
 Calculate powermixes and nodes' usages of links and save results to file.
 """
 if 'trace' in task:
-	lapse = 8760 # 280512
+	lapse = 87600 # 280512
 	N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz')
 	directions = ['lin', 'sqr']
 	p = Pool(2)
