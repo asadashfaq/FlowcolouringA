@@ -25,10 +25,89 @@ if len(sys.argv)>1:
 else:
     raise Exception('Not enough inputs!')
 
-modes = ['linear' ,'square', 'RND']
+schemes = ['linear' ,'square', 'RND']
 directions = ['import', 'export', 'combined']
 
-def drawnet_usage(N=None,mode='linear',direction='combined'):
+def linkProportional(N,link_dic,quantiles):
+    """
+    Calculate a node's link proportional.
+    For each node: find directly connected links and sum half their capacity
+    """
+    link_proportional = np.zeros(len(N))
+    for n in N:
+        node_id = n.id
+        node_label = str(n.label)
+        for link in link_dic[node_label]:
+            link_proportional[node_id] += quantiles[link]*.5
+        link_proportional[node_id] = link_proportional[node_id]/n.mean
+    link_proportional = np.reshape(link_proportional,(len(link_proportional),1))
+    return link_proportional
+
+def simpleMerger(data, merge_dict):
+    """
+    Function to merge a list of data for regions to a list of data for
+    countries. This function depends on the merge_dict which does not exist
+    before the function usageMerger has been run.
+    """
+    merge_index = 0
+    merged_data = np.zeros(len(merge_dict))
+    for d in merge_dict:
+        regions = merge_dict[d]
+        for region in regions:
+            merged_data[merge_index] += data[region]
+        merge_index += 1
+    return merged_data
+
+def usageMerger(scheme, direction, lapse, md=None, node_ids=None):
+    """
+    Merge regional usage to compare with country's usage
+    """
+    N_countries = EU_Nodes_usage()
+    N_regions = EU_Nodes_regions()
+    
+    # The optional parameter is intended for sorting of merged regions. If the
+    # parameter is not set the ordering will be the default ordering as at is in
+    # nodes objects.
+    if node_ids == None:
+        node_ids = np.arange(30)
+
+    # Create a dictionary for merging. All entries are integers referring to IDs.
+    # The format of the dictionary is: {country : [region1, region2, region3]}
+    if md:
+        merge_dict = md
+    else:
+        merge_dict = {}
+        for node in node_ids:
+            for region in N_regions:
+                # Merge Northern Ireland with GB
+                if region.label.tostring() == 'IE_N':
+                    thisNode = 7 # GB
+                    if thisNode in merge_dict:
+                        merge_dict[thisNode].append(region.id)
+                    else:
+                        merge_dict.update({thisNode: [region.id]})
+                elif region.label.tostring()[0:2] == N_countries[node].label.tostring():
+                    if node in merge_dict:
+                        merge_dict[node].append(region.id)
+                    else:
+                        merge_dict.update({node: [region.id]})
+
+    region_usages = np.load('./sensitivity/regions-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
+
+    # Merge usages and mean load with the dictionary build above.
+    merged_usages = np.zeros((len(merge_dict),region_usages.shape[1]))
+    merged_mean_load = np.zeros((len(merge_dict)))
+    merge_index = 0
+    for d in merge_dict:
+        regions = merge_dict[d]
+        for region in regions:
+            merged_usages[merge_index] += region_usages[region]
+            merged_mean_load[merge_index] += N_regions[region].mean
+        merge_index += 1
+
+    return merged_usages, merged_mean_load, merge_dict
+
+def drawnet_usage(N=None,scheme='linear',direction='combined'):
     """
     Make network figures of a node's usage of links for both import, export and
     combined. Adapted from drawnet() in aurespf.plotting
@@ -96,9 +175,9 @@ def drawnet_usage(N=None,mode='linear',direction='combined'):
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
     
-    # Load usages for given mode and direction
-    N_usages = np.load('./results/Node_contrib_'+mode+'_'+direction+'_70128.npy')
-    quantiles = np.load('./results/quantiles_'+str(mode)+'_70128.npy')
+    # Load usages for given scheme and direction
+    N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_70128.npy')
+    quantiles = np.load('./results/quantiles_'+str(scheme)+'_70128.npy')
 
     # Pick a particular node
     for n in N:
@@ -114,9 +193,9 @@ def drawnet_usage(N=None,mode='linear',direction='combined'):
         cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='vhorizontal')
         
         # Label just above color bar
-        if mode == 'linear':
+        if scheme == 'linear':
             scheme = 'Most localised'
-        elif mode == 'square':
+        elif scheme == 'square':
             scheme = 'Synchronised'
         else:
             scheme = 'Market'
@@ -144,26 +223,27 @@ def drawnet_usage(N=None,mode='linear',direction='combined'):
         ax2.axis('off') 
     
         # Save figure
-        plt.savefig("./figures/network_figures/"+mode+"/"+str(n.id)+'_'+str(direction)+".png")
+        plt.savefig("./figures/network_figures/"+scheme+"/"+str(n.id)+'_'+str(direction)+".png")
 
 
-def bars(mode, verbose=None):
+def bars(scheme, verbose=None):
     """
-    Make a lot of figures for a single mode and put them in ./figures/mode/
+    Figure to compare link proportional and usage proportional for a single
+    scheme and put them in ./sensitivity/figures/scheme/
     """
     # Load data and results
     if len(N) == 8:
-        F = np.load('./sensitivity/superRegions-'+mode+'-flows.npy')
-        quantiles = np.load('./sensitivity/superRegions-quantiles_'+mode+'_'+str(lapse)+'.npy')
+        F = abs(np.load('./sensitivity/superRegions-'+scheme+'-flows.npy'))
+        quantiles = np.load('./sensitivity/superRegions-quantiles_'+scheme+'_'+str(lapse)+'.npy')
         network = 'superRegions'
         nNodes = 8
     elif len(N) == 30:
-        F = abs(np.load('./results/'+mode+'-flows.npy'))
-        quantiles = np.load('./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
+        F = abs(np.load('./results/'+scheme+'-flows.npy'))
+        quantiles = np.load('./results/quantiles_'+scheme+'_'+str(lapse)+'.npy')
         nNodes = 30
     elif len(N) == 50:
-        F = np.load('./sensitivity/regions-'+mode+'-flows.npy')
-        quantiles = np.load('./sensitivity/regions-quantiles_'+mode+'_'+str(lapse)+'.npy')
+        F = abs(np.load('./sensitivity/regions-'+scheme+'-flows.npy'))
+        quantiles = np.load('./sensitivity/regions-quantiles_'+scheme+'_'+str(lapse)+'.npy')
         network = 'regions'
         nNodes = 50
     else:
@@ -176,15 +256,15 @@ def bars(mode, verbose=None):
 
     for direction in directions:
         if network == 'regions':
-            N_usages = np.load('./sensitivity/regions-Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+            N_usages = np.load('./sensitivity/regions-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
         elif network == 'superRegions':
-            N_usages = np.load('./sensitivity/superRegions-Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+            N_usages = np.load('./sensitivity/superRegions-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
         else:
-            N_usages = np.load('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+            N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
     
         # Compare node transmission to mean load
         if verbose:
-            print('Plotting node comparison - '+mode+' - '+direction)
+            print('Plotting node comparison - '+scheme+' - '+direction)
         # sort node names for x-axis
         Total_usage = np.sum(N_usages,1)
         node_ids = np.array(range(len(N))).reshape((len(N),1))
@@ -196,15 +276,7 @@ def bars(mode, verbose=None):
         Node_proportional = node_mean_load/EU_load*Total_caps/node_mean_load
 
         # Calculate link proportional
-        # For each node: find directly connected links and sum half their capacity
-        link_proportional = np.zeros(len(N))
-        for n in N:
-            node_id = n.id
-            node_label = str(n.label)
-            for link in link_dic[node_label]:
-                link_proportional[node_id] += quantiles[link]*.5
-            link_proportional[node_id] = link_proportional[node_id]/n.mean
-        link_proportional = np.reshape(link_proportional,(len(link_proportional),1))
+        link_proportional = linkProportional(N,link_dic,quantiles)
 
         # Calculate usage and sort countries by mean load
         normed_usage = Total_usage/node_mean_load
@@ -259,22 +331,135 @@ def bars(mode, verbose=None):
         plt.setp(ltext, fontsize=9.5)    # the legend text fontsize
 
         if network == 'regions':
-            plt.savefig('./sensitivity/figures/'+mode+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
+            plt.savefig('./sensitivity/figures/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
         elif network == 'superRegions':
-            plt.savefig('./sensitivity/figures/'+mode+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
+            plt.savefig('./sensitivity/figures/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
         else:
-            plt.savefig('./figures/'+mode+'/network-usage-'+direction+'.png', bbox_inches='tight')
+            plt.savefig('./figures/'+scheme+'/network-usage-'+direction+'.png', bbox_inches='tight')
             if verbose:
-                print('Saved figures to ./figures/'+mode+'/network-usage-'+direction+'.png')
+                print('Saved figures to ./figures/'+scheme+'/network-usage-'+direction+'.png')
+
+def bars2(scheme, verbose=False):
+    """
+    Creates figures to compare usage proportional for networks with N = 30 and
+    N = 50 and places them in ./figures/scheme/
+    """
+    # Load data and results
+    N_regions = EU_Nodes_regions()
+    F_regions = abs(np.load('./sensitivity/regions-'+scheme+'-flows.npy'))
+    quantiles_regions = np.load('./sensitivity/regions-quantiles_'+scheme+'_'+str(lapse)+'.npy')
+
+    N = EU_Nodes_usage()
+    F = abs(np.load('./results/'+scheme+'-flows.npy'))
+    quantiles = np.load('./results/quantiles_'+scheme+'_'+str(lapse)+'.npy')
+
+    mergeDict = None # dictionary for merged regions, see usageMerger()
+    names = node_namer(N) # array of node labels
+    links = range(len(F))
+    nNodes = 30
+    nodes = np.linspace(0.5,2*nNodes-1.5,nNodes)
+    nodes_shift = nodes+.5
+
+    for direction in directions:
+        N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
+
+        # Calculate node-, link- and usage proportional for countries
+        # Compare node transmission to mean load
+        # sort node names for x-axis
+        Total_usage = np.sum(N_usages,1)
+        node_ids = np.array(range(len(N))).reshape((len(N),1))
+        node_mean_load = [n.mean for n in N]
+        
+        # Calculate node proportional
+        EU_load = np.sum(node_mean_load)
+        Total_caps = sum(quantiles)
+        Node_proportional = node_mean_load/EU_load*Total_caps/node_mean_load
+
+        # Calculate link proportional
+        link_proportional = linkProportional(N,link_dic,quantiles)
+
+        # Calculate usage and sort countries by mean load
+        normed_usage = Total_usage/node_mean_load
+        normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
+        node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
+        data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional])
+        data_sort = data[data[:,2].argsort()]
+        names_sort = [names[int(i)] for i in data_sort[:,1]]
+        # flip order so largest is first
+        names_sort = names_sort[::-1]
+        link_proportional = data_sort[:,3][::-1]
+        data_sort = data_sort[:,0][::-1]
+
+        # Calculate node-, link- and usage proportional for regions. Variable
+        # names are the same as above with the addition of '_merged' or '_regions'
+        region_usages, node_mean_load_merged, mergeDict = usageMerger(scheme, direction, lapse, md=mergeDict)
+        Total_usage_merged = np.sum(region_usages,1)
+        EU_load_merged = np.sum(node_mean_load_merged)
+        Total_caps_merged = sum(quantiles_regions)
+        Node_proportional_merged = node_mean_load_merged/EU_load_merged*Total_caps_merged/node_mean_load_merged
+
+        link_proportional_regions = linkProportional(N_regions, link_dic_regions, quantiles_regions)
+        link_proportional_merged = simpleMerger(link_proportional_regions, mergeDict)
+        normed_usage_merged = Total_usage_merged/node_mean_load_merged
+        
+        normed_usage_merged = np.reshape(normed_usage_merged,(len(normed_usage_merged),1))
+        node_mean_load_merged = np.reshape(node_mean_load_merged,(len(node_mean_load_merged),1))
+        link_proportional_merged = np.reshape(link_proportional_merged,(len(link_proportional_merged),1))
+        
+        data_merged = np.hstack([normed_usage_merged,node_mean_load_merged,link_proportional_merged])
+        data_sort_merged = data_merged[data_merged[:,1].argsort()]
+        # flip order so largest is first
+        link_proportional_merged = data_sort_merged[:,2][::-1]
+        data_sort_merged = data_sort_merged[:,0][::-1]
+
+        # PLOTTING
+        plt.figure(figsize=(10, 4), facecolor='w', edgecolor='k')
+        ax = plt.subplot(111)
+        green = '#009900'
+        blue = '#000099'
+
+        # Plot node proportional
+        plt.rc('lines', lw=2)
+        plt.rc('lines', dash_capstyle = 'round')
+        plt.plot(np.linspace(0,len(N)*2+2,len(N)),Node_proportional,'--k')
+        # Plot link proportional
+        plt.bar(nodes,link_proportional,width=1,color=green,edgecolor='none')
+        plt.bar(nodes[:-3],link_proportional_merged,width=1,color='#ff0000',edgecolor='none')
+        # Plot usage proportional
+        plt.bar(nodes_shift,data_sort,width=1,color=blue,edgecolor='none')
+        plt.bar(nodes_shift[:-3],data_sort_merged,width=1,color='#aa0000',edgecolor='none')
+
+        # Magic with ticks and labels
+        ax.set_xticks(np.linspace(2,len(N)*2+2,len(N)+1))
+        ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top",fontsize=10.5)
+
+        ax.xaxis.grid(False)
+        ax.xaxis.set_tick_params(width=0)
+        ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+        maxes = [max(link_proportional), max(data_sort)]
+        plt.axis([0,nNodes*2+.5,0,1.15*max(maxes)])
+
+        # Legend
+        artists = [plt.Line2D([0,0],[0,0],ls='dashed',lw=2.0,c='k'), plt.Rectangle((0,0),0,0,ec=green,fc=green), plt.Rectangle((0,0),0,0,ec=blue,fc=blue)]
+        LABS = ['node proportional M$^1$','link proportional M$^2$','usage proportional M$^3$']
+        leg = plt.legend(artists, LABS,loc='upper left',ncol=len(artists), columnspacing=0.6,borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight = 1.2)
+        leg.get_frame().set_alpha(0)
+        leg.get_frame().set_edgecolor('white')
+        ltext = leg.get_texts()
+        plt.setp(ltext, fontsize=9.5)
+
+        plt.savefig('./sensitivity/figures/'+scheme+'/compared-network-usage-'+direction+'.png', bbox_inches='tight')
+        if verbose:
+            print('Saved figures to ./sensitivity/figures/'+scheme+'/compared-network-usage-'+direction+'.png')
 
 if 'network' in task:
     print('Plotting network figures')
     N = EU_Nodes_usage()
-    for mode in modes:
-        print('Mode: '+mode)
+    for scheme in schemes:
+        print('Mode: '+scheme)
         for direction in directions:
             print('Direction: '+direction)
-            drawnet_usage(N,mode,direction)
+            drawnet_usage(N,scheme,direction)
 
 if (('total' in task) and ('sensitivity' not in task)):
     print('Plotting total network usage')
@@ -284,7 +469,7 @@ if (('total' in task) and ('sensitivity' not in task)):
     link_dic = link_dict(N) # dictionary of links directly connected to each node
     print('Plotting')
     p = Pool(3)
-    p.map(bars,modes)
+    p.map(bars,schemes)
 
 if (('total' in task) and ('sensitivity' in task)):
     print('Plotting total network usage for different networks')
@@ -292,14 +477,24 @@ if (('total' in task) and ('sensitivity' in task)):
     N = EU_Nodes_superRegions()
     nLinks = np.zeros(10)
     link_dic = link_dict(N,nLinks)
-    for mode in modes:
-        bars(mode)
+    for scheme in schemes:
+        bars(scheme)
 
     N = EU_Nodes_regions()
     nLinks = np.zeros(94)
     link_dic = link_dict(N,nLinks)
-    for mode in modes:
-        bars(mode)
+    for scheme in schemes:
+        bars(scheme)
 
-#if (('sensitivity' in task) and ('compare' in task)):
+if (('sensitivity' in task) and ('compare' in task)):
+    for scheme in schemes:
+        lapse = 70128
+        N = EU_Nodes_usage()
+        link_dic = link_dict(N) # dictionary of links directly connected to each node
+        
+        N = EU_Nodes_regions()
+        nLinks = np.zeros(94)
+        link_dic_regions = link_dict(N,nLinks)
+
+        bars2(scheme)
 
