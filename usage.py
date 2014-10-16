@@ -57,8 +57,40 @@ def link_label(num,N):
     label = get_link_direction(num,N)
     return str(label[0].label)+'-'+str(label[1].label)
 
+def binMaker(F_matrix,q,lapse,nbins=None):
+    """
+    Histogram to calculate each nodes average usage of a link. The last bin
+    should be placed such that its right side is aligned with the 99% quantile
+    of the flow on the link. This value is set as the capacity of the link.
+    """
+    bin_max = np.ceil(q) # last bin ends at 99% quantile
+    if not nbins:
+        nbins = 16 # this number is not at all arbitrary
+    bin_size = bin_max/nbins
+    bin_edges = np.linspace(bin_size,bin_max,nbins) # value at the right side of each bin, last bin is 99% quantile
+
+    flows = F_matrix[:,0]
+    usages = F_matrix[:,1]
+    H = np.zeros((nbins,2)) # [number of events, mean usage]
+    for b in range(nbins):
+        if b == nbins-2:
+            usage = usages[np.where(flows >= b*bin_size)]
+        else:
+            usage = usages[np.where(np.logical_and(flows >= b*bin_size, flows<(b+1)*bin_size))]
+        events = len(usage)
+        usage = sum(usage)
+        if events > 0:
+            H[b,0] = events
+            H[b,1] = usage/events
+        else:
+            H[b,0] = 0
+            H[b,1] = 0
+    return H, bin_edges
+
 def bin_maker(F_matrix,q,lapse,nbins=None):
     """
+    This function is deprecated and should not be used. It's left here because
+    some old scripts depend on it.
     Create a lot of bins to calculate each nodes average usage of a link. The
     last bin should be placed such that its right side is aligned with the 99%
     quantile of the flow on the link. This value is set as the capacity of the
