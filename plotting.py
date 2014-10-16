@@ -47,7 +47,7 @@ def simpleMerger(data, merge_dict):
     """
     Function to merge a list of data for regions to a list of data for
     countries. This function depends on the merge_dict which does not exist
-    before the function usageMerger has been run.
+    before the function regionMerger has been run.
     """
     merge_index = 0
     merged_data = np.zeros(len(merge_dict))
@@ -58,7 +58,7 @@ def simpleMerger(data, merge_dict):
         merge_index += 1
     return merged_data
 
-def usageMerger(scheme, direction, lapse, md=None, node_ids=None):
+def regionMerger(scheme, direction, lapse, md=None, node_ids=None):
     """
     Merge regional usage to compare with country's usage
     """
@@ -78,9 +78,10 @@ def usageMerger(scheme, direction, lapse, md=None, node_ids=None):
     else:
         merge_dict = {}
         for node in node_ids:
+            node = int(node)
             for region in N_regions:
                 # Merge Northern Ireland with GB
-                if region.label.tostring() == 'IE_N':
+                if ((region.label.tostring() == 'IE_N') and (node == 7)):
                     thisNode = 7 # GB
                     if thisNode in merge_dict:
                         merge_dict[thisNode].append(region.id)
@@ -96,7 +97,7 @@ def usageMerger(scheme, direction, lapse, md=None, node_ids=None):
 
     # Merge usages and mean load with the dictionary build above.
     merged_usages = np.zeros((len(merge_dict),region_usages.shape[1]))
-    merged_mean_load = np.zeros((len(merge_dict)))
+    merged_mean_load = np.zeros(len(merge_dict))
     merge_index = 0
     for d in merge_dict:
         regions = merge_dict[d]
@@ -353,12 +354,13 @@ def bars2(scheme, verbose=False):
     F = abs(np.load('./results/'+scheme+'-flows.npy'))
     quantiles = np.load('./results/quantiles_'+scheme+'_'+str(lapse)+'.npy')
 
-    mergeDict = None # dictionary for merged regions, see usageMerger()
+    mergeDict = None # dictionary for merged regions, see regionMerger()
     names = node_namer(N) # array of node labels
     links = range(len(F))
     nNodes = 30
     nodes = np.linspace(0.5,2*nNodes-1.5,nNodes)
-    nodes_shift = nodes+.5
+    bw = .5 # bar width
+    nodes_shift = nodes+.5*bw
 
     for direction in directions:
         N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
@@ -369,7 +371,7 @@ def bars2(scheme, verbose=False):
         Total_usage = np.sum(N_usages,1)
         node_ids = np.array(range(len(N))).reshape((len(N),1))
         node_mean_load = [n.mean for n in N]
-        
+
         # Calculate node proportional
         EU_load = np.sum(node_mean_load)
         Total_caps = sum(quantiles)
@@ -382,17 +384,18 @@ def bars2(scheme, verbose=False):
         normed_usage = Total_usage/node_mean_load
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
         node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
-        data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional])
-        data_sort = data[data[:,2].argsort()]
-        names_sort = [names[int(i)] for i in data_sort[:,1]]
-        # flip order so largest is first
-        names_sort = names_sort[::-1]
-        link_proportional = data_sort[:,3][::-1]
-        data_sort = data_sort[:,0][::-1]
+#        data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional])
+#        data_sort = data[data[:,2].argsort()]
+#        names_sort = [names[int(i)] for i in data_sort[:,1]]
+#        # flip order so largest is first
+#        ids_sort = data_sort[:,1][::-1]
+#        names_sort = names_sort[::-1]
+#        link_proportional = data_sort[:,3][::-1]
+#        data_sort = data_sort[:,0][::-1]
 
         # Calculate node-, link- and usage proportional for regions. Variable
         # names are the same as above with the addition of '_merged' or '_regions'
-        region_usages, node_mean_load_merged, mergeDict = usageMerger(scheme, direction, lapse, md=mergeDict)
+        region_usages, node_mean_load_merged, mergeDict = regionMerger(scheme, direction, lapse, md=mergeDict)
         Total_usage_merged = np.sum(region_usages,1)
         EU_load_merged = np.sum(node_mean_load_merged)
         Total_caps_merged = sum(quantiles_regions)
@@ -401,16 +404,34 @@ def bars2(scheme, verbose=False):
         link_proportional_regions = linkProportional(N_regions, link_dic_regions, quantiles_regions)
         link_proportional_merged = simpleMerger(link_proportional_regions, mergeDict)
         normed_usage_merged = Total_usage_merged/node_mean_load_merged
-        
+
+        zeros = np.zeros(3)
+        normed_usage_merged = np.append(normed_usage_merged,zeros)
+        node_mean_load_merged = np.append(node_mean_load_merged,zeros)
+        link_proportional_merged = np.append(link_proportional_merged,zeros)
+
         normed_usage_merged = np.reshape(normed_usage_merged,(len(normed_usage_merged),1))
         node_mean_load_merged = np.reshape(node_mean_load_merged,(len(node_mean_load_merged),1))
         link_proportional_merged = np.reshape(link_proportional_merged,(len(link_proportional_merged),1))
+
+#        data_merged = np.hstack([normed_usage_merged,node_mean_load_merged,link_proportional_merged])
+#        data_sort_merged = data_merged[data_merged[:,1].argsort()]
+#        # flip order so largest is first
+#        link_proportional_merged = data_sort_merged[:,2][::-1]
+#        normed_usage_merged = data_sort_merged[:,0][::-1]
         
-        data_merged = np.hstack([normed_usage_merged,node_mean_load_merged,link_proportional_merged])
-        data_sort_merged = data_merged[data_merged[:,1].argsort()]
+        # Sort data for plotting
+        data = np.hstack([normed_usage, node_ids, node_mean_load, link_proportional,
+            normed_usage_merged, link_proportional_merged])
+        data_sort = data[data[:,2].argsort()]
+        names_sort = [names[int(i)] for i in data_sort[:,1]]
         # flip order so largest is first
-        link_proportional_merged = data_sort_merged[:,2][::-1]
-        data_sort_merged = data_sort_merged[:,0][::-1]
+        names_sort = names_sort[::-1]
+        link_proportional = data_sort[:,3][::-1]
+        usage_proportional = data_sort[:,0][::-1]
+        link_proportional_merged = data_sort[:,5][::-1]
+        usage_proportional_merged = data_sort[:,4][::-1]
+
 
         # PLOTTING
         plt.figure(figsize=(10, 4), facecolor='w', edgecolor='k')
@@ -423,11 +444,11 @@ def bars2(scheme, verbose=False):
         plt.rc('lines', dash_capstyle = 'round')
         plt.plot(np.linspace(0,len(N)*2+2,len(N)),Node_proportional,'--k')
         # Plot link proportional
-        plt.bar(nodes,link_proportional,width=1,color=green,edgecolor='none')
-        plt.bar(nodes[:-3],link_proportional_merged,width=1,color='#ff0000',edgecolor='none')
+        plt.bar(nodes,link_proportional,width=bw,color=green,edgecolor='none')
+        plt.bar(nodes+1.5*bw,link_proportional_merged,width=bw,color=green,edgecolor='none')
         # Plot usage proportional
-        plt.bar(nodes_shift,data_sort,width=1,color=blue,edgecolor='none')
-        plt.bar(nodes_shift[:-3],data_sort_merged,width=1,color='#aa0000',edgecolor='none')
+        plt.bar(nodes_shift+.2*bw,usage_proportional,width=bw,color=blue,edgecolor='none')
+        plt.bar(nodes_shift+1.7*bw,usage_proportional_merged,width=bw,color=blue,edgecolor='none')
 
         # Magic with ticks and labels
         ax.set_xticks(np.linspace(2,len(N)*2+2,len(N)+1))
@@ -436,7 +457,7 @@ def bars2(scheme, verbose=False):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
-        maxes = [max(link_proportional), max(data_sort)]
+        maxes = [max(link_proportional), max(usage_proportional), max(link_proportional_merged), max(usage_proportional_merged)]
         plt.axis([0,nNodes*2+.5,0,1.15*max(maxes)])
 
         # Legend
