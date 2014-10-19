@@ -8,6 +8,7 @@ import networkx as nx
 import matplotlib as mpl
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import node_namer, link_dict
+from scipy.stats import pearsonr
 
 """
 Script that makes network figures of a country's usage for import, export and
@@ -469,6 +470,16 @@ def bars2(scheme, verbose=False):
         ltext = leg.get_texts()
         plt.setp(ltext, fontsize=9.5)
 
+        # Calculate correlations between countries and merged regions
+        link1 = link_proportional[np.where(link_proportional_merged > 0)]
+        link2 = link_proportional_merged[np.where(link_proportional_merged > 0)]
+        linkCorr =  '%0.2f' % pearsonr(link1, link2)[0]
+        usage1 = usage_proportional[np.where(usage_proportional_merged > 0)]
+        usage2 = usage_proportional_merged[np.where(usage_proportional_merged > 0)]
+        usageCorr =  '%0.2f' % pearsonr(usage1, usage2)[0]
+        s = 'linkCorr = '+linkCorr+', usageCorr = '+usageCorr
+        plt.text(6,.9*max(maxes),s)
+
         plt.savefig('./sensitivity/figures/'+scheme+'/compared-network-usage-'+direction+'.png', bbox_inches='tight')
         if verbose:
             print('Saved figures to ./sensitivity/figures/'+scheme+'/compared-network-usage-'+direction+'.png')
@@ -508,6 +519,7 @@ if (('total' in task) and ('sensitivity' in task)):
         bars(scheme)
 
 if (('sensitivity' in task) and ('compare' in task)):
+    print('Comparing countries with merged regions')
     for scheme in schemes:
         lapse = 70128
         N = EU_Nodes_usage()
