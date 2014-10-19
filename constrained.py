@@ -209,7 +209,7 @@ def plotter():
             N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
             usages.append(.5*N_usages[:,link]/quantiles[link])
         usages = np.array(usages).transpose()
-        ax6 = plt.subplot(121)
+        ax6 = plt.subplot(122)
         ax6.set_xticks(np.linspace(0,30,16))
         ax6.set_xticklabels(np.linspace(0,1.5,16))
         ax6.set_yticks(np.linspace(.5,29.5,30))
