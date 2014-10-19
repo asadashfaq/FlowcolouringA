@@ -10,7 +10,7 @@ from EUgrid import *
 from link_colour_less import track_flows, get_link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
 from link_namer import node_namer,link_dict
-from usage import bin_maker, bin_prob, bin_CDF, node_contrib
+from usage import binMaker, bin_prob, bin_CDF, node_contrib
 
 """
 Script to calculate nodes' usage of links in the same way as
@@ -117,7 +117,7 @@ def calc_contribution(network,scheme,verbose=None):
         if direction == 'combined':
             Usages1 = np.load('./sensitivity/linkcolouring/'+network+'-old_'+scheme+'_copper_link_mix_import_all_alpha=same.npy')
             Usages2 = np.load('./sensitivity/linkcolouring/'+network+'-old_'+scheme+'_copper_link_mix_export_all_alpha=same.npy')
-            Usages = Usages1+Usages2
+            Usages = (Usages1 + Usages2)*.5
             Usages1,Usages2 = None,None
         else:
             Usages = np.load('./sensitivity/linkcolouring/'+network+'-old_'+scheme+'_copper_link_mix_'+direction+'_all_alpha=same.npy')
@@ -135,7 +135,7 @@ def calc_contribution(network,scheme,verbose=None):
                 F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
                 F_matrix[F_matrix[:,0].argsort()]
                 
-                H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse,N_bins)
+                H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,N_bins)
                 Node_contributions[node,link] = node_contrib(H,bin_edges)
                 
         # save results to file 
