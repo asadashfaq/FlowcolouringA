@@ -119,7 +119,7 @@ def plotter():
             quantiles = np.load('./constrained/quantiles_'+scheme+'_b_'+str(b)+'.npy')
             N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
             usages.append(.5*N_usages[node]/quantiles)
-            totalUsagesLin.append(np.sum(.5*N_usages/quantiles,1))
+            totalUsagesLin.append(np.sum(.5*N_usages,1)/node_mean_load)
         usages = np.array(usages).transpose()
         ax1 = plt.subplot(121)
         plt.pcolormesh(usages)
@@ -141,7 +141,7 @@ def plotter():
             quantiles = np.load('./constrained/quantiles_'+scheme+'_b_'+str(b)+'.npy')
             N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
             usages.append(.5*N_usages[node]/quantiles)
-            totalUsagesSqr.append(np.sum(.5*N_usages/quantiles,1))
+            totalUsagesSqr.append(np.sum(.5*N_usages,1)/node_mean_load)
         usages = np.array(usages).transpose()
         ax2 = plt.subplot(122)
         plt.pcolormesh(usages)
@@ -248,12 +248,13 @@ if 'usage' in task:
 Create various plots of usage and save figures to ./figures/
 """
 if 'plot' in task:
-    N = EU_Nodes()
+    N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz')
     F = abs(np.load('./ConstrainedFlowData/Europe_aHE_0.05q99_DC_lin_flows.npy'))
     link_dic = link_dict(N,F)
     nodes = range(len(N))
     links = range(len(F))
     names = [str(N[i].label) for i in range(len(N))]
     link_names = link_namer(N,F)
+    node_mean_load = [n.mean for n in N]
     N = None
     plotter()
