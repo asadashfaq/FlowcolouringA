@@ -242,6 +242,7 @@ def bars(scheme, verbose=None):
     elif len(N) == 30:
         F = abs(np.load('./results/'+scheme+'-flows.npy'))
         quantiles = np.load('./results/quantiles_'+scheme+'_'+str(lapse)+'.npy')
+        network = ''
         nNodes = 30
     elif len(N) == 50:
         F = abs(np.load('./sensitivity/regions-'+scheme+'-flows.npy'))
