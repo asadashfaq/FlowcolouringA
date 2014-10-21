@@ -156,13 +156,16 @@ def plotter():
 
     # Figure comparing nodes' total network usage as function of b
     totalUsagesLin = np.array(totalUsagesLin).transpose()
+    totalUsagesLin = totalUsagesLin[node_mean_load.argsort()]
     totalUsagesSqr = np.array(totalUsagesSqr).transpose()
+    totalUsagesSqr = totalUsagesSqr[node_mean_load.argsort()]
+    names_sort = names[node_mean_load.argsort()]
     plt.figure(figsize=(16,7))
     ax3 = plt.subplot(121)
     ax3.set_xticks(np.linspace(0,30,16))
     ax3.set_xticklabels(np.linspace(0,1.5,16))
     ax3.set_yticks(np.linspace(.5,29.5,30))
-    ax3.set_yticklabels(names,ha="right",va="center",fontsize=9)
+    ax3.set_yticklabels(names_sort,ha="right",va="center",fontsize=9)
     plt.pcolormesh(totalUsagesLin)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
@@ -171,7 +174,7 @@ def plotter():
     ax4.set_xticks(np.linspace(0,30,16))
     ax4.set_xticklabels(np.linspace(0,1.5,16))
     ax4.set_yticks(np.linspace(.5,29.5,30))
-    ax4.set_yticklabels(names,ha="right",va="center",fontsize=9)
+    ax4.set_yticklabels(names_sort,ha="right",va="center",fontsize=9)
     plt.pcolormesh(totalUsagesSqr)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
@@ -248,13 +251,14 @@ if 'usage' in task:
 Create various plots of usage and save figures to ./figures/
 """
 if 'plot' in task:
-    N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz')
+    N = EU_Nodes()
     F = abs(np.load('./ConstrainedFlowData/Europe_aHE_0.05q99_DC_lin_flows.npy'))
     link_dic = link_dict(N,F)
     nodes = range(len(N))
     links = range(len(F))
-    names = [str(N[i].label) for i in range(len(N))]
+    names = np.array([str(N[i].label) for i in range(len(N))])
     link_names = link_namer(N,F)
-    node_mean_load = [n.mean for n in N]
+    N = np.load('./ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz',mmap_mode='r+')
+    node_mean_load = N['mean']
     N = None
     plotter()
