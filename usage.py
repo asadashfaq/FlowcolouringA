@@ -182,7 +182,7 @@ def convergence(test):
             exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
             F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
             F_matrix[F_matrix[:,0].argsort()]
-            H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse,nbins=test)
+            H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,nbins=test)
             Node_contributions[node,link] = node_contrib(H,bin_edges)
     # save results to file 
     np.save('./convergence/Node_contrib_'+str(test)+'.npy',Node_contributions)
@@ -207,7 +207,7 @@ def solver(mode,verbose=None):
         if 'combined' in directions:
             Usages1 = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_import_all_alpha=same.npy')
             Usages2 = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_export_all_alpha=same.npy')
-            Usages = Usages1+Usages2
+            Usages = (Usages1+Usages2)*.5
             Usages1,Usages2 = None,None
         else:
             Usages = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_'+direction+'_all_alpha=same.npy')
@@ -225,7 +225,7 @@ def solver(mode,verbose=None):
                 F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
                 F_matrix[F_matrix[:,0].argsort()]
                 
-                H,bin_edges = bin_maker(F_matrix,quantiles[link],lapse,N_bins)
+                H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,N_bins)
                 Node_contributions[node,link] = node_contrib(H,bin_edges)
                 
         # save results to file 
