@@ -19,9 +19,10 @@ the transmission is constrained
 All ouput files are saved to ./constrained/
 
 Call the script using only one of the following command line arguments:
-- trace:    run flow tracing and save results
-- usage:    calculate node's usage of links
-- plot:		create figures of usage as function of transmission constraint
+- trace:        run flow tracing and save results
+- usage:        calculate node's usage of links
+- plot:		    create figures of usage as function of transmission constraint
+- plot total:   extra plotting of total usages
 """
 
 if len(sys.argv)<2:
@@ -160,10 +161,11 @@ def plotter():
     totalUsagesSqr = np.array(totalUsagesSqr).transpose()
     totalUsagesSqr = totalUsagesSqr[node_mean_load.argsort()]
     names_sort = names[node_mean_load.argsort()]
+    np.savez('constrained_results',lin=totalUsagesLin, sqr=totalUsagesSqr, names=names_sort)
     plt.figure(figsize=(16,7))
     ax3 = plt.subplot(121)
     ax3.set_xticks(np.linspace(0,30,16))
-    ax3.set_xticklabels(np.linspace(0,1.5,16))
+    ax3.set_xticklabels(np.linspace(0,1.5,16),fontsize=8)
     ax3.set_yticks(np.linspace(.5,29.5,30))
     ax3.set_yticklabels(names_sort,ha="right",va="center",fontsize=9)
     plt.pcolormesh(totalUsagesLin)
@@ -172,7 +174,7 @@ def plotter():
     plt.title('Total network usage, linear')
     ax4 = plt.subplot(122)
     ax4.set_xticks(np.linspace(0,30,16))
-    ax4.set_xticklabels(np.linspace(0,1.5,16))
+    ax4.set_xticklabels(np.linspace(0,1.5,16),fontsize=8)
     ax4.set_yticks(np.linspace(.5,29.5,30))
     ax4.set_yticklabels(names_sort,ha="right",va="center",fontsize=9)
     plt.pcolormesh(totalUsagesSqr)
@@ -180,6 +182,42 @@ def plotter():
     plt.xlabel(r'$\beta$')
     plt.title('Total network usage, square')
     plt.savefig('./constrained/figures/total-network-usage.png', bbox_inches='tight')
+
+    # Figure plotting the same as just above, but viewed from a different angle
+    betas = np.linspace(0.05,1.5,30)
+    plt.figure(figsize=(16,7))
+    ax5 = plt.subplot(121)
+    for n in range(len(names_sort)):
+        if n in [0, 1, 2, 8, 13, 19, 21]:
+            col = '#000099'
+            alph = .7
+        elif n in [27, 28, 29]:
+            col = '#990000'
+            alph = .7
+        else:
+            col = '#000000'
+            alph = .3
+        plt.plot(betas,totalUsagesLin[n],'-',color=col,lw=1.5,alpha=alph)
+    ax5.set_xlabel(r'$\beta$')
+    ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+    plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesLin))])
+    plt.title('Total network usage, linear')
+    ax6 = plt.subplot(122)
+    for n in range(len(names_sort)):
+        if n in [0, 1, 2, 8, 13, 19, 21]:
+            col = '#000099'
+            alph = .7
+        elif n in [27, 28, 29]:
+            col = '#990000'
+            alph = .7
+        else:
+            col = '#000000'
+            alph = .3
+        plt.plot(betas,totalUsagesSqr[n],'-',color=col,lw=1.5,alpha=alph)
+    ax6.set_xlabel(r'$\beta$')
+    plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesSqr))])
+    plt.title('Total network usage, square')
+    plt.savefig('./constrained/figures/total-network-usage-lines.png', bbox_inches='tight')
 
     # All countries usage of a single link as function of b
     for link in links:
@@ -193,11 +231,11 @@ def plotter():
             N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
             usages.append(.5*N_usages[:,link]/quantiles[link])
         usages = np.array(usages).transpose()
-        ax5 = plt.subplot(121)
-        ax5.set_xticks(np.linspace(0,30,16))
-        ax5.set_xticklabels(np.linspace(0,1.5,16))
-        ax5.set_yticks(np.linspace(.5,29.5,30))
-        ax5.set_yticklabels(names,ha="right",va="center",fontsize=9)
+        ax7 = plt.subplot(121)
+        ax7.set_xticks(np.linspace(0,30,16))
+        ax7.set_xticklabels(np.linspace(0,1.5,16))
+        ax7.set_yticks(np.linspace(.5,29.5,30))
+        ax7.set_yticklabels(names,ha="right",va="center",fontsize=9)
         plt.pcolormesh(usages)
         plt.colorbar()
         plt.xlabel(r'$\beta$')
@@ -212,11 +250,11 @@ def plotter():
             N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
             usages.append(.5*N_usages[:,link]/quantiles[link])
         usages = np.array(usages).transpose()
-        ax6 = plt.subplot(122)
-        ax6.set_xticks(np.linspace(0,30,16))
-        ax6.set_xticklabels(np.linspace(0,1.5,16))
-        ax6.set_yticks(np.linspace(.5,29.5,30))
-        ax6.set_yticklabels(names,ha="right",va="center",fontsize=9)
+        ax8 = plt.subplot(122)
+        ax8.set_xticks(np.linspace(0,30,16))
+        ax8.set_xticklabels(np.linspace(0,1.5,16))
+        ax8.set_yticks(np.linspace(.5,29.5,30))
+        ax8.set_yticklabels(names,ha="right",va="center",fontsize=9)
         plt.pcolormesh(usages)
         plt.colorbar()
         plt.xlabel(r'$\beta$')
@@ -250,7 +288,7 @@ if 'usage' in task:
 """
 Create various plots of usage and save figures to ./figures/
 """
-if 'plot' in task:
+if (('plot' in task) and ('total' not in task)):
     N = EU_Nodes()
     F = abs(np.load('./ConstrainedFlowData/Europe_aHE_0.05q99_DC_lin_flows.npy'))
     link_dic = link_dict(N,F)
@@ -262,3 +300,108 @@ if 'plot' in task:
     node_mean_load = N['mean']
     N = None
     plotter()
+
+"""
+ekstra plotting of total usages
+"""
+if (('plot' in task) and ('total' in task)):
+    results = np.load('constrained_results.npz')
+    totalUsagesLin = results['lin']
+    totalUsagesSqr = results['sqr']
+    names = results['names']
+
+    # Figure comparing nodes' total network usage as function of b
+    plt.figure(figsize=(16,7))
+    ax3 = plt.subplot(121)
+    ax3.set_xticks(np.linspace(0,30,16))
+    ax3.set_xticklabels(np.linspace(0,1.5,16),fontsize=8)
+    ax3.set_yticks(np.linspace(.5,29.5,30))
+    ax3.set_yticklabels(names,ha="right",va="center",fontsize=9)
+    plt.pcolormesh(totalUsagesLin)
+    plt.colorbar()
+    plt.xlabel(r'$\beta$')
+    plt.title('Total network usage, linear')
+    ax4 = plt.subplot(122)
+    ax4.set_xticks(np.linspace(0,30,16))
+    ax4.set_xticklabels(np.linspace(0,1.5,16),fontsize=8)
+    ax4.set_yticks(np.linspace(.5,29.5,30))
+    ax4.set_yticklabels(names,ha="right",va="center",fontsize=9)
+    plt.pcolormesh(totalUsagesSqr)
+    plt.colorbar()
+    plt.xlabel(r'$\beta$')
+    plt.title('Total network usage, square')
+    plt.savefig('./constrained/figures/total-network-usage.png', bbox_inches='tight')
+
+    # Figure plotting the same as just above, but viewed from a different angle
+    betas = np.linspace(0.05,1.5,30)
+    plt.figure(figsize=(16,7))
+    ax5 = plt.subplot(121)
+    for n in range(len(names)):
+        if n in [4,7,9,14,15]:
+            col = '#000099'
+            alph = .7
+        elif n in [21,27, 28, 29]:
+            col = '#990000'
+            alph = .7
+        else:
+            col = '#000000'
+            alph = .3
+        plt.plot(betas,totalUsagesLin[n],'-',color=col,lw=1.5,alpha=alph)
+    ax5.set_xlabel(r'$\beta$')
+    ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+    plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesLin))])
+    plt.title('Total network usage, linear')
+    ax6 = plt.subplot(122)
+    for n in range(len(names)):
+        if n in [4,7,9,14,15]:
+            col = '#000099'
+            alph = .7
+        elif n in [21,27, 28, 29]:
+            col = '#990000'
+            alph = .7
+        else:
+            col = '#000000'
+            alph = .3
+        plt.plot(betas,totalUsagesSqr[n],'-',color=col,lw=1.5,alpha=alph)
+    ax6.set_xlabel(r'$\beta$')
+    plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesSqr))])
+    plt.title('Total network usage, square')
+    plt.savefig('./constrained/figures/total-network-usage-lines.png', bbox_inches='tight')
+
+    # normalisation across betas
+    normedUsagesLin = totalUsagesLin/np.sum(totalUsagesLin,0)
+    normedUsagesSqr = totalUsagesSqr/np.sum(totalUsagesSqr,0)
+    plt.figure(figsize=(16,7))
+    ax5 = plt.subplot(121)
+    for n in range(len(names)):
+        if n in [4,7,9,14,15]:
+            col = '#000099'
+            alph = .7
+        elif n in [21,27, 28, 29]:
+            col = '#990000'
+            alph = .7
+        else:
+            col = '#000000'
+            alph = .3
+        plt.plot(betas,normedUsagesLin[n],'-',color=col,lw=1.5,alpha=alph)
+    ax5.set_xlabel(r'$\beta$')
+    ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$], normalised across $\beta$')
+    plt.axis([0.05, 1.5, 0, 1.1*np.max(normedUsagesLin)])
+    plt.title('Total network usage, linear')
+    ax6 = plt.subplot(122)
+    for n in range(len(names)):
+        if n in [4,7,9,14,15]:
+            col = '#000099'
+            alph = .7
+        elif n in [21,27, 28, 29]:
+            col = '#990000'
+            alph = .7
+        else:
+            col = '#000000'
+            alph = .3
+        plt.plot(betas,normedUsagesSqr[n],'-',color=col,lw=1.5,alpha=alph)
+    ax6.set_xlabel(r'$\beta$')
+    plt.axis([0.05, 1.5, 0, 1.1*np.max(normedUsagesSqr)])
+    plt.title('Total network usage, square')
+    plt.savefig('./constrained/figures/total-network-usage-beta-normed.png', bbox_inches='tight')
+
