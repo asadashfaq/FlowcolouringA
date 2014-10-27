@@ -171,9 +171,9 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
     
-    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.3,0,0),(.5, 0.5, 0.5),(1.0, 1, 1)),
-             'green': ((0.0, 1.0, 1.0),(.3,0,0),(.5, 0, 0),(1.0, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(.3,1,1),(.5, 0.5, 0.5),(1.0, 0, 0))}
+    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0.5, 0.5),(1.0, 1, 1)),
+             'green': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0, 0),(1.0, 0.0, 0.0)),
+             'blue': ((0.0, 1.0, 1.0),(.2,1,1),(.5, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
     
@@ -196,12 +196,12 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
         
         # Label just above color bar
         if scheme == 'linear':
-            scheme = 'Most localised'
+            xlabel = 'Most localised'
         elif scheme == 'square':
-            scheme = 'Synchronised'
+            xlabel = 'Synchronised'
         else:
-            scheme = 'Market'
-        ax1.set_xlabel(scheme+' '+direction+r" usage $C_n/C^{\,99\%}$")
+            xlabel = 'Market'
+        ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
         ax1.xaxis.set_label_position('top') 
         
         ax2 = fig.add_axes([-0.05,0.15,1.1,0.95])
