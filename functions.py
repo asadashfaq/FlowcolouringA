@@ -107,7 +107,7 @@ def removeLink(name1, name2, admat, regions):
         admat[id1, id2] = 0
         admat[id2, id1] = 0
 
-def addLink(name1, name2, admat):
+def addLink(name1, name2, admat, regions):
     id1 = idFinder(name1, regions)
     id2 = idFinder(name2, regions)
     admat[id1, id2] = 1
