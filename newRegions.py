@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import numpy as np
+from functions import idFinder, removeLink, addLink
 
 """
 This script expands the old 50+33 node region network to a 53+33 node network.
@@ -29,32 +30,6 @@ regions = ['AT.npz', 'BA.npz', 'BA_off.npz', 'BE.npz', 'BE_off.npz', 'BG.npz',
 'RO.npz', 'RO_off.npz', 'RS.npz', 'SE_M.npz', 'SE_M_off.npz', 'SE_N.npz',
 'SE_N_off.npz', 'SE_S.npz', 'SE_S_off.npz', 'SI.npz', 'SK.npz', 'EE.npz',
 'LV.npz', 'LT.npz']
-
-def idFinder(name, regions):
-    i = 0
-    for j in regions:
-        if j == name+'.npz':
-            return i
-        i += 1
-    raise Exception('Region not found')
-
-def removeLink(name1, name2, admat, regions):
-    id1 = idFinder(name1, regions)
-    id2 = idFinder(name2, regions)
-    if (admat[id1, id2] == 0) and (admat[id2, id1] == 0):
-        raise Exception('Link not found')
-    elif (admat[id1, id2] == 0) or (admat[id2, id1] == 0):
-        raise Exception('Adjacency matrix is broken')
-    else:
-        admat[id1, id2] = 0
-        admat[id2, id1] = 0
-
-def addLink(name1, name2, admat):
-    id1 = idFinder(name1, regions)
-    id2 = idFinder(name2, regions)
-    admat[id1, id2] = 1
-    admat[id2, id1] = 1
-    return admat
 
 print('You are about to create a new and improved region and super region network.')
 print('This script should only be run once - ever.')

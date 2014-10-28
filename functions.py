@@ -83,3 +83,33 @@ def node_contrib(H,bin_edges):
             l += 1
         C += c1*c2
     return C
+
+"""
+The following three functions are for manipulating adjacency matrices.
+They are especially used in newRegions.py.
+"""
+def idFinder(name, regions):
+    i = 0
+    for j in regions:
+        if j == name+'.npz':
+            return i
+        i += 1
+    raise Exception('Region not found')
+
+def removeLink(name1, name2, admat, regions):
+    id1 = idFinder(name1, regions)
+    id2 = idFinder(name2, regions)
+    if (admat[id1, id2] == 0) and (admat[id2, id1] == 0):
+        raise Exception('Link not found')
+    elif (admat[id1, id2] == 0) or (admat[id2, id1] == 0):
+        raise Exception('Adjacency matrix is broken')
+    else:
+        admat[id1, id2] = 0
+        admat[id2, id1] = 0
+
+def addLink(name1, name2, admat):
+    id1 = idFinder(name1, regions)
+    id2 = idFinder(name2, regions)
+    admat[id1, id2] = 1
+    admat[id2, id1] = 1
+    return admat
