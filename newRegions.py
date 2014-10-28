@@ -6,8 +6,6 @@ from functions import idFinder, removeLink, addLink
 This script expands the old 50+33 node region network to a 53+33 node network.
 The three Baltic countries are added and some links from Luxembourg are
 destroyed. A new adjacency matrix is created.
-In the end the network consisting of 8 super regions is updated with the new
-regions and links.
 This script should only be run once. If it has already been run it will tell you
 so and stop, so don't worry about breaking anything.
 After this script is run you should run _mergeRegions.py_.
@@ -43,7 +41,7 @@ if ((admat.shape[0] == 86) and (len(np.nonzero(admat)[0])/2 == 128)):
 
 oldDim = admat.shape[0]
 newRegions = ['EE', 'LV', 'LT']
-newLinks = [['EE', 'FI_S'], ['EE', 'LV'], ['LV', 'LT']]
+newLinks = [['NL', 'NO_S'], ['EE', 'FI_S'], ['EE', 'LV'], ['LV', 'LT']]
 oldLinks = [['BE', 'LU'], ['FR_NE', 'LU']]
 
 newAdmat = np.zeros((oldDim+len(newRegions), oldDim+len(newRegions)))
