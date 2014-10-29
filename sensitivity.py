@@ -40,7 +40,7 @@ else:
     task = str(sys.argv[1:])
 
 networks = ['superRegions', 'regions']
-schemes = ['linear', 'square', 'RND']
+schemes = ['linear', 'square'] #'RND'
 directions = ['import', 'export', 'combined']
 lapse = 70128  # number of hours to include
 

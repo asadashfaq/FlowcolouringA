@@ -26,7 +26,7 @@ if len(sys.argv)>1:
 else:
     raise Exception('Not enough inputs!')
 
-schemes = ['linear' ,'square', 'RND']
+schemes = ['linear' ,'square'] #'RND'
 directions = ['import', 'export', 'combined']
 
 def linkProportional(N,link_dic,quantiles):
