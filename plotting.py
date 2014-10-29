@@ -244,11 +244,11 @@ def bars(scheme, verbose=None):
         quantiles = np.load('./results/quantiles_'+scheme+'_'+str(lapse)+'.npy')
         network = ''
         nNodes = 30
-    elif len(N) == 50:
+    elif len(N) == 53:
         F = abs(np.load('./sensitivity/regions-'+scheme+'-flows.npy'))
         quantiles = np.load('./sensitivity/regions-quantiles_'+scheme+'_'+str(lapse)+'.npy')
         network = 'regions'
-        nNodes = 50
+        nNodes = 53
     else:
         raise Exception('Wrong network!')
 
@@ -386,14 +386,6 @@ def bars2(scheme, verbose=False):
         normed_usage = Total_usage/node_mean_load
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
         node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
-#        data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional])
-#        data_sort = data[data[:,2].argsort()]
-#        names_sort = [names[int(i)] for i in data_sort[:,1]]
-#        # flip order so largest is first
-#        ids_sort = data_sort[:,1][::-1]
-#        names_sort = names_sort[::-1]
-#        link_proportional = data_sort[:,3][::-1]
-#        data_sort = data_sort[:,0][::-1]
 
         # Calculate node-, link- and usage proportional for regions. Variable
         # names are the same as above with the addition of '_merged' or '_regions'
@@ -416,12 +408,6 @@ def bars2(scheme, verbose=False):
         node_mean_load_merged = np.reshape(node_mean_load_merged,(len(node_mean_load_merged),1))
         link_proportional_merged = np.reshape(link_proportional_merged,(len(link_proportional_merged),1))
 
-#        data_merged = np.hstack([normed_usage_merged,node_mean_load_merged,link_proportional_merged])
-#        data_sort_merged = data_merged[data_merged[:,1].argsort()]
-#        # flip order so largest is first
-#        link_proportional_merged = data_sort_merged[:,2][::-1]
-#        normed_usage_merged = data_sort_merged[:,0][::-1]
-        
         # Sort data for plotting
         data = np.hstack([normed_usage, node_ids, node_mean_load, link_proportional,
             normed_usage_merged, link_proportional_merged])
@@ -514,7 +500,7 @@ if (('total' in task) and ('sensitivity' in task)):
         bars(scheme)
 
     N = EU_Nodes_regions()
-    nLinks = np.zeros(94)
+    nLinks = np.zeros(96)
     link_dic = link_dict(N,nLinks)
     for scheme in schemes:
         bars(scheme)
@@ -527,7 +513,7 @@ if (('sensitivity' in task) and ('compare' in task)):
         link_dic = link_dict(N) # dictionary of links directly connected to each node
         
         N = EU_Nodes_regions()
-        nLinks = np.zeros(94)
+        nLinks = np.zeros(96)
         link_dic_regions = link_dict(N,nLinks)
 
         bars2(scheme)
