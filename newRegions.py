@@ -36,7 +36,7 @@ admat = np.genfromtxt('./settings/regionadmat.txt')
 
 if admat.shape[0] != admat.shape[1]:
     raise Exception('Adjacency matrix dimensions are broken')
-if ((admat.shape[0] == 86) and (len(np.nonzero(admat)[0])/2 == 128)):
+if ((admat.shape[0] == 86) and (len(np.nonzero(admat)[0])/2 == 129)):
     raise Exception('The network is already up to date')
 
 oldDim = admat.shape[0]
