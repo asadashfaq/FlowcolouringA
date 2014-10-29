@@ -10,7 +10,7 @@ from EUgrid import *
 from link_colour_less import track_flows, get_link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
 from link_namer import node_namer,link_dict
-from usage import binMaker, bin_prob, bin_CDF, node_contrib
+from functions import binMaker, bin_prob, bin_CDF, node_contrib
 
 """
 Script to calculate nodes' usage of links in the same way as
@@ -31,7 +31,7 @@ All ouput files are saved to ./sensitivity/
 Call the script using only one of the following command line arguments:
 - solve:    solve network and save solutions
 - trace:    run flow tracing and save results
-
+- usage:    calculate nodes' usage and save results
 """
 
 if len(sys.argv)<2:
