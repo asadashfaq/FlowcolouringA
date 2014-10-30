@@ -399,11 +399,6 @@ def bars2(scheme, verbose=False):
         link_proportional_merged = simpleMerger(link_proportional_regions, mergeDict)
         normed_usage_merged = Total_usage_merged/node_mean_load_merged
 
-        zeros = np.zeros(3)
-        normed_usage_merged = np.append(normed_usage_merged,zeros)
-        node_mean_load_merged = np.append(node_mean_load_merged,zeros)
-        link_proportional_merged = np.append(link_proportional_merged,zeros)
-
         normed_usage_merged = np.reshape(normed_usage_merged,(len(normed_usage_merged),1))
         node_mean_load_merged = np.reshape(node_mean_load_merged,(len(node_mean_load_merged),1))
         link_proportional_merged = np.reshape(link_proportional_merged,(len(link_proportional_merged),1))
