@@ -162,7 +162,7 @@ def plotter():
     totalUsagesSqr = np.array(totalUsagesSqr).transpose()
     totalUsagesSqr = totalUsagesSqr[node_mean_load.argsort()]
     names_sort = names[node_mean_load.argsort()]
-    np.savez('constrained_results',lin=totalUsagesLin, sqr=totalUsagesSqr, names=names_sort)
+    np.savez('./results/constrained_results',lin=totalUsagesLin, sqr=totalUsagesSqr, names=names_sort)
     plt.figure(figsize=(16,7))
     ax3 = plt.subplot(121)
     ax3.set_xticks(np.linspace(0,30,16))
@@ -306,7 +306,7 @@ if (('plot' in task) and ('total' not in task)):
 ekstra plotting of total usages
 """
 if (('plot' in task) and ('total' in task)):
-    results = np.load('constrained_results.npz')
+    results = np.load('./results/constrained_results.npz')
     totalUsagesLin = results['lin']
     totalUsagesSqr = results['sqr']
     names = results['names']
