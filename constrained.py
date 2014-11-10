@@ -17,6 +17,7 @@ Script to investigate the transition of a node's usage of the links as
 the transmission is constrained
 
 All ouput files are saved to ./constrained/
+Figures are saved to ./figures/constrained/
 
 Call the script using only one of the following command line arguments:
 - trace:        run flow tracing and save results
@@ -153,7 +154,7 @@ def plotter():
         ax2.set_xticklabels(np.linspace(0,1.5,16))
         ax2.set_yticks(np.linspace(.5,49.5,50))
         ax2.set_yticklabels(link_names,ha="right",va="center",fontsize=6)
-        plt.savefig('./constrained/figures/node-usage-'+str(node)+'.png', bbox_inches='tight')
+        plt.savefig('./figures/constrained/node-usage-'+str(node)+'.png', bbox_inches='tight')
 
     # Figure comparing nodes' total network usage as function of b
     totalUsagesLin = np.array(totalUsagesLin).transpose()
@@ -181,7 +182,7 @@ def plotter():
     plt.colorbar()
     plt.xlabel(r'$\beta$')
     plt.title('Total network usage, square')
-    plt.savefig('./constrained/figures/total-network-usage.png', bbox_inches='tight')
+    plt.savefig('./figures/constrained/total-network-usage.png', bbox_inches='tight')
 
     # Figure plotting the same as just above, but viewed from a different angle
     betas = np.linspace(0.05,1.5,30)
@@ -217,7 +218,7 @@ def plotter():
     ax6.set_xlabel(r'$\beta$')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesSqr))])
     plt.title('Total network usage, square')
-    plt.savefig('./constrained/figures/total-network-usage-lines.png', bbox_inches='tight')
+    plt.savefig('./figures/constrained/total-network-usage-lines.png', bbox_inches='tight')
 
     # All countries usage of a single link as function of b
     for link in links:
@@ -259,7 +260,7 @@ def plotter():
         plt.colorbar()
         plt.xlabel(r'$\beta$')
         plt.title('Usage of link '+link_names[link]+', square')
-        plt.savefig('./constrained/figures/link-usage-'+str(link)+'.png', bbox_inches='tight')
+        plt.savefig('./figures/constrained/link-usage-'+str(link)+'.png', bbox_inches='tight')
 
 lapse = 8760 # 280512
 schemes = ['lin', 'sqr']
@@ -330,7 +331,7 @@ if (('plot' in task) and ('total' in task)):
     plt.colorbar()
     plt.xlabel(r'$\beta$')
     plt.title('Total network usage, square')
-    plt.savefig('./constrained/figures/total-network-usage.png', bbox_inches='tight')
+    plt.savefig('./figures/constrained/total-network-usage.png', bbox_inches='tight')
 
     # Figure plotting the same as just above, but viewed from a different angle
     betas = np.linspace(0.05,1.5,30)
@@ -366,7 +367,7 @@ if (('plot' in task) and ('total' in task)):
     ax6.set_xlabel(r'$\beta$')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesSqr))])
     plt.title('Total network usage, square')
-    plt.savefig('./constrained/figures/total-network-usage-lines.png', bbox_inches='tight')
+    plt.savefig('./figures/constrained/total-network-usage-lines.png', bbox_inches='tight')
 
     # normalisation across betas
     normedUsagesLin = totalUsagesLin/np.sum(totalUsagesLin,0)
@@ -403,5 +404,5 @@ if (('plot' in task) and ('total' in task)):
     ax6.set_xlabel(r'$\beta$')
     plt.axis([0.05, 1.5, 0, 1.1*np.max(normedUsagesSqr)])
     plt.title('Total network usage, square')
-    plt.savefig('./constrained/figures/total-network-usage-beta-normed.png', bbox_inches='tight')
+    plt.savefig('./figures/constrained/total-network-usage-beta-normed.png', bbox_inches='tight')
 
