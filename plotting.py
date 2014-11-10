@@ -334,11 +334,12 @@ def bars(scheme, verbose=None):
         plt.setp(ltext, fontsize=9.5)    # the legend text fontsize
 
         if network == 'regions':
-            plt.savefig('./sensitivity/figures/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
         elif network == 'superRegions':
-            plt.savefig('./sensitivity/figures/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
         else:
             plt.savefig('./figures/'+scheme+'/network-usage-'+direction+'.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/'+scheme+'/network-usage-'+direction+'.png', bbox_inches='tight')
             if verbose:
                 print('Saved figures to ./figures/'+scheme+'/network-usage-'+direction+'.png')
 
@@ -462,9 +463,9 @@ def bars2(scheme, verbose=False):
         s = 'linkCorr = '+linkCorr+', usageCorr = '+usageCorr
         plt.text(6,.9*max(maxes),s)
 
-        plt.savefig('./sensitivity/figures/'+scheme+'/compared-network-usage-'+direction+'.png', bbox_inches='tight')
+        plt.savefig('./figures/sensitivity/'+scheme+'/compared-network-usage-'+direction+'.png', bbox_inches='tight')
         if verbose:
-            print('Saved figures to ./sensitivity/figures/'+scheme+'/compared-network-usage-'+direction+'.png')
+            print('Saved figures to ./figures/sensitivity/'+scheme+'/compared-network-usage-'+direction+'.png')
 
 if 'network' in task:
     print('Plotting network figures')
