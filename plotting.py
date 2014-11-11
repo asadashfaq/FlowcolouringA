@@ -490,7 +490,7 @@ if (('total' in task) and ('sensitivity' in task)):
     print('Plotting total network usage for different networks')
     lapse = 70128
     N = EU_Nodes_superRegions()
-    nLinks = np.zeros(10)
+    nLinks = np.zeros(12)
     link_dic = link_dict(N,nLinks)
     for scheme in schemes:
         bars(scheme)
