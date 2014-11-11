@@ -20,10 +20,13 @@ All ouput files are saved to ./constrained/
 Figures are saved to ./figures/constrained/
 
 Call the script using only one of the following command line arguments:
-- trace:        run flow tracing and save results
-- usage:        calculate node's usage of links
-- plot:		    create figures of usage as function of transmission constraint
-- plot total:   extra plotting of total usages
+- trace:        Run flow tracing and save results.
+- usage:        Calculate node's usage of links.
+- plot:		    Create figures of usage as function of transmission constraint.
+                Figures for each link and each node.
+- plot total:   Plotting one figure for both export schemes comparing all nodes'
+                total usages of the network as a color mesh.
+                Also make two line plots of the same data.             
 """
 
 if len(sys.argv)<2:
