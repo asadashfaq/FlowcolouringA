@@ -26,7 +26,7 @@ Call the script using only one of the following command line arguments:
                 Figures for each link and each node.
 - plot total:   Plotting one figure for both export schemes comparing all nodes'
                 total usages of the network as a color mesh.
-                Also make two line plots of the same data.             
+                Also make two line plots of the same data. 
 """
 
 if len(sys.argv)<2:
@@ -292,7 +292,8 @@ if 'usage' in task:
 """
 Create various plots of usage and save figures to ./figures/
 """
-if (('plot' in task) and ('total' not in task)):
+if (('plot' in task) and ('total' not in task) and ('area' not in task)):
+    print('Plotting node- and link usages')
     N = EU_Nodes()
     F = abs(np.load('./ConstrainedFlowData/Europe_aHE_0.05q99_DC_lin_flows.npy'))
     link_dic = link_dict(N,F)
@@ -309,6 +310,7 @@ if (('plot' in task) and ('total' not in task)):
 ekstra plotting of total usages
 """
 if (('plot' in task) and ('total' in task)):
+    print('Plotting total node- and link usages')
     results = np.load('./results/constrained_results.npz')
     totalUsagesLin = results['lin']
     totalUsagesSqr = results['sqr']
@@ -409,3 +411,198 @@ if (('plot' in task) and ('total' in task)):
     plt.title('Total network usage, square')
     plt.savefig('./figures/constrained/total-network-usage-beta-normed.png', bbox_inches='tight')
 
+
+"""
+Create stacked area plots for each link and each node
+"""
+if (('plot' in task) and ('area' in task)):
+    print('Plotting area figures')
+    N = EU_Nodes()
+    F = abs(np.load('./ConstrainedFlowData/Europe_aHE_0.05q99_DC_lin_flows.npy'))
+    link_dic = link_dict(N,F)
+    nodes = range(len(N))
+    links = range(len(F))
+    names = np.array([str(N[i].label) for i in range(len(N))])
+    link_names = np.array(link_namer(N,F))
+    N = np.load('./ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz',mmap_mode='r+')
+    node_mean_load = N['mean']
+    N = None
+    betas = np.linspace(0.05,1.5,30)
+
+    # Country's usage of all links as function of b
+    for node in nodes:
+        plt.figure(figsize=(16,7))
+        usages = []
+        scheme = 'lin'
+        for b in np.linspace(0.05,1.5,30):
+            # Load data and results
+            F = abs(np.load('./ConstrainedFlowData/Europe_aHE_'+str(b)+'q99_DC_'+scheme+'_flows.npy'))
+            quantiles = np.load('./constrained/quantiles_'+scheme+'_b_'+str(b)+'.npy')
+            N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
+            usages.append(.5*N_usages[node]/quantiles)
+        usages = np.array(usages).transpose()
+        ax1 = plt.subplot(121)
+
+        max_usages = np.max(usages,1)
+        sort_usages = usages[max_usages.argsort()]
+        norm_usages = sort_usages/np.sum(sort_usages,0)
+        sort_link_names = link_names[max_usages.argsort()]
+        top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+        for a in links:
+            if a < len(links)-6:
+                col = "#6e5160"
+            else:
+                col = top_col[len(links)-a-1]
+            if a == 0:
+                ax1.fill_between(betas, 0, norm_usages[a,:], facecolor=col, alpha=.7)
+                baseline = norm_usages[a,:]
+            else:
+                plot_data = [norm_usages[a,i] + baseline[i] for i in range(len(baseline))]
+                ax1.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                if a >= len(links)-10:
+                    plt.text(1.52,
+                            0+baseline[-1]+(plot_data[-1]-baseline[-1])/2,
+                            sort_link_names[a], color=col, va='center',
+                            fontsize=9)
+                baseline = [baseline[i] + norm_usages[a,i] for i in range(len(baseline))]
+
+        ax1.set_xticks(np.linspace(0,1.5,16))
+        ax1.set_xticklabels(np.linspace(0,1.5,16))
+        ax1.set_yticks(np.linspace(0,1,11))
+        ax1.set_yticklabels(np.linspace(0,1,11))
+        plt.axis([0.05, 1.5, 0, 1])
+        plt.xlabel(r'$\beta$')
+        plt.ylabel(r'$C_{nl}/C_n$')
+        plt.title(names[node]+'\'s usage of links, linear')
+
+        usages = []
+        scheme = 'sqr'
+        for b in np.linspace(0.05,1.5,30):
+            # Load data and results
+            F = abs(np.load('./ConstrainedFlowData/Europe_aHE_'+str(b)+'q99_DC_'+scheme+'_flows.npy'))
+            quantiles = np.load('./constrained/quantiles_'+scheme+'_b_'+str(b)+'.npy')
+            N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
+            usages.append(.5*N_usages[node]/quantiles)
+        usages = np.array(usages).transpose()
+        ax2 = plt.subplot(122)
+
+        max_usages = np.max(usages,1)
+        sort_usages = usages[max_usages.argsort()]
+        norm_usages = sort_usages/np.sum(sort_usages,0)
+        sort_link_names = link_names[max_usages.argsort()]
+        top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+        for a in links:
+            if a < len(links)-6:
+                col = "#6e5160"
+            else:
+                col = top_col[len(links)-a-1]
+            if a == 0:
+                ax2.fill_between(betas, 0, norm_usages[a,:], facecolor=col, alpha=.7)
+                baseline = norm_usages[a,:]
+            else:
+                plot_data = [norm_usages[a,i] + baseline[i] for i in range(len(baseline))]
+                ax2.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                if a >= len(links)-10:
+                    plt.text(1.52,
+                            0+baseline[-1]+(plot_data[-1]-baseline[-1])/2,
+                            sort_link_names[a], color=col, va='center',
+                            fontsize=9)
+                baseline = [baseline[i] + norm_usages[a,i] for i in range(len(baseline))]
+
+        ax2.set_xticks(np.linspace(0,1.5,16))
+        ax2.set_xticklabels(np.linspace(0,1.5,16))
+        ax2.set_yticks(np.linspace(0,1,11))
+        ax2.set_yticklabels(np.linspace(0,1,11))
+        plt.axis([0.05, 1.5, 0, 1])
+        plt.xlabel(r'$\beta$')
+        plt.ylabel(r'$C_{nl}/C_n$')
+        plt.title(names[node]+'\'s usage of links, square')
+        plt.savefig('./figures/constrained/node-usage-area-'+str(node)+'.png', bbox_inches='tight')
+
+    # All countries usage of a single link as function of b
+    for link in links:
+        plt.figure(figsize=(16,7))
+        usages = []
+        scheme='lin'
+        for b in betas:
+            # Load data and results
+            F = abs(np.load('./ConstrainedFlowData/Europe_aHE_'+str(b)+'q99_DC_'+scheme+'_flows.npy'))
+            quantiles = np.load('./constrained/quantiles_'+scheme+'_b_'+str(b)+'.npy')
+            N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
+            usages.append(.5*N_usages[:,link]/quantiles[link])
+        usages = np.array(usages).transpose()
+        ax3 = plt.subplot(121)
+
+        max_usages = np.max(usages,1)
+        sort_usages = usages[max_usages.argsort()]
+        norm_usages = sort_usages/np.sum(sort_usages,0)
+        sort_names = names[max_usages.argsort()]
+        top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+        for a in nodes:
+            if a < len(nodes)-6:
+                col = "#6e5160"
+            else:
+                col = top_col[len(nodes)-a-1]
+            if a == 0:
+                ax3.fill_between(betas, 0, norm_usages[a,:], facecolor=col, alpha=.7)
+                baseline = norm_usages[a,:]
+            else:
+                plot_data = [norm_usages[a,i] + baseline[i] for i in range(len(baseline))]
+                ax3.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                if a >= len(nodes)-10:
+                    plt.text(1.52, 0+baseline[-1]+(plot_data[-1]-baseline[-1])/2, sort_names[a], color=col, va='center', fontsize=9)
+                baseline = [baseline[i] + norm_usages[a,i] for i in range(len(baseline))]
+
+        ax3.set_xticks(np.linspace(0,1.5,16))
+        ax3.set_xticklabels(np.linspace(0,1.5,16))
+        ax3.set_yticks(np.linspace(0,1,11))
+        ax3.set_yticklabels(np.linspace(0,1,11))
+        plt.axis([0.05, 1.5, 0, 1])
+        plt.xlabel(r'$\beta$')
+        plt.ylabel(r'$C_{nl}/C_l$')
+        plt.title('Usage of link '+link_names[link]+', linear')
+
+        usages = []
+        scheme='sqr'
+        for b in np.linspace(0.05,1.5,30):
+            # Load data and results
+            F = abs(np.load('./ConstrainedFlowData/Europe_aHE_'+str(b)+'q99_DC_'+scheme+'_flows.npy'))
+            quantiles = np.load('./constrained/quantiles_'+scheme+'_b_'+str(b)+'.npy')
+            N_usages = np.load('./constrained/Node_contrib_'+scheme+'_combined_b_'+str(b)+'.npy')
+            usages.append(.5*N_usages[:,link]/quantiles[link])
+        usages = np.array(usages).transpose()
+        ax4 = plt.subplot(122)
+        
+        max_usages = np.max(usages,1)
+        sort_usages = usages[max_usages.argsort()]
+        norm_usages = sort_usages/np.sum(sort_usages,0)
+        sort_names = names[max_usages.argsort()]
+        top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+        for a in nodes:
+            if a < len(nodes)-6:
+                col = "#6e5160"
+            else:
+                col = top_col[len(nodes)-a-1]
+            if a == 0:
+                ax4.fill_between(betas, 0, norm_usages[a,:], facecolor=col, alpha=.7)
+                baseline = norm_usages[a,:]
+            else:
+                plot_data = [norm_usages[a,i] + baseline[i] for i in range(len(baseline))]
+                ax4.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                if a >= len(nodes)-10:
+                    plt.text(1.52, 0+baseline[-1]+(plot_data[-1]-baseline[-1])/2, sort_names[a], color=col, va='center', fontsize=9)
+                baseline = [baseline[i] + norm_usages[a,i] for i in range(len(baseline))]
+
+        ax4.set_xticks(np.linspace(0,1.5,16))
+        ax4.set_xticklabels(np.linspace(0,1.5,16))
+        ax4.set_yticks(np.linspace(0,1,11))
+        ax4.set_yticklabels(np.linspace(0,1,11))
+        plt.axis([0.05, 1.5, 0, 1])
+        plt.xlabel(r'$\beta$')
+        plt.ylabel(r'$C_{nl}/C_l$')
+        plt.title('Usage of link '+link_names[link]+', square')
+        plt.savefig('./figures/constrained/link-usage-area-'+str(link)+'.png', bbox_inches='tight')
