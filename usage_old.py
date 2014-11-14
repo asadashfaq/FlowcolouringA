@@ -42,7 +42,7 @@ if len(sys.argv)<2:
 else:
     task = str(sys.argv[1:])
 
-modes = ['linear','square','RND']   # Export schemes. 'RND' is also known as 'Market'.
+modes = ['linear','square'] #RND   # Export schemes. 'RND' is also known as 'Market'.
 
 
 """
