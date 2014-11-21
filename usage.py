@@ -10,6 +10,7 @@ from EUgrid import *
 from link_colour_less import track_flows, get_link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
 from link_namer import node_namer,link_dict
+import time
 
 """
 Script to calculate nodes' usage of links using the all new and improved model
@@ -43,7 +44,7 @@ else:
 modes = ['linear','square'] # RND # The three export schemes
 directions = ['import','export']
 lapse = 70128   # number of hours to include
-N_bins = 16     # number of bins. Determined from the convergence mode
+N_bins = 90     # number of bins. Determined from the convergence mode
 
 print('Initialisation')
 print('Modes: '+str(modes))
@@ -57,15 +58,16 @@ def link_label(num,N):
     label = get_link_direction(num,N)
     return str(label[0].label)+'-'+str(label[1].label)
 
-def binMaker(F_matrix,q,lapse,nbins=None):
+def binMaker(F_matrix, q, lapse, nbins=None, verbose=False):
     """
     Histogram to calculate each nodes average usage of a link. The last bin
     should be placed such that its right side is aligned with the 99% quantile
     of the flow on the link. This value is set as the capacity of the link.
     """
+    if (verbose and (nbins in [10, 50, 100, 150, 200])): start = time.time()
     bin_max = np.ceil(q) # last bin ends at 99% quantile
     if not nbins:
-        nbins = 16 # this number is not at all arbitrary
+        nbins = 90 # this number is not at all arbitrary
     bin_size = bin_max/nbins
     bin_edges = np.linspace(bin_size,bin_max,nbins) # value at the right side of each bin, last bin is 99% quantile
 
@@ -89,6 +91,9 @@ def binMaker(F_matrix,q,lapse,nbins=None):
         else:
             H[b,0] = 0
             H[b,1] = 0
+    if (verbose and (nbins in [10, 50, 100, 150, 200])):
+        end = time.time()
+        print 'BinMaker with '+str(nbins)+' bins took '+str(end-start)+' seconds'
     return H, bin_edges
 
 def bin_maker(F_matrix,q,lapse,nbins=None):
@@ -181,12 +186,14 @@ def convergence(test):
     Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
     for node in range(len(N)):
         for link in range(len(F)):
+            if (link == 0) and (node == 0): verbose = True
+            else: verbose = False
             # Stacking and sorting data
             F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
             exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
             F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
             F_matrix[F_matrix[:,0].argsort()]
-            H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,nbins=test)
+            H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,nbins=test,verbose=verbose)
             Node_contributions[node,link] = node_contrib(H,bin_edges)
     # save results to file 
     np.save('./results/convergence/Node_contrib_'+str(test)+'.npy',Node_contributions)
