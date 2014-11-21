@@ -40,7 +40,7 @@ if len(sys.argv)<2:
 else:
     task = str(sys.argv[1:])
 
-modes = ['linear','square','RND']   # The three export schemes
+modes = ['linear','square'] # RND # The three export schemes
 directions = ['import','export']
 lapse = 70128   # number of hours to include
 N_bins = 16     # number of bins. Determined from the convergence mode
@@ -74,7 +74,11 @@ def binMaker(F_matrix,q,lapse,nbins=None):
     H = np.zeros((nbins,2)) # [number of events, mean usage]
     for b in range(nbins):
         if b == nbins-2:
-            usage = usages[np.where(flows >= b*bin_size)]
+            usage = usages[np.where(np.logical_and(flows >= b*bin_size, flows<(b+1)*bin_size))]
+            # Take care of events beyond the given quantile. Scale them and
+            # place them in the last bin
+            indices = np.where(flows >= (b+1)*bin_size)
+            np.append(usage, usages[indices]/flows[indices]*(b+1)*bin_size)
         else:
             usage = usages[np.where(np.logical_and(flows >= b*bin_size, flows<(b+1)*bin_size))]
         events = len(usage)
@@ -185,7 +189,7 @@ def convergence(test):
             H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,nbins=test)
             Node_contributions[node,link] = node_contrib(H,bin_edges)
     # save results to file 
-    np.save('./convergence/Node_contrib_'+str(test)+'.npy',Node_contributions)
+    np.save('./results/convergence/Node_contrib_'+str(test)+'.npy',Node_contributions)
 
 def solver(mode,verbose=None):
     """
@@ -322,7 +326,10 @@ if 'converge' in task:
     """
     Check for convergence with altering bin size
     """
-    test_bins = range(10,31,2) # how many bins to test
+    r1 = range(10,22,2)
+    r2 = range(25,105,5)
+    r3 = range(110,210,10)
+    test_bins = np.hstack([r1, r2, r3]) # how many bins to test
     print('Geting ready to test convergence')
     print('Lapse: '+str(lapse)+', Number of runs: '+str(len(test_bins)))
 
@@ -333,11 +340,11 @@ if 'converge' in task:
     print('Loaded import usages')
     # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
-    np.save('./convergence/quantiles.npy',quantiles)
+    np.save('./results/convergence/quantiles.npy',quantiles)
 
     # Calculate usages
     print('Populating workers')
-    p = Pool(6)
+    p = Pool(8)
     p.map(convergence,test_bins)
 
     # Compare results
@@ -346,18 +353,18 @@ if 'converge' in task:
     means = np.zeros(len(test_bins))
     maxs = np.zeros(len(test_bins))
     stds = np.zeros(len(test_bins))
-    quantiles = np.load('./convergence/quantiles.npy')
+
     index = 0
     for i in test_bins:
-        N_usages = np.load('./convergence/Node_contrib_'+str(i)+'.npy')
+        N_usages = np.load('./results/convergence/Node_contrib_'+str(i)+'.npy')
         Total = np.sum(N_usages,0)/quantiles
         mins[index] = Total.min()
         means[index] = Total.mean()
         maxs[index] = Total.max()
         stds[index] = Total.std()
         index+=1
-    np.savez('./convergence/results.npz',mins=mins,means=means,maxs=maxs,stds=stds)
-    print('Saved results to ./convergence/results.npz')
+    np.savez('./results/convergence/results.npz',mins=mins,means=means,maxs=maxs,stds=stds)
+    print('Saved results to ./results/convergence/results.npz')
 
     # Plot comparison
     print('Plotting results')
@@ -370,8 +377,8 @@ if 'converge' in task:
     plt.xlabel('Number of bins')
     plt.ylabel(r'$C/T^{99\%}$')
     plt.title('Convergence check for different bin sizes')
-    plt.savefig('./figures/convergence.png')
-    print('Saved results to ./figures/convergence.png')
+    plt.savefig('./figures/convergence/convergence.png')
+    print('Saved results to ./figures/convergence/convergence.png')
 
 if 'solve' in task:
     """
