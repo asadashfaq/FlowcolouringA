@@ -9,6 +9,7 @@ import matplotlib as mpl
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import node_namer, link_dict
 from scipy.stats import pearsonr
+from functions import linkProportional
 
 """
 Script that makes network figures of a country's usage for import, export and
@@ -29,21 +30,6 @@ else:
 
 schemes = ['linear' ,'square'] #'RND'
 directions = ['import', 'export', 'combined']
-
-def linkProportional(N,link_dic,quantiles):
-    """
-    Calculate a node's link proportional.
-    For each node: find directly connected links and sum half their capacity
-    """
-    link_proportional = np.zeros(len(N))
-    for n in N:
-        node_id = n.id
-        node_label = str(n.label)
-        for link in link_dic[node_label]:
-            link_proportional[node_id] += quantiles[link]*.5
-        link_proportional[node_id] = link_proportional[node_id]/n.mean
-    link_proportional = np.reshape(link_proportional,(len(link_proportional),1))
-    return link_proportional
 
 def simpleMerger(data, merge_dict):
     """
