@@ -33,7 +33,7 @@ How to call the script with only one of the following command line arguments:
 - combined:     calculate usages for combined import/export and save to './results/'
 - plot:         create various figures from './results/ and save to './figures/'
 
-'solve', 'combined' and 'plot' can be followed by 'length' to inklude modelling of link lengths.
+'solve' and 'combined' can be followed by 'length' to include modelling of link lengths.
 """
 
 """
@@ -48,6 +48,9 @@ modes = ['linear','square'] # RND # The three export schemes
 directions = ['import','export']
 lapse = 70128   # number of hours to include
 N_bins = 90     # number of bins. Determined from the convergence mode
+
+if 'length' in task: length = 'countries' # modelling of link lengths
+else: length = False
 
 print('Initialisation')
 print('Modes: '+str(modes))
@@ -154,12 +157,16 @@ def solver(mode,verbose=None):
                 F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
                 F_matrix[F_matrix[:,0].argsort()]
                 
-                H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,N_bins)
-                Node_contributions[node,link] = node_contrib(H,bin_edges)
+                H,bin_edges = binMaker(F_matrix, quantiles[link], lapse, N_bins)
+                Node_contributions[node,link] = node_contrib(H, bin_edges, linkID=link, lengths=length)
                 
-        # save results to file 
-        np.save('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
-        print('Saved Node_contributions to ./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+        # save results to file
+        if not length:
+            np.save('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
+            print('Saved Node_contributions to ./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy')
+        else:
+            np.save('./results/Node_contrib_'+mode+'_'+direction+'_length_'+str(lapse)+'.npy',Node_contributions)
+            print('Saved Node_contributions to ./results/Node_contrib_'+mode+'_'+direction+'_length_'+str(lapse)+'.npy')
         if ((direction == 'import') or ('combined' in directions)):
             np.save('./results/quantiles_'+mode+'_'+str(lapse)+'.npy',quantiles)
             print('Saved 99% quantiles to ./results/quantiles_'+mode+'_'+str(lapse)+'.npy')
@@ -309,16 +316,18 @@ if 'solve' in task:
     """
     Calculate nodes' contributions and save results to file.
     """
-    print('Solving')
+    if not length: print('Solving')
+    else: print('Solving with lengths')
     p = Pool(len(modes))
     print('Populating '+str(len(modes))+' workers')
     p.map(solver,modes)
-
+    
 if 'combined' in task:
     """
     Calculate nodes' contributions for the combination of import and export and save results to file.
     """
-    print('Solving the combined case')
+    if not length: print('Solving the combined case')
+    else: print('Solving the combined case with lengths')
     directions = ['combined']
     p = Pool(len(modes))
     print('Populating '+str(len(modes))+' workers')
@@ -328,7 +337,8 @@ if 'plot' in task:
     """
     Create various plots of usage and save figures to ./figures/
     """
-    print('Getting ready to plot')
+    if not length: print('Getting ready to plot')
+    else: print('Getting ready to plot with lengths')
     #directions = ['import','export','combined']
     directions = ['combined']
     p = Pool(len(modes))
