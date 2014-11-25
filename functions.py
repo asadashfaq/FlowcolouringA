@@ -22,7 +22,7 @@ def linkProportional(N, link_dic, quantiles, lengths=None):
     if lengths: # includes modelling of link lengths
         if ((type(lengths) != list) and (not hasattr(lengths, 'all'))): # load lengths if none are given
             if lengths == 'countries':
-                lengths = np.load('./settings/country_link_length')
+                lengths = np.load('./settings/country_link_length.npy')
         quantiles = quantiles*lengths
     link_proportional = np.zeros(len(N))
     for n in N:
