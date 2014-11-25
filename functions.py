@@ -7,22 +7,43 @@ import numpy as np
 A collection of commonly used functions.
 """
 
-def link_label(num,N):
+def link_label(num, N):
     """
     Translate link number into a string like: 'Country1-Country2'.
     """
     label = get_link_direction(num,N)
     return str(label[0].label)+'-'+str(label[1].label)
 
-def binMaker(F_matrix,q,lapse,nbins=None):
+def linkProportional(N, link_dic, quantiles, lengths=None):
+    """
+    Calculate a node's link proportional.
+    For each node: find directly connected links and sum half their capacity
+    """
+    if lengths: # includes modelling of link lengths
+        if ((type(lengths) != list) and (not hasattr(lengths, 'all'))): # load lengths if none are given
+            if len(quantiles) == 30:
+                lengths = np.load('./settings/country_link_length')
+        quantiles = quantiles*lengths
+    link_proportional = np.zeros(len(N))
+    for n in N:
+        node_id = n.id
+        node_label = str(n.label)
+        for link in link_dic[node_label]:
+            link_proportional[node_id] += quantiles[link]*.5
+        link_proportional[node_id] = link_proportional[node_id]/n.mean
+    link_proportional = np.reshape(link_proportional,(len(link_proportional),1))
+    return link_proportional
+
+def binMaker(F_matrix, q, lapse, nbins=None, verbose=False):
     """
     Histogram to calculate each nodes average usage of a link. The last bin
     should be placed such that its right side is aligned with the 99% quantile
     of the flow on the link. This value is set as the capacity of the link.
     """
+    if (verbose and (nbins in [10, 50, 100, 150, 200])): start = time.time()
     bin_max = np.ceil(q) # last bin ends at 99% quantile
     if not nbins:
-        nbins = 16 # this number is not at all arbitrary
+        nbins = 90 # this number is not at all arbitrary
     bin_size = bin_max/nbins
     bin_edges = np.linspace(bin_size,bin_max,nbins) # value at the right side of each bin, last bin is 99% quantile
 
@@ -31,7 +52,11 @@ def binMaker(F_matrix,q,lapse,nbins=None):
     H = np.zeros((nbins,2)) # [number of events, mean usage]
     for b in range(nbins):
         if b == nbins-2:
-            usage = usages[np.where(flows >= b*bin_size)]
+            usage = usages[np.where(np.logical_and(flows >= b*bin_size, flows<(b+1)*bin_size))]
+            # Take care of events beyond the given quantile. Scale them and
+            # place them in the last bin
+            indices = np.where(flows >= (b+1)*bin_size)
+            np.append(usage, usages[indices]/flows[indices]*(b+1)*bin_size)
         else:
             usage = usages[np.where(np.logical_and(flows >= b*bin_size, flows<(b+1)*bin_size))]
         events = len(usage)
@@ -42,18 +67,21 @@ def binMaker(F_matrix,q,lapse,nbins=None):
         else:
             H[b,0] = 0
             H[b,1] = 0
+    if (verbose and (nbins in [10, 50, 100, 150, 200])):
+        end = time.time()
+        print 'BinMaker with '+str(nbins)+' bins took '+str(end-start)+' seconds'
     return H, bin_edges
     
-def bin_prob(bin_id,H):
+def bin_prob(bin_id, H):
     """
     Probability of occurence of given flow
     """
     return H[bin_id,0]/sum(H[:,0])
 
-def bin_CDF(bin_id,H):
+def bin_CDF(bin_id, H):
     """
     Cumulative distribution function to be used on the bins created in the
-    bin_maker.
+    binMaker.
     """
     i = 0
     P = 0
@@ -63,7 +91,7 @@ def bin_CDF(bin_id,H):
     P = P/sum(H[:,0])
     return P
 
-def node_contrib(H,bin_edges):
+def node_contrib(H, bin_edges, linkID=None, lengths=None):
     """
     Calculate a node's contribution to a specific links capacity
     """
@@ -82,8 +110,13 @@ def node_contrib(H,bin_edges):
             c2 += bin_prob(l,H)*H[l,1]/flows[l]
             l += 1
         C += c1*c2
-    return C
-
+    if not lengths:
+        return C
+    else: # includes modelling of link lengths
+        if ((type(lengths) != list) and (not hasattr(lengths, 'all'))): # load lengths if none are given
+            if len(quantiles) == 30:
+                lengths = np.load('./settings/country_link_length')
+        return C*lengths[linkID]
 """
 The following three functions are for manipulating adjacency matrices.
 They are especially used in newRegions.py.
