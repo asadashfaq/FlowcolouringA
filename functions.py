@@ -114,8 +114,8 @@ def node_contrib(H, bin_edges, linkID=None, lengths=None):
         return C
     else: # includes modelling of link lengths
         if ((type(lengths) != list) and (not hasattr(lengths, 'all'))): # load lengths if none are given
-            if len(quantiles) == 30:
-                lengths = np.load('./settings/country_link_length')
+            if lengths == 'countries':
+                lengths = np.load('./settings/country_link_length.npy')
         return C*lengths[linkID]
 """
 The following three functions are for manipulating adjacency matrices.
