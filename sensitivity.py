@@ -32,6 +32,8 @@ Call the script using only one of the following command line arguments:
 - solve:    solve network and save solutions
 - trace:    run flow tracing and save results
 - usage:    calculate nodes' usage and save results
+
+usage can be followed by 'length' to include modelling of link lengths.
 """
 
 if len(sys.argv)<2:
@@ -43,6 +45,9 @@ networks = ['superRegions', 'regions']
 schemes = ['linear', 'square'] #'RND'
 directions = ['import', 'export', 'combined']
 lapse = 70128  # number of hours to include
+
+if 'length' in task: length = True # modelling of link lengths
+else: length = False
 
 def regionSolver(scheme):
     print('Solving regions')
@@ -89,7 +94,7 @@ def calc_usage(network):
         boxplot,boxplotlabel = track_link_usage_total(N2,F,mode=scheme,alph='same',lapse=lapse,sensitivity=True)
     return
 
-def calc_contribution(network,scheme,verbose=None):
+def calc_contribution(network, scheme, verbose=None):
     """
     Calculate nodes' contribution for a single mode and save results to file.
     Adapted from _solver_ in usage.py
@@ -101,8 +106,10 @@ def calc_contribution(network,scheme,verbose=None):
     
     if network == 'superRegions':
         N = EU_Nodes_superRegions('../sensitivity/superRegions-'+scheme+'.npz')
+        if length: lengths = 'superRegions'
     elif network == 'regions':
         N = EU_Nodes_regions('../sensitivity/regions-'+scheme+'.npz')
+        if length: lengths = 'regions'
     else:
         raise Exception('Wrong network!')
     
@@ -136,11 +143,15 @@ def calc_contribution(network,scheme,verbose=None):
                 F_matrix[F_matrix[:,0].argsort()]
                 
                 H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,N_bins)
-                Node_contributions[node,link] = node_contrib(H,bin_edges)
-                
-        # save results to file 
-        np.save('./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
-        print('Saved Node_contributions to ./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
+                Node_contributions[node,link] = node_contrib(H, bin_edges, linkID=link, lengths=lengths)
+
+        # save results to file
+        if not length:
+            np.save('./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
+            print('Saved Node_contributions to ./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
+        else:
+            np.save('./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy',Node_contributions)
+            print('Saved Node_contributions to ./sensitivity/'+network+'-Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
         if direction == 'import':
             np.save('./sensitivity/'+network+'-quantiles_'+scheme+'_'+str(lapse)+'.npy',quantiles)
             print('Saved 99% quantiles to ./sensitivity/'+network+'-quantiles_'+scheme+'_'+str(lapse)+'.npy')
