@@ -30,7 +30,7 @@ def linkProportional(N, link_dic, quantiles, lengths=None):
     """
     if lengths: # includes modelling of link lengths
         if ((type(lengths) != list) and (not hasattr(lengths, 'all'))): # load lengths if none are given
-            getLengths(lengths)
+            lengths = getLengths(lengths)
         quantiles = quantiles*lengths
     link_proportional = np.zeros(len(N))
     for n in N:
