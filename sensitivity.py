@@ -94,7 +94,7 @@ def calc_usage(network):
         boxplot,boxplotlabel = track_link_usage_total(N2,F,mode=scheme,alph='same',lapse=lapse,sensitivity=True)
     return
 
-def calc_contribution(network, scheme, verbose=None):
+def calc_contribution(scheme, verbose=None):
     """
     Calculate nodes' contribution for a single mode and save results to file.
     Adapted from _solver_ in usage.py
@@ -105,10 +105,10 @@ def calc_contribution(network, scheme, verbose=None):
         print('Scheme: '+scheme)
     
     if network == 'superRegions':
-        N = EU_Nodes_superRegions('../sensitivity/superRegions-'+scheme+'.npz')
+        nNodes = 8
         if length: lengths = 'superRegions'
     elif network == 'regions':
-        N = EU_Nodes_regions('../sensitivity/regions-'+scheme+'.npz')
+        nNodes = 53
         if length: lengths = 'regions'
     else:
         raise Exception('Wrong network!')
@@ -131,10 +131,10 @@ def calc_contribution(network, scheme, verbose=None):
         print('Loaded '+scheme+' usages')
         
         # Calculate usages and save to file
-        Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
-        for node in range(len(N)):
+        Node_contributions = np.zeros((nNodes,len(F))) # empty array for calculated usages
+        for node in range(nNodes):
             if verbose:
-                print node+1,'/ '+str(len(N))
+                print node+1,'/ '+str(nNodes)
             for link in range(len(F)):
                 # Stacking and sorting data
                 F_vert = np.reshape(F[link,:lapse],(len(F[link,:lapse]),1))
@@ -142,7 +142,7 @@ def calc_contribution(network, scheme, verbose=None):
                 F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
                 F_matrix[F_matrix[:,0].argsort()]
                 
-                H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,N_bins)
+                H,bin_edges = binMaker(F_matrix, quantiles[link], lapse, N_bins)
                 Node_contributions[node,link] = node_contrib(H, bin_edges, linkID=link, lengths=lengths)
 
         # save results to file
@@ -162,8 +162,8 @@ Solving flows for different export schemes
 if 'solve' in task:
     print 'Mode selected: Solving network flows'
     print 'Lapse: '+str(lapse)+' hours'
-    
-    p = Pool(3)
+    p = Pool(len(directions))
+    print('Populating '+str(len(directions))+' workers')
     p.map(regionSolver,schemes)
     p.map(sRegionSolver,schemes)
 
@@ -183,5 +183,6 @@ if 'usage' in task:
     print 'Mode selected: Calculate usage'
     N_bins = 90 # This number has been determined from a calculation of convergence. See 'convergence' in _usage.py_.
     for network in networks:
-        for scheme in schemes:
-            calc_contribution(network,scheme)
+        p = Pool(len(directions))
+        print('Populating '+str(len(directions))+' workers')
+        p.map(calc_contribution, schemes)
