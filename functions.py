@@ -14,6 +14,15 @@ def link_label(num, N):
     label = get_link_direction(num,N)
     return str(label[0].label)+'-'+str(label[1].label)
 
+def getLengths(lengths):
+    if lengths == 'countries':
+        lengths = np.load('./settings/country_link_length.npy')
+    elif lengths == 'regions':
+        lengths = np.load('./settings/region_link_length.npy')
+    elif lengths == 'superRegions':
+        lengths = np.load('./settings/superRegion_link_length.npy')
+    return lengths
+
 def linkProportional(N, link_dic, quantiles, lengths=None):
     """
     Calculate a node's link proportional.
@@ -21,8 +30,7 @@ def linkProportional(N, link_dic, quantiles, lengths=None):
     """
     if lengths: # includes modelling of link lengths
         if ((type(lengths) != list) and (not hasattr(lengths, 'all'))): # load lengths if none are given
-            if lengths == 'countries':
-                lengths = np.load('./settings/country_link_length.npy')
+            getLengths(lengths)
         quantiles = quantiles*lengths
     link_proportional = np.zeros(len(N))
     for n in N:
@@ -114,8 +122,7 @@ def node_contrib(H, bin_edges, linkID=None, lengths=None):
         return C
     else: # includes modelling of link lengths
         if ((type(lengths) != list) and (not hasattr(lengths, 'all'))): # load lengths if none are given
-            if lengths == 'countries':
-                lengths = np.load('./settings/country_link_length.npy')
+            lengths = getLengths(lengths)
         return C*lengths[linkID]
 """
 The following three functions are for manipulating adjacency matrices.
