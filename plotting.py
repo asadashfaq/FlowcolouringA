@@ -9,7 +9,7 @@ import matplotlib as mpl
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import node_namer, link_dict
 from scipy.stats import pearsonr
-from functions import linkProportional
+from functions import linkProportional, getLengths
 
 """
 Script that makes network figures of a country's usage for import, export and
@@ -269,19 +269,22 @@ def bars(scheme, verbose=None):
         quantiles = np.load('./sensitivity/superRegions-quantiles_'+scheme+'_'+str(lapse)+'.npy')
         network = 'superRegions'
         nNodes = 8
-        if length: lengths = 'superRegions'
+        if length:
+            lengths = 'superRegions'
     elif len(N) == 30:
         F = abs(np.load('./results/'+scheme+'-flows.npy'))
         quantiles = np.load('./results/quantiles_'+scheme+'_'+str(lapse)+'.npy')
         network = ''
         nNodes = 30
-        if length: lengths = 'countries'
+        if length:
+            lengths = 'countries'
     elif len(N) == 53:
         F = abs(np.load('./sensitivity/regions-'+scheme+'-flows.npy'))
         quantiles = np.load('./sensitivity/regions-quantiles_'+scheme+'_'+str(lapse)+'.npy')
         network = 'regions'
         nNodes = 53
-        if length: lengths = 'regions'
+        if length:
+            lengths = 'regions'
     else:
         raise Exception('Wrong network!')
 
@@ -312,9 +315,10 @@ def bars(scheme, verbose=None):
         # Calculate node proportional
         EU_load = np.sum(node_mean_load)
         if length:
-            linkLengths = np.load('./settings/country_link_length.npy')
+            linkLengths = getLengths(lengths)
             Total_caps = sum(quantiles*linkLengths)
-        else: Total_caps = sum(quantiles)
+        else:
+            Total_caps = sum(quantiles)
         Node_proportional = node_mean_load/EU_load*Total_caps/node_mean_load
 
         # Calculate link proportional
@@ -359,8 +363,10 @@ def bars(scheme, verbose=None):
 
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
-        if length: ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
-        else: ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+        if length:
+            ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
+        else:
+            ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
         maxes = [max(link_proportional), max(data_sort)]
         plt.axis([0,nNodes*2+.5,0,1.15*max(maxes)])
 
@@ -375,7 +381,7 @@ def bars(scheme, verbose=None):
 
         if (network == 'regions' or network == 'superRegions'):
             if length: plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'-length.png', bbox_inches='tight')
-            else: plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'-length.png', bbox_inches='tight')
+            else: plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
         else:
             if length:
                 plt.savefig('./figures/'+scheme+'/network-usage-'+direction+'-length.png', bbox_inches='tight')
@@ -686,7 +692,8 @@ if (('total' in task) and ('sensitivity' not in task)):
     p.map(bars, schemes)
 
 if (('total' in task) and ('sensitivity' in task)):
-    print('Plotting total network usage for different networks')
+    if not length: print('Plotting total network usage for different networks')
+    else: print('Plotting total network usage for different networks with lengths')
     lapse = 70128
     N = EU_Nodes_superRegions()
     nLinks = np.zeros(12)
