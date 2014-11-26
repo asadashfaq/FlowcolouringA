@@ -181,7 +181,7 @@ Calculate nodes' contributions and save results to file.
 """
 if 'usage' in task:
     print 'Mode selected: Calculate usage'
-    N_bins = 16 # This number has been determined from a calculation of convergence. See 'convergence' in _usage.py_.
+    N_bins = 90 # This number has been determined from a calculation of convergence. See 'convergence' in _usage.py_.
     for network in networks:
         for scheme in schemes:
             calc_contribution(network,scheme)
