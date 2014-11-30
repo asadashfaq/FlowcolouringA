@@ -324,7 +324,8 @@ def bars(scheme, verbose=None):
 
         # Calculate link proportional
         link_proportional = linkProportional(N, link_dic, quantiles, lengths=lengths)
-
+        link_proportional = [link_proportional[i]/node_mean_load[i] for i in range(nNodes)]
+        
         # Calculate usage and sort countries by mean load
         normed_usage = Total_usage/node_mean_load
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
@@ -438,7 +439,8 @@ def bars2(scheme, verbose=False):
         # Calculate link proportional
         if length: link_proportional = linkProportional(N, link_dic, quantiles, lengths='countries')
         else: link_proportional = linkProportional(N, link_dic, quantiles)
-
+        link_proportional = [link_proportional[i]/node_mean_load[i] for i in range(nNodes)]
+        
         # Calculate usage and sort countries by mean load
         normed_usage = Total_usage/node_mean_load
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
@@ -459,6 +461,7 @@ def bars2(scheme, verbose=False):
         if length: link_proportional_regions = linkProportional(N_regions, link_dic_regions, quantiles_regions, lengths='regions')
         else: link_proportional_regions = linkProportional(N_regions, link_dic_regions, quantiles_regions)
         link_proportional_merged = simpleMerger(link_proportional_regions, mergeDict)
+        link_proportional_merged = [link_proportional_merged[i]/node_mean_load_merged[i] for i in range(nNodes)]
         normed_usage_merged = Total_usage_merged/node_mean_load_merged
 
         normed_usage_merged = np.reshape(normed_usage_merged,(len(normed_usage_merged),1))
@@ -582,6 +585,7 @@ def bars3(scheme):
         # Calculate link proportional
         if length: SR_link_proportional = linkProportional(N_superRegions, link_dic_superRegions, quantiles_superRegions, lengths='superRegions')
         else: SR_link_proportional = linkProportional(N_superRegions, link_dic_superRegions, quantiles_superRegions)
+        SR_link_proportional = [SR_link_proportional[i]/SR_mean_load[i] for i in range(nNodes)]
 
         # Calculate usage and sort countries by mean load
         normed_usage = Total_SR_usage/SR_mean_load
@@ -605,6 +609,7 @@ def bars3(scheme):
         if length: country_link_proportional = linkProportional(N, link_dic, quantiles, lengths='countries')
         else: country_link_proportional = linkProportional(N, link_dic, quantiles)
         country_link_proportional = simpleMerger(country_link_proportional, country_mergeDict)
+        country_link_proportional = [country_link_proportional[i]/country_mean_load[i] for i in range(nNodes)]
         country_normed_usage = Total_country_usage/country_mean_load
 
         country_normed_usage = np.reshape(country_normed_usage,(len(country_normed_usage),1))
@@ -626,6 +631,7 @@ def bars3(scheme):
         if length: region_link_proportional = linkProportional(N_regions, link_dic_regions, quantiles_regions, lengths='regions')
         else: region_link_proportional = linkProportional(N_regions, link_dic_regions, quantiles_regions)
         region_link_proportional = simpleMerger(region_link_proportional, country_mergeDict)
+        region_link_proportional = [region_link_proportional[i]/region_mean_load[i] for i in range(nNodes)]
         region_normed_usage = Total_region_usage/region_mean_load
 
         region_normed_usage = np.reshape(region_normed_usage,(len(region_normed_usage),1))
