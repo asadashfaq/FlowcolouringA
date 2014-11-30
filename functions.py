@@ -38,7 +38,6 @@ def linkProportional(N, link_dic, quantiles, lengths=None):
         node_label = str(n.label)
         for link in link_dic[node_label]:
             link_proportional[node_id] += quantiles[link]*.5
-        link_proportional[node_id] = link_proportional[node_id]/n.mean
     link_proportional = np.reshape(link_proportional,(len(link_proportional),1))
     return link_proportional
 
