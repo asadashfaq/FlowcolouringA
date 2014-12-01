@@ -19,7 +19,7 @@ Call the script using only one of the following command line arguments:
 - network:                  network figures with coloured links, only works for N=30
 - total:                    barplots comparing total network usage for different export schemes
 - total sensitivity:        same as above, but for N=8 and N=50 networks
-- sensitivity compare:      compare different networks in the same figure, N=30, N=8 
+- sensitivity compare:      compare different networks: N=30 & N=8 ; N=30 & N=53
 - sensitivity compare all:  as just above for N=53, N=30, N=8
 
 The last 4 can be followed by 'length' to include modelling of link lengths.
@@ -530,12 +530,159 @@ def bars2(scheme, verbose=False):
         s = 'linkCorr = '+linkCorr+', usageCorr = '+usageCorr
         plt.text(6,.9*max(maxes),s)
 
-        if length: plt.savefig('./figures/sensitivity/'+scheme+'/compared-network-usage-'+direction+'-length.png', bbox_inches='tight')
-        else: plt.savefig('./figures/sensitivity/'+scheme+'/compared-network-usage-'+direction+'.png', bbox_inches='tight')
+        if length: plt.savefig('./figures/sensitivity/'+scheme+'/compared-30-53-usage-'+direction+'-length.png', bbox_inches='tight')
+        else: plt.savefig('./figures/sensitivity/'+scheme+'/compared-30-53-usage-'+direction+'.png', bbox_inches='tight')
         if verbose:
-            print('Saved figures to ./figures/sensitivity/'+scheme+'/compared-network-usage-'+direction+'.png')
+            print('Saved figures to ./figures/sensitivity/'+scheme+'/compared-30-53-usage-'+direction+'.png')
 
-def bars3(scheme):
+def bars3(scheme, verbose=False):
+    """
+    Creates figures to compare usage proportional for networks with N = 30 and
+    N = 8 and places them in ./figures/sensitivity/scheme/
+    """
+    """
+    Creates figures to compare usage proportional for networks with N = 53,
+    N = 50 and N = 8 and places them in ./figures/sensitivity/scheme/
+    """
+    # Load data and results
+    N_superRegions = EU_Nodes_superRegions()
+    F_superRregions = abs(np.load('./sensitivity/superRegions-'+scheme+'-flows.npy'))
+    quantiles_superRegions = np.load('./sensitivity/superRegions-quantiles_'+scheme+'_'+str(lapse)+'.npy')
+
+    N = EU_Nodes_usage()
+    F = abs(np.load('./results/'+scheme+'-flows.npy'))
+    quantiles = np.load('./results/quantiles_'+scheme+'_'+str(lapse)+'.npy')
+
+    country_mergeDict = None
+    names = node_namer(N_superRegions)
+    countryNames = node_namer(N)
+    nNodes = 8
+    nodes = np.linspace(0.5,2*nNodes-1.5,nNodes)
+    bw = .5 # bar width
+    nodes_shift = nodes+.5*bw
+    
+    for direction in directions:
+        if length: SR_usages = np.load('./sensitivity/superRegions-Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
+        else: SR_usages = np.load('./sensitivity/superRegions-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
+
+        # SUPER REGIONS
+        # Calculate node-, link- and usage proportional
+        Total_SR_usage = np.sum(SR_usages,1)
+        node_ids = np.array(range(nNodes)).reshape((nNodes,1))
+        SR_mean_load = [n.mean for n in N_superRegions]
+
+        # Calculate node proportional
+        Total_load = np.sum(SR_mean_load)
+        if length:
+            linkLengths = getLengths('superRegions')
+            Total_caps = sum(quantiles_superRegions*linkLengths)
+        else:
+            Total_caps = sum(quantiles_superRegions)
+        SR_node_proportional = SR_mean_load/Total_load*Total_caps/SR_mean_load
+
+        # Calculate link proportional
+        if length: SR_link_proportional = linkProportional(N_superRegions, link_dic_superRegions, quantiles_superRegions, lengths='superRegions')
+        else: SR_link_proportional = linkProportional(N_superRegions, link_dic_superRegions, quantiles_superRegions)
+        SR_link_proportional = [SR_link_proportional[i]/SR_mean_load[i] for i in range(nNodes)]
+
+        # Calculate usage and sort countries by mean load
+        normed_usage = Total_SR_usage/SR_mean_load
+        normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
+        SR_mean_load = np.reshape(SR_mean_load,(len(SR_mean_load),1))
+
+
+        # COUNTRIES
+        if length: country_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
+        else: country_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
+        country_usages, country_mean_load, country_mergeDict = superRegionMerger(N, country_usages, countryNames, md=country_mergeDict)
+        
+        Total_country_usage = np.sum(country_usages,1)
+        Total_country_load = np.sum(country_mean_load)
+        if length:
+            linkLengths = getLengths('countries')
+            Total_country_caps = sum(quantiles*linkLengths)
+        else:
+            Total_country_caps = sum(quantiles)
+        country_node_proportional = country_mean_load/Total_country_load*Total_country_caps/country_mean_load
+        if length: country_link_proportional = linkProportional(N, link_dic, quantiles, lengths='countries')
+        else: country_link_proportional = linkProportional(N, link_dic, quantiles)
+        country_link_proportional = simpleMerger(country_link_proportional, country_mergeDict)
+        country_link_proportional = [country_link_proportional[i]/country_mean_load[i] for i in range(nNodes)]
+        country_normed_usage = Total_country_usage/country_mean_load
+
+        country_normed_usage = np.reshape(country_normed_usage,(len(country_normed_usage),1))
+        country_mean_load = np.reshape(country_mean_load,(len(country_mean_load),1))
+        country_link_proportional = np.reshape(country_link_proportional,(len(country_link_proportional),1))
+
+
+        # Sort data for plotting
+        data = np.hstack([normed_usage, node_ids, SR_mean_load, SR_link_proportional,
+            country_normed_usage, country_link_proportional])
+        data_sort = data[data[:,2].argsort()]
+        names_sort = [names[int(i)] for i in data_sort[:,1]]
+        # flip order so largest is first
+        names_sort = names_sort[::-1]
+        SR_link_proportional = data_sort[:,3][::-1]
+        SR_usage_proportional = data_sort[:,0][::-1]
+        country_link_proportional = data_sort[:,5][::-1]
+        country_usage_proportional = data_sort[:,4][::-1]
+
+
+        # PLOTTING
+        plt.figure(figsize=(10, 4), facecolor='w', edgecolor='k')
+        ax = plt.subplot(111)
+        green = '#009900'
+        blue = '#000099'
+
+        # Plot node proportional
+        plt.rc('lines', lw=2)
+        plt.rc('lines', dash_capstyle = 'round')
+        plt.plot(np.linspace(0,len(N_superRegions)*2+2,len(N_superRegions)),SR_node_proportional,'--k')
+        # Plot link proportional
+        plt.bar(nodes,SR_link_proportional,width=bw,color=green,edgecolor='none')
+        plt.bar(nodes+1.5*bw,country_link_proportional,width=bw,color=green,edgecolor='none')
+        # Plot usage proportional
+        plt.bar(nodes_shift+.2*bw,SR_usage_proportional,width=bw,color=blue,edgecolor='none')
+        plt.bar(nodes_shift+1.7*bw,country_usage_proportional,width=bw,color=blue,edgecolor='none')
+
+        # Magic with ticks and labels
+        ax.set_xticks(np.linspace(1.5,len(N)*2+1.5,len(N)+1))
+        ax.set_xticklabels(names_sort,rotation=60,ha="right",va="top",fontsize=10.5)
+
+        ax.xaxis.grid(False)
+        ax.xaxis.set_tick_params(width=0)
+        if length:
+            ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
+        else:
+            ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+        maxes = [max(SR_link_proportional), max(SR_usage_proportional), max(country_link_proportional), max(country_usage_proportional)]
+        plt.axis([0,nNodes*2+.5,0,1.15*max(maxes)])
+
+        # Legend
+        artists = [plt.Line2D([0,0],[0,0],ls='dashed',lw=2.0,c='k'), plt.Rectangle((0,0),0,0,ec=green,fc=green), plt.Rectangle((0,0),0,0,ec=blue,fc=blue)]
+        LABS = ['node proportional M$^1$','link proportional M$^2$','usage proportional M$^3$']
+        leg = plt.legend(artists, LABS,loc='upper left',ncol=len(artists), columnspacing=0.6,borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight = 1.2)
+        leg.get_frame().set_alpha(0)
+        leg.get_frame().set_edgecolor('white')
+        ltext = leg.get_texts()
+        plt.setp(ltext, fontsize=9.5)
+
+        # Calculate correlations between countries and merged regions
+        link1 = SR_link_proportional[np.where(country_link_proportional > 0)]
+        link2 = country_link_proportional[np.where(country_link_proportional > 0)]
+        linkCorr =  '%0.2f' % pearsonr(link1, link2)[0]
+        usage1 = SR_usage_proportional[np.where(country_usage_proportional > 0)]
+        usage2 = country_usage_proportional[np.where(country_usage_proportional > 0)]
+        usageCorr =  '%0.2f' % pearsonr(usage1, usage2)[0]
+        s = 'linkCorr = '+linkCorr+', usageCorr = '+usageCorr
+        plt.text(2,.9*max(maxes),s)
+
+        if length: plt.savefig('./figures/sensitivity/'+scheme+'/compared-30-8-usage-'+direction+'-length.png', bbox_inches='tight')
+        else: plt.savefig('./figures/sensitivity/'+scheme+'/compared-30-8-usage-'+direction+'.png', bbox_inches='tight')
+        if verbose:
+            print('Saved figures to ./figures/sensitivity/'+scheme+'/compared-30-8-usage-'+direction+'.png')
+
+def bars4(scheme):
     """
     Creates figures to compare usage proportional for networks with N = 53,
     N = 50 and N = 8 and places them in ./figures/sensitivity/scheme/
@@ -751,18 +898,24 @@ if (('total' in task) and ('sensitivity' in task)):
         bars(scheme)
 
 if (('sensitivity' in task) and ('compare' in task) and ('all' not in task)):
-    if not length: print('Comparing countries with merged regions')
-    else: print('Comparing countries with merged regions with lengths')
-    for scheme in schemes:
-        lapse = 70128
-        N = EU_Nodes_usage()
-        link_dic = link_dict(N) # dictionary of links directly connected to each node
-        
-        N = EU_Nodes_regions()
-        nLinks = np.zeros(96)
-        link_dic_regions = link_dict(N,nLinks)
+    if not length: print('Comparing N=30 with N=8 and N=30 with N=53')
+    else: print('Comparing N=30 with N=8 and N=30 with N=53 including lengths')
 
+    lapse = 70128
+    N = EU_Nodes_usage()
+    link_dic = link_dict(N) # dictionary of links directly connected to each node
+    
+    N = EU_Nodes_regions()
+    nLinks = np.zeros(96)
+    link_dic_regions = link_dict(N,nLinks)
+
+    N = EU_Nodes_superRegions()
+    nlinks = np.zeros(12)
+    link_dic_superRegions = link_dict(N,nlinks)
+
+    for scheme in schemes:
         bars2(scheme)
+        bars3(scheme)
 
 if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
     if not length: print('Comparing N=53, N=30 and N=8 networks')
@@ -780,4 +933,4 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
         nlinks = np.zeros(12)
         link_dic_superRegions = link_dict(N,nlinks)
 
-        bars3(scheme)
+        bars4(scheme)
