@@ -22,11 +22,12 @@ Figures are saved to ./figures/constrained/
 Call the script using only one of the following command line arguments:
 - trace:        Run flow tracing and save results.
 - usage:        Calculate node's usage of links.
-- plot:		    Create figures of usage as function of transmission constraint.
+- plot:         Create figures of usage as function of transmission constraint.
                 Figures for each link and each node.
 - plot total:   Plotting one figure for both export schemes comparing all nodes'
                 total usages of the network as a color mesh.
-                Also make two line plots of the same data. 
+                Also make two line plots of the same data.
+- plot area:    Stacked area plots for each link and each node
 """
 
 if len(sys.argv)<2:
@@ -131,7 +132,7 @@ def plotter():
         plt.colorbar()
         plt.xlabel(r'$\beta$')
         plt.ylabel('link number')
-        plt.title(names[node]+'\'s usage of links, linear')
+        plt.title(names[node]+'\'s usage of links, localised')
         ax1.set_xticks(np.linspace(0,30,16))
         ax1.set_xticklabels(np.linspace(0,1.5,16))
         ax1.set_yticks(np.linspace(.5,49.5,50))
@@ -152,7 +153,7 @@ def plotter():
         plt.pcolormesh(usages)
         plt.colorbar()
         plt.xlabel(r'$\beta$')
-        plt.title(names[node]+'\'s usage of links, square')
+        plt.title(names[node]+'\'s usage of links, synchronised')
         ax2.set_xticks(np.linspace(0,30,16))
         ax2.set_xticklabels(np.linspace(0,1.5,16))
         ax2.set_yticks(np.linspace(.5,49.5,50))
@@ -175,7 +176,7 @@ def plotter():
     plt.pcolormesh(totalUsagesLin)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, linear')
+    plt.title('Total network usage, localised')
     ax4 = plt.subplot(122)
     ax4.set_xticks(np.linspace(0,30,16))
     ax4.set_xticklabels(np.linspace(0,1.5,16),fontsize=8)
@@ -184,7 +185,7 @@ def plotter():
     plt.pcolormesh(totalUsagesSqr)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, square')
+    plt.title('Total network usage, synchronised')
     plt.savefig('./figures/constrained/total-network-usage.png', bbox_inches='tight')
 
     # Figure plotting the same as just above, but viewed from a different angle
@@ -205,7 +206,7 @@ def plotter():
     ax5.set_xlabel(r'$\beta$')
     ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesLin))])
-    plt.title('Total network usage, linear')
+    plt.title('Total network usage, localised')
     ax6 = plt.subplot(122)
     for n in range(len(names_sort)):
         if n in [0, 1, 2, 8, 13, 19, 21]:
@@ -220,7 +221,7 @@ def plotter():
         plt.plot(betas,totalUsagesSqr[n],'-',color=col,lw=1.5,alpha=alph)
     ax6.set_xlabel(r'$\beta$')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesSqr))])
-    plt.title('Total network usage, square')
+    plt.title('Total network usage, synchronised')
     plt.savefig('./figures/constrained/total-network-usage-lines.png', bbox_inches='tight')
 
     # All countries usage of a single link as function of b
@@ -243,7 +244,7 @@ def plotter():
         plt.pcolormesh(usages)
         plt.colorbar()
         plt.xlabel(r'$\beta$')
-        plt.title('Usage of link '+link_names[link]+', linear')
+        plt.title('Usage of link '+link_names[link]+', localised')
 
         usages = []
         scheme='sqr'
@@ -262,7 +263,7 @@ def plotter():
         plt.pcolormesh(usages)
         plt.colorbar()
         plt.xlabel(r'$\beta$')
-        plt.title('Usage of link '+link_names[link]+', square')
+        plt.title('Usage of link '+link_names[link]+', synchronised')
         plt.savefig('./figures/constrained/link-usage-'+str(link)+'.png', bbox_inches='tight')
 
 lapse = 8760 # 280512
@@ -309,7 +310,7 @@ if (('plot' in task) and ('total' not in task) and ('area' not in task)):
 """
 ekstra plotting of total usages
 """
-if (('plot' in task) and ('total' in task)):
+if (('plot' in task) and ('total' in task) and ('area' not in task)):
     print('Plotting total node- and link usages')
     results = np.load('./results/constrained_results.npz')
     totalUsagesLin = results['lin']
@@ -326,7 +327,7 @@ if (('plot' in task) and ('total' in task)):
     plt.pcolormesh(totalUsagesLin)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, linear')
+    plt.title('Total network usage, localised')
     ax4 = plt.subplot(122)
     ax4.set_xticks(np.linspace(0,30,16))
     ax4.set_xticklabels(np.linspace(0,1.5,16),fontsize=8)
@@ -335,7 +336,7 @@ if (('plot' in task) and ('total' in task)):
     plt.pcolormesh(totalUsagesSqr)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, square')
+    plt.title('Total network usage, synchronised')
     plt.savefig('./figures/constrained/total-network-usage.png', bbox_inches='tight')
 
     # Figure plotting the same as just above, but viewed from a different angle
@@ -356,7 +357,7 @@ if (('plot' in task) and ('total' in task)):
     ax5.set_xlabel(r'$\beta$')
     ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesLin))])
-    plt.title('Total network usage, linear')
+    plt.title('Total network usage, localised')
     ax6 = plt.subplot(122)
     for n in range(len(names)):
         if n in [4,7,9,14,15]:
@@ -371,7 +372,7 @@ if (('plot' in task) and ('total' in task)):
         plt.plot(betas,totalUsagesSqr[n],'-',color=col,lw=1.5,alpha=alph)
     ax6.set_xlabel(r'$\beta$')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesSqr))])
-    plt.title('Total network usage, square')
+    plt.title('Total network usage, synchronised')
     plt.savefig('./figures/constrained/total-network-usage-lines.png', bbox_inches='tight')
 
     # normalisation across betas
@@ -393,7 +394,7 @@ if (('plot' in task) and ('total' in task)):
     ax5.set_xlabel(r'$\beta$')
     ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$], normalised across $\beta$')
     plt.axis([0.05, 1.5, 0, 1.1*np.max(normedUsagesLin)])
-    plt.title('Total network usage, linear')
+    plt.title('Total network usage, localised')
     ax6 = plt.subplot(122)
     for n in range(len(names)):
         if n in [4,7,9,14,15]:
@@ -408,7 +409,7 @@ if (('plot' in task) and ('total' in task)):
         plt.plot(betas,normedUsagesSqr[n],'-',color=col,lw=1.5,alpha=alph)
     ax6.set_xlabel(r'$\beta$')
     plt.axis([0.05, 1.5, 0, 1.1*np.max(normedUsagesSqr)])
-    plt.title('Total network usage, square')
+    plt.title('Total network usage, synchronised')
     plt.savefig('./figures/constrained/total-network-usage-beta-normed.png', bbox_inches='tight')
 
 
@@ -474,7 +475,7 @@ if (('plot' in task) and ('area' in task)):
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
         plt.ylabel(r'$C_{nl}/C_n$')
-        plt.title(names[node]+'\'s usage of links, linear')
+        plt.title(names[node]+'\'s usage of links, localised')
 
         usages = []
         scheme = 'sqr'
@@ -518,7 +519,7 @@ if (('plot' in task) and ('area' in task)):
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
         plt.ylabel(r'$C_{nl}/C_n$')
-        plt.title(names[node]+'\'s usage of links, square')
+        plt.title(names[node]+'\'s usage of links, synchronised')
         plt.savefig('./figures/constrained/node-usage-area-'+str(node)+'.png', bbox_inches='tight')
 
     # All countries usage of a single link as function of b
@@ -563,7 +564,7 @@ if (('plot' in task) and ('area' in task)):
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
         plt.ylabel(r'$C_{nl}/C_l$')
-        plt.title('Usage of link '+link_names[link]+', linear')
+        plt.title('Usage of link '+link_names[link]+', localised')
 
         usages = []
         scheme='sqr'
@@ -604,5 +605,5 @@ if (('plot' in task) and ('area' in task)):
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
         plt.ylabel(r'$C_{nl}/C_l$')
-        plt.title('Usage of link '+link_names[link]+', square')
+        plt.title('Usage of link '+link_names[link]+', synchronised')
         plt.savefig('./figures/constrained/link-usage-area-'+str(link)+'.png', bbox_inches='tight')
