@@ -202,9 +202,9 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
     
-    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0.5, 0.5),(1.0, 1, 1)),
-             'green': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0, 0),(1.0, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(.2,1,1),(.5, 0.5, 0.5),(1.0, 0, 0))}
+    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0.5, 0.5),(1.0, 1, 1)),
+             'green': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
+             'blue': ((0.0, 1.0, 1.0),(.15,1,1),(.4, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
     
@@ -232,7 +232,8 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
             xlabel = 'Synchronised'
         else:
             xlabel = 'Market'
-        ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
+        #ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
+        ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         ax1.xaxis.set_label_position('top') 
         
         ax2 = fig.add_axes([-0.05,0.15,1.1,0.95])
@@ -366,15 +367,18 @@ def bars(scheme, verbose=None):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
+            #ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
+            ax.set_ylabel(r'$M_n km/\left\langle L_n \right\rangle$')
         else:
-            ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+            #ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+            ax.set_ylabel(r'$M_n/\left\langle L_n \right\rangle$')
         maxes = [max(link_proportional), max(data_sort)]
         plt.axis([0,nNodes*2+.5,0,1.15*max(maxes)])
 
         # Legend
         artists = [plt.Line2D([0,0],[0,0],ls='dashed',lw=2.0,c='k'), plt.Rectangle((0,0),0,0,ec=green,fc=green), plt.Rectangle((0,0),0,0,ec=blue,fc=blue)]
-        LABS = ['node proportional M$^1$','link proportional M$^2$','usage proportional M$^3$']
+        #LABS = ['node proportional M$^1$','link proportional M$^2$','usage proportional M$^3$']
+        LABS = ['node based M$^1$','link based M$^2$','usage based M$^3$']
         leg = plt.legend(artists, LABS,loc='upper left',ncol=len(artists), columnspacing=0.6,borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight = 1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')

@@ -474,7 +474,8 @@ if (('plot' in task) and ('area' in task)):
         ax1.set_yticklabels(np.linspace(0,1,11))
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
-        plt.ylabel(r'$C_{nl}/C_n$')
+        #plt.ylabel(r'$C_{nl}/C_n$')
+        plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         plt.title(names[node]+'\'s usage of links, localised')
 
         usages = []
@@ -518,7 +519,8 @@ if (('plot' in task) and ('area' in task)):
         ax2.set_yticklabels(np.linspace(0,1,11))
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
-        plt.ylabel(r'$C_{nl}/C_n$')
+        #plt.ylabel(r'$C_{nl}/C_n$')
+        plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         plt.title(names[node]+'\'s usage of links, synchronised')
         plt.savefig('./figures/constrained/node-usage-area-'+str(node)+'.png', bbox_inches='tight')
 
@@ -563,7 +565,8 @@ if (('plot' in task) and ('area' in task)):
         ax3.set_yticklabels(np.linspace(0,1,11))
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
-        plt.ylabel(r'$C_{nl}/C_l$')
+        #plt.ylabel(r'$C_{nl}/C_l$')
+        plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         plt.title('Usage of link '+link_names[link]+', localised')
 
         usages = []
@@ -604,6 +607,7 @@ if (('plot' in task) and ('area' in task)):
         ax4.set_yticklabels(np.linspace(0,1,11))
         plt.axis([0.05, 1.5, 0, 1])
         plt.xlabel(r'$\beta$')
-        plt.ylabel(r'$C_{nl}/C_l$')
+        #plt.ylabel(r'$C_{nl}/C_l$')
+        plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         plt.title('Usage of link '+link_names[link]+', synchronised')
         plt.savefig('./figures/constrained/link-usage-area-'+str(link)+'.png', bbox_inches='tight')
