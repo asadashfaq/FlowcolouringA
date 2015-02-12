@@ -11,7 +11,11 @@ from aurespf.tools import get_q, AtoKh_old
 import networkx as nx
 
 """
-Figures for a paper on flowtracing with unconstrained synchronised flow with gamma = 1, alpha = .7
+Figures for a paper on flowtracing with unconstrained synchronised flow with
+gamma = 1, alpha = .7
+
+These plotting functions are modifications of some from plotting.py and also
+from Magnus': /AUESG/constrainedDCflow/figutils.py
 """
 
 if len(sys.argv)<2:
@@ -151,9 +155,9 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1a/networ
     pos['LT']=[0.925,0.72]
 
 
-    redgreendict = {'red':[(0.0, .7, .7), (0.5, 1.0, 1.0) ,(1.0, 0.0, 0.0)],
-                    'green':[(0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, .7, .7)],
-                    'blue':[(0.0, 0.2, 0.0), (0.5, 1.0, 1.0), (1.0, 0.2, 0.0)]}
+    redgreendict = {'red':[(0.0, .3, .3), (0.2, .7, .7), (0.5, 1.0, 1.0) ,(.8, 0.0, 0.0) ,(1.0, 0.0, 0.0)],
+                    'green':[(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.5, 1.0, 1.0),(.8, .7, .7), (1.0, .3, .3)],
+                    'blue':[(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.5, 1.0, 1.0), (.8, 0.0, 0.0), (1.0, 0.0, 0.0)]}
 
 
     cmap = LinearSegmentedColormap('redgreen', redgreendict, 1000)
@@ -492,7 +496,7 @@ def drawnet_import(N=None, scheme='square', direction='import'):
         cbl.set_ticks(np.linspace(0,1,6))
         cbl.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
 
-        ax2.set_xlabel(r'import fraction')
+        ax2.set_xlabel(r'import fraction [normalized]')
         ax2.xaxis.set_label_position('top')
         cbl2.set_ticks(np.linspace(0,1,6))
         cbl2.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
@@ -642,7 +646,7 @@ def drawnet_export(N=None, scheme='square', direction='export'):
         cbl.set_ticks(np.linspace(0,1,6))
         cbl.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
 
-        ax2.set_xlabel(r'export fraction')
+        ax2.set_xlabel(r'export fraction [normalized]')
         ax2.xaxis.set_label_position('top')
         cbl2.set_ticks(np.linspace(0,1,6))
         cbl2.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
@@ -680,7 +684,7 @@ if '1a' in figNum:
     print 'Making figure 1a'
     N = np.load('./results/square.npz')
     F = np.load('./results/square-flows.npy')
-    for t in range(70104,70128):
+    for t in range(24): #range(70104,70128):
         node_weights = N['mismatch'][:,t] + N['balancing'][:,t]
         make_europe_graph(F[:,t], node_weights, t)
 
