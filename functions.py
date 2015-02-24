@@ -78,7 +78,7 @@ def binMaker(F_matrix, q, lapse, nbins=None, verbose=False):
         end = time.time()
         print 'BinMaker with '+str(nbins)+' bins took '+str(end-start)+' seconds'
     return H, bin_edges
-    
+
 def bin_prob(bin_id, H):
     """
     Probability of occurence of given flow
@@ -152,3 +152,29 @@ def addLink(name1, name2, admat, regions):
     admat[id1, id2] = 1
     admat[id2, id1] = 1
     return admat
+
+"""
+Functions for calculating distance correlation
+See: http://jpktd.blogspot.com/2012/06/non-linear-dependence-measures-distance.html
+"""
+def dist(x, y):
+    #1d only
+    return np.abs(x[:, None] - y)
+
+
+def d_n(x):
+    d = dist(x, x)
+    dn = d - d.mean(0) - d.mean(1)[:,None] + d.mean()
+    return dn
+
+
+def dcov_all(x, y):
+    dnx = d_n(x)
+    dny = d_n(y)
+
+    denom = np.product(dnx.shape)
+    dc = (dnx * dny).sum() / denom
+    dvx = (dnx**2).sum() / denom
+    dvy = (dny**2).sum() / denom
+    dr = dc / (np.sqrt(dvx) * np.sqrt(dvy))
+    return dc, dr, dvx, dvy
