@@ -9,7 +9,7 @@ import matplotlib as mpl
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import node_namer, link_dict
 from scipy.stats import pearsonr
-from functions import linkProportional, getLengths
+from functions import *
 
 """
 Script that makes network figures of a country's usage for import, export and
@@ -57,7 +57,7 @@ def regionMerger(scheme, direction, lapse, md=None, node_ids=None):
     """
     N_countries = EU_Nodes_usage()
     N_regions = EU_Nodes_regions()
-    
+
     # The optional parameter is intended for sorting of merged regions. If the
     # parameter is not set the ordering will be the default ordering as at is in
     # nodes objects.
@@ -99,7 +99,7 @@ def regionMerger(scheme, direction, lapse, md=None, node_ids=None):
             merged_usages[merge_index] += region_usages[region]
             merged_mean_load[merge_index] += N_regions[region].mean
         merge_index += 1
-    
+
     return merged_usages, merged_mean_load, merge_dict
 
 def superRegionMerger(N, usages, countryNames, region_mean_load=None, md=None):
@@ -147,7 +147,7 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
     """
     colwidth = (3.425)
     dcolwidth = (2*3.425+0.236)
-    
+
     if N==None:
         N=EU_Nodes_usage()
     G=nx.Graph()
@@ -163,7 +163,7 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
 
     for l in LF:
         G.add_edge(l[0], l[1], id=l[2])
-    
+
     # Define position of nodes
     pos={}
     pos['AT']=[0.55,0.45]
@@ -196,18 +196,18 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
     pos['EE']=[1.0,0.985]
     pos['LV']=[0.975,0.87]
     pos['LT']=[0.925,0.77]
-   
+
     # Define color scale for links
     blueDict = {'red': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
-    
+
     blueDict2 = {'red': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0.5, 0.5),(1.0, 1, 1)),
              'green': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(.15,1,1),(.4, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
-    
+
     # Load usages for given scheme and direction
     N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_70128.npy')
     quantiles = np.load('./results/quantiles_'+str(scheme)+'_70128.npy')
@@ -217,14 +217,14 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
         # Calculate colors of links
         N_usages[n.id] = N_usages[n.id]/quantiles
         col = [ (cmap(l)) for l in N_usages[n.id]]
-        
+
         # Create a new figure and plot network below
         fig = plt.figure(dpi=400,figsize=(0.85*dcolwidth,0.85*0.8*dcolwidth))
-    
+
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05,0.08,0.9,.08])
         cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='vhorizontal')
-        
+
         # Label just above color bar
         if scheme == 'linear':
             xlabel = 'Most localised'
@@ -234,28 +234,28 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
             xlabel = 'Market'
         #ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
         ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
-        ax1.xaxis.set_label_position('top') 
-        
+        ax1.xaxis.set_label_position('top')
+
         ax2 = fig.add_axes([-0.05,0.15,1.1,0.95])
-        
-        # Set color of nodes, highlight one and draw all 
+
+        # Set color of nodes, highlight one and draw all
         node_c = [ "#000000" for node in N]
         node_c[n.id] = "#B30000"
         nx.draw_networkx_nodes(G,pos,node_size=500,nodelist=nodelist,node_color=node_c,facecolor=(1,1,1))
-    
+
         # Draw links colored by usage of node n
         edges=[(u,v) for (u,v,d) in G.edges(data=True)]
         edge_id = [d['id'] for (u,v,d) in G.edges(data=True)]
-        
+
         color_sort = []
         for i in range(len(col)):
             color_sort.append(col[edge_id[i]])
         nx.draw_networkx_edges(G,pos,edgelist=edges,width=3.5,edge_color=color_sort,alpha=1)
-        
+
         # Draw country names
         nx.draw_networkx_labels(G,pos,font_size=12,font_color='w',font_family='sans-serif')
-        ax2.axis('off') 
-    
+        ax2.axis('off')
+
         # Save figure
         plt.savefig("./figures/network_figures/"+scheme+"/"+str(n.id)+'_'+str(direction)+".png")
 
@@ -305,7 +305,7 @@ def bars(scheme, verbose=None):
         else:
             if length: N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
             else: N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
-    
+
         # Compare node transmission to mean load
         if verbose:
             print('Plotting node comparison - '+scheme+' - '+direction)
@@ -313,7 +313,7 @@ def bars(scheme, verbose=None):
         Total_usage = np.sum(N_usages,1)
         node_ids = np.array(range(len(N))).reshape((len(N),1))
         node_mean_load = [n.mean for n in N]
-        
+
         # Calculate node proportional
         EU_load = np.sum(node_mean_load)
         if length:
@@ -326,7 +326,7 @@ def bars(scheme, verbose=None):
         # Calculate link proportional
         link_proportional = linkProportional(N, link_dic, quantiles, lengths=lengths)
         link_proportional = [link_proportional[i]/node_mean_load[i] for i in range(nNodes)]
-        
+
         # Calculate usage and sort countries by mean load
         normed_usage = Total_usage/node_mean_load
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
@@ -444,7 +444,7 @@ def bars2(scheme, verbose=False):
         if length: link_proportional = linkProportional(N, link_dic, quantiles, lengths='countries')
         else: link_proportional = linkProportional(N, link_dic, quantiles)
         link_proportional = [link_proportional[i]/node_mean_load[i] for i in range(nNodes)]
-        
+
         # Calculate usage and sort countries by mean load
         normed_usage = Total_usage/node_mean_load
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
@@ -564,7 +564,7 @@ def bars3(scheme, verbose=False):
     nodes = np.linspace(0.5,2*nNodes-1.5,nNodes)
     bw = .5 # bar width
     nodes_shift = nodes+.5*bw
-    
+
     for direction in directions:
         if length: SR_usages = np.load('./sensitivity/superRegions-Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
         else: SR_usages = np.load('./sensitivity/superRegions-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
@@ -599,7 +599,7 @@ def bars3(scheme, verbose=False):
         if length: country_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
         else: country_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
         country_usages, country_mean_load, country_mergeDict = superRegionMerger(N, country_usages, countryNames, md=country_mergeDict)
-        
+
         Total_country_usage = np.sum(country_usages,1)
         Total_country_load = np.sum(country_mean_load)
         if length:
@@ -713,7 +713,7 @@ def bars4(scheme):
     bw = .4 # bar width
     nodes2 = nodes+1.5*bw
     nodes3 = nodes2+1.5*bw
-    
+
     for direction in directions:
         if length: SR_usages = np.load('./sensitivity/superRegions-Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
         else: SR_usages = np.load('./sensitivity/superRegions-Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
@@ -748,7 +748,7 @@ def bars4(scheme):
         if length: country_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_length_'+str(lapse)+'.npy')
         else: country_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_'+str(lapse)+'.npy')
         country_usages, country_mean_load, country_mergeDict = superRegionMerger(N, country_usages, countryNames, md=country_mergeDict)
-        
+
         Total_country_usage = np.sum(country_usages,1)
         Total_country_load = np.sum(country_mean_load)
         if length:
@@ -766,7 +766,7 @@ def bars4(scheme):
         country_normed_usage = np.reshape(country_normed_usage,(len(country_normed_usage),1))
         country_mean_load = np.reshape(country_mean_load,(len(country_mean_load),1))
         country_link_proportional = np.reshape(country_link_proportional,(len(country_link_proportional),1))
-        
+
         # REGIONS
         region_usages, region_mean_load, region_mergeDict = regionMerger(scheme, direction, lapse, md=region_mergeDict)
         region_usages, region_mean_load, country_mergeDict = superRegionMerger(N_regions, region_usages, countryNames, region_mean_load, md=country_mergeDict)
@@ -801,7 +801,7 @@ def bars4(scheme):
         country_usage_proportional = data_sort[:,4][::-1]
         region_link_proportional = data_sort[:,7][::-1]
         region_usage_proportional = data_sort[:,6][::-1]
-        
+
         # PLOTTING
         plt.figure(figsize=(10, 4), facecolor='w', edgecolor='k')
         ax = plt.subplot(111)
@@ -859,7 +859,20 @@ def bars4(scheme):
         s2 = 'usage(8,30) = '+usageCorr1+', usage(8,53) = '+usageCorr2+', usage(30,53) = '+usageCorr3
         plt.text(.5*bw,.9*max(maxes),s1,fontsize=8)
         plt.text(.5*bw,.82*max(maxes),s2,fontsize=8)
-        
+
+        # Calculate distance correlations
+        dc, dr1, dvx, dvy = dcov_all(link1, link2)
+        dc, dr2, dvx, dvy = dcov_all(link1, link3)
+        dc, dr3, dvx, dvy = dcov_all(link2, link3)
+        dc, dr4, dvx, dvy = dcov_all(usage1, usage2)
+        dc, dr5, dvx, dvy = dcov_all(usage1, usage3)
+        dc, dr6, dvx, dvy = dcov_all(usage2, usage3)
+
+        s3 = 'link(8,30) = '+'%0.2f' % dr1+', link(8,53) = '+'%0.2f' % dr2+', link(30,53) = '+'%0.2f' % dr3
+        s4 = 'usage(8,30) = '+'%0.2f' % dr4+', usage(8,53) = '+'%0.2f' % dr5+', usage(30,53) = '+'%0.2f' % dr6
+        plt.text(.5*bw,.70*max(maxes),s3,fontsize=8)
+        plt.text(.5*bw,.62*max(maxes),s4,fontsize=8)
+
         if length: plt.savefig('./figures/sensitivity/'+scheme+'/compared-all-network-usage-'+direction+'-length.png', bbox_inches='tight')
         else: plt.savefig('./figures/sensitivity/'+scheme+'/compared-all-network-usage-'+direction+'.png', bbox_inches='tight')
         print('Saved figures to ./figures/sensitivity/'+scheme+'/compared-all-network-usage-'+direction+'.png')
@@ -908,7 +921,7 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' not in task)):
     lapse = 70128
     N = EU_Nodes_usage()
     link_dic = link_dict(N) # dictionary of links directly connected to each node
-    
+
     N = EU_Nodes_regions()
     nLinks = np.zeros(96)
     link_dic_regions = link_dict(N,nLinks)
@@ -928,7 +941,7 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
         lapse = 70128
         N = EU_Nodes_usage()
         link_dic = link_dict(N) # dictionary of links directly connected to each node
-        
+
         N = EU_Nodes_regions()
         nLinks = np.zeros(96)
         link_dic_regions = link_dict(N,nLinks)
