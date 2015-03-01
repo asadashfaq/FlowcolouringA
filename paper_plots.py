@@ -384,12 +384,10 @@ def scatter_plotter(N, F, Fmax, usage, direction):
             plt.close('all') # fixes memory leak.
     return
 
-def drawnet_import(N=None, scheme='square', direction='import'):
+def drawnet_import(N, scheme='square', direction='import'):
     colwidth = (3.425)
     dcolwidth = (2*3.425+0.236)
 
-    if N==None:
-        N=EU_Nodes_usage()
     G=nx.Graph()
     nodelist=[]
 
@@ -529,12 +527,10 @@ def drawnet_import(N=None, scheme='square', direction='import'):
         # Save figure
         plt.savefig(outPath+'fig 5/'+str(n.id)+'_'+str(direction)+".png")
 
-def drawnet_export(N=None, scheme='square', direction='export'):
+def drawnet_export(N, scheme='square', direction='export'):
     colwidth = (3.425)
     dcolwidth = (2*3.425+0.236)
 
-    if N==None:
-        N=EU_Nodes_usage()
     G=nx.Graph()
     nodelist=[]
 
@@ -714,3 +710,21 @@ if '5' in figNum:
 
 if '6' in figNum:
     print 'Making figure 6'
+    N = np.load('./results/square.npz')
+
+    sqr_mix_ex = np.load('./linkcolouring/old_square_copper_link_mix_export_all_alpha=same.npy')
+    sqr_mix_im = np.load('./linkcolouring/old_square_copper_link_mix_import_all_alpha=same.npy')
+    sqr_net = np.mean(np.sum(sqr_mix_ex,0),1) - np.mean(np.sum(sqr_mix_im,0),1)
+
+    order = N['mean'].argsort()[::-1]
+
+    plt.figure(figsize=(10, 4), facecolor='w', edgecolor='k')
+    ax = plt.subplot(111)
+    plt.plot([0,30], [0,0], '-k')
+    plt.bar(range(30), sqr_net[order]/N['mean'][order], edgecolor='none', color='#000099')
+    ax.set_xticks(np.linspace(.8,29.8,30))
+    ax.set_xticklabels(N['label'][order], rotation=60, ha="right", va="top", fontsize=10.5)
+    ax.xaxis.grid(False)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_ylabel('Net exports')
+    plt.savefig(outPath+'fig 6/net_exports.png', bbox_inches='tight')
