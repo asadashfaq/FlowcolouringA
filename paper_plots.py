@@ -207,22 +207,17 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
     cb1 = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
     cb1.set_ticks([0, 0.5, 1])
     cb1.set_ticklabels(['-1', '0', '1'])
-    #strk = str(comp_number+1)
     ax1.set_xlabel(r'$\Phi_n$' + ' [normalized]')
     ax1.xaxis.set_label_position('top')
     ax1.set_xticks('none')
     ax2.axis('off')
-    #strpercentlambd = '%2.1f' % (100*lambd)
-    #lambdtxt = r'$\lambda_'+strk+'='+strpercentlambd+'\%$'
-    #props = dict(boxstyle='round', facecolor='w')
-    #ax2.text(-0.1, 1.15, lambdtxt, bbox=props)
     if title!=None:
         fig.suptitle(title)
     fig.savefig(savepath+figfilename+'-'+str(t)+'.png')
 
     return
 
-def draw_static_network(N=None,F=None,tit="1",show_link_size=True,typ=0):
+def draw_static_network(N=None, F=None, tit="1", show_link_size=True, typ=0, mode=''):
     N = EU_Nodes_usage('square.npz')
     F = np.load('./results/square-flows.npy')
 
@@ -230,6 +225,17 @@ def draw_static_network(N=None,F=None,tit="1",show_link_size=True,typ=0):
     rolor= ( (19)/255. , (75)/255. , (124)/255.)
     G=nx.Graph()
     nodelist=[]
+
+    col = ['#d4d4ff',
+           '#adadff',
+           '#8585ff',
+           '#5e5eff',
+           '#3737ff',
+           '#1010ff',
+           '#0000d4',
+           '#000099',
+           '#000072',
+           '#000037']
 
     for n in N:
         G.add_node(str(n.label))
@@ -272,52 +278,84 @@ def draw_static_network(N=None,F=None,tit="1",show_link_size=True,typ=0):
     pos['EE']=[1.0,0.94]
     pos['LV']=[0.95,0.83]
     pos['LT']=[0.87,0.72]
-    if len(N)>30:
-        pos['NS']=[0.325,.95]
-        pos['NA']=[0.275,0.0]
-
 
     fig = plt.figure(dpi=400,figsize=(1.7*colwidth,1.7*colwidth*0.75))
 
     if show_link_size: ax1= fig.add_axes([-0.125,0.135,1.25,0.975]) #For displaying graph
     else: ax1= fig.add_axes([-0.125,-0.075,1.25,1.25])
     nx.draw_networkx_nodes(G,pos,node_size=600,nodelist=nodelist,node_color=rolor,facecolor=(1,1,1))
-    e0=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=1000]
-    e1=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1000 and d['weight']<=1500]
-    e2=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1500 and d['weight']<=2000]
-    e3=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>2000 and d['weight']<=4000]
-    e4=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>4000 and d['weight']<=6000]
-    e5=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>6000 and d['weight']<=8000]
-    e6=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>8000 and d['weight']<=10000]
-    e7=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>10000 and d['weight']<=15000]
-    e8=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>15000 and d['weight']<=20000]
-    e9=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>20000]
-    # ax1.text(-0.05,1.05,"(a)",fontsize=12)
-    nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=1.0,style='dotted')
-    nx.draw_networkx_edges(G,pos,edgelist=e1,width=0.5,edge_color='k',alpha=0.7,style='dashed')
-    nx.draw_networkx_edges(G,pos,edgelist=e2,width=1.0,edge_color='k',alpha=0.8,style='dashed')
-    nx.draw_networkx_edges(G,pos,edgelist=e3,width=2.0,edge_color='k',alpha=.9,style='dashed')
-    nx.draw_networkx_edges(G,pos,edgelist=e4,width=3.0,edge_color='k',alpha=1.0,style='dashed')
-    nx.draw_networkx_edges(G,pos,edgelist=e5,width=3.0,edge_color='k',alpha=0.6)
-    nx.draw_networkx_edges(G,pos,edgelist=e6,width=3.5,edge_color='k',alpha=.7)
-    nx.draw_networkx_edges(G,pos,edgelist=e7,width=4.0,edge_color='k',alpha=.8)
-    nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.5,edge_color='k',alpha=0.9)
-    nx.draw_networkx_edges(G,pos,edgelist=e9,width=5.0,edge_color='k',alpha=1.0)
-    nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')
+    if mode == 'old':
+        e0=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=1000]
+        e1=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1000 and d['weight']<=1500]
+        e2=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1500 and d['weight']<=2000]
+        e3=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>2000 and d['weight']<=4000]
+        e4=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>4000 and d['weight']<=6000]
+        e5=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>6000 and d['weight']<=8000]
+        e6=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>8000 and d['weight']<=10000]
+        e7=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>10000 and d['weight']<=15000]
+        e8=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>15000 and d['weight']<=20000]
+        e9=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>20000]
+        # ax1.text(-0.05,1.05,"(a)",fontsize=12)
+        nx.draw_networkx_edges(G,pos,edgelist=e0,width=1.0,edge_color='k',alpha=1.0,style='dotted')
+        nx.draw_networkx_edges(G,pos,edgelist=e1,width=0.5,edge_color='k',alpha=0.7,style='dashed')
+        nx.draw_networkx_edges(G,pos,edgelist=e2,width=1.0,edge_color='k',alpha=0.8,style='dashed')
+        nx.draw_networkx_edges(G,pos,edgelist=e3,width=2.0,edge_color='k',alpha=.9,style='dashed')
+        nx.draw_networkx_edges(G,pos,edgelist=e4,width=3.0,edge_color='k',alpha=1.0,style='dashed')
+        nx.draw_networkx_edges(G,pos,edgelist=e5,width=3.0,edge_color='k',alpha=0.6)
+        nx.draw_networkx_edges(G,pos,edgelist=e6,width=3.5,edge_color='k',alpha=.7)
+        nx.draw_networkx_edges(G,pos,edgelist=e7,width=4.0,edge_color='k',alpha=.8)
+        nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.5,edge_color='k',alpha=0.9)
+        nx.draw_networkx_edges(G,pos,edgelist=e9,width=5.0,edge_color='k',alpha=1.0)
+        nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')
+    else:
+        e0=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']<=1000]
+        e1=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1000 and d['weight']<=1500]
+        e2=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>1500 and d['weight']<=2000]
+        e3=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>2000 and d['weight']<=4000]
+        e4=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>4000 and d['weight']<=6000]
+        e5=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>6000 and d['weight']<=8000]
+        e6=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>8000 and d['weight']<=10000]
+        e7=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>10000 and d['weight']<=15000]
+        e8=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>15000 and d['weight']<=20000]
+        e9=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight']>20000]
+        # ax1.text(-0.05,1.05,"(a)",fontsize=12)
+        nx.draw_networkx_edges(G,pos,edgelist=e0,width=4.0,edge_color=col[0],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e1,width=4.0,edge_color=col[1],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e2,width=4.0,edge_color=col[2],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e3,width=4.0,edge_color=col[3],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e4,width=4.0,edge_color=col[4],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e5,width=4.0,edge_color=col[5],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e6,width=4.0,edge_color=col[6],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e7,width=4.0,edge_color=col[7],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e8,width=4.0,edge_color=col[8],alpha=1.0)
+        nx.draw_networkx_edges(G,pos,edgelist=e9,width=4.0,edge_color=col[9],alpha=1.0)
+        nx.draw_networkx_labels(G,pos,font_size=13,font_color='w',font_family='sans-serif')
     ax1.axis('off')
 
     if show_link_size:
         ax4= fig.add_axes([-0.075,0.075,1.5,.15]) #For displaying graph
-        ax4.plot((0.03*1.05+0.025,0.09*1.05+0.025),(0.75,0.75),linewidth=1.0,color='k',alpha=1.0,linestyle='dotted')
-        ax4.plot((0.09*1.05+0.025,0.15*1.05+0.025),(0.75,0.75),linewidth=0.5,color='k',alpha=0.4,linestyle='dashed')
-        ax4.plot((0.15*1.05+0.025,0.21*1.05+0.025),(0.75,0.75),linewidth=1.0,color='k',alpha=0.6,linestyle='dashed')
-        ax4.plot((0.21*1.05+0.025,0.27*1.05+0.025),(0.75,0.75),linewidth=2.0,color='k',alpha=0.8,linestyle='dashed')
-        ax4.plot((0.27*1.05+0.025,0.33*1.05+0.025),(0.75,0.75),linewidth=3.0,color='k',alpha=1.0,linestyle='dashed')
-        ax4.plot((0.33*1.05+0.0295,0.39*1.05+0.025),(0.75,0.75),linewidth=3.0,color='k',alpha=0.6)
-        ax4.plot((0.39*1.05+0.03,0.45*1.05+0.025),(0.75,0.75),linewidth=3.5,color='k',alpha=0.7)
-        ax4.plot((0.45*1.05+0.0305,0.51*1.05+0.025),(0.75,0.75),linewidth=4.0,color='k',alpha=0.8)
-        ax4.plot((0.51*1.05+0.0310,0.57*1.05+0.025),(0.75,0.75),linewidth=4.5,color='k',alpha=0.9)
-        ax4.plot((0.57*1.05+0.0315,0.63*1.05+0.025),(0.75,0.75),linewidth=5.0,color='k',alpha=1.0)
+        if mode == 'old':
+            ax4.plot((0.03*1.05+0.025,0.09*1.05+0.025),(0.75,0.75),linewidth=1.0,color='k',alpha=1.0,linestyle='dotted')
+            ax4.plot((0.09*1.05+0.025,0.15*1.05+0.025),(0.75,0.75),linewidth=0.5,color='k',alpha=0.4,linestyle='dashed')
+            ax4.plot((0.15*1.05+0.025,0.21*1.05+0.025),(0.75,0.75),linewidth=1.0,color='k',alpha=0.6,linestyle='dashed')
+            ax4.plot((0.21*1.05+0.025,0.27*1.05+0.025),(0.75,0.75),linewidth=2.0,color='k',alpha=0.8,linestyle='dashed')
+            ax4.plot((0.27*1.05+0.025,0.33*1.05+0.025),(0.75,0.75),linewidth=3.0,color='k',alpha=1.0,linestyle='dashed')
+            ax4.plot((0.33*1.05+0.0295,0.39*1.05+0.025),(0.75,0.75),linewidth=3.0,color='k',alpha=0.6)
+            ax4.plot((0.39*1.05+0.03,0.45*1.05+0.025),(0.75,0.75),linewidth=3.5,color='k',alpha=0.7)
+            ax4.plot((0.45*1.05+0.0305,0.51*1.05+0.025),(0.75,0.75),linewidth=4.0,color='k',alpha=0.8)
+            ax4.plot((0.51*1.05+0.0310,0.57*1.05+0.025),(0.75,0.75),linewidth=4.5,color='k',alpha=0.9)
+            ax4.plot((0.57*1.05+0.0315,0.63*1.05+0.025),(0.75,0.75),linewidth=5.0,color='k',alpha=1.0)
+        else:
+            ax4.plot((0.03*1.05+0.025,0.09*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[0],alpha=1.0)
+            ax4.plot((0.09*1.05+0.025,0.15*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[1],alpha=1.0)
+            ax4.plot((0.15*1.05+0.025,0.21*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[2],alpha=1.0)
+            ax4.plot((0.21*1.05+0.025,0.27*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[3],alpha=1.0)
+            ax4.plot((0.27*1.05+0.025,0.33*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[4],alpha=1.0)
+            ax4.plot((0.33*1.05+0.0295,0.39*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[5],alpha=1.0)
+            ax4.plot((0.39*1.05+0.03,0.45*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[6],alpha=1.0)
+            ax4.plot((0.45*1.05+0.0305,0.51*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[7],alpha=1.0)
+            ax4.plot((0.51*1.05+0.0310,0.57*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[8],alpha=1.0)
+            ax4.plot((0.57*1.05+0.0315,0.63*1.05+0.025),(0.75,0.75),linewidth=4.0,color=col[9],alpha=1.0)
         ax4.text(0.06*1.05+0.01,0.5,"$\leq$ 1.0 GW",fontsize=9,rotation=-60)
         ax4.text(0.12*1.05+0.01,0.5,"$\leq$ 1.5 GW",fontsize=9,rotation=-60)
         ax4.text(0.18*1.05+0.01,0.5,"$\leq$ 2.0 GW",fontsize=9,rotation=-60)
@@ -330,8 +368,118 @@ def draw_static_network(N=None,F=None,tit="1",show_link_size=True,typ=0):
         ax4.text(0.60*1.05+0.01,0.5,"$\leq$ 45 GW",fontsize=9,rotation=-60)
         ax4.axis([0.0,1.0,0.0,1.2])
         ax4.axis('off')
+    if mode == 'old':
+        plt.savefig(outPath+'fig 2/network-old.pdf')
+    else:
+        plt.savefig(outPath+'fig 2/network.pdf')
 
-    plt.savefig(outPath+'fig 2/network.pdf')
+def drawnet_capacities(N=None,scheme='square',direction='combined'):
+    """
+    Make network figures of a node's usage of links for both import, export and
+    combined. Adapted from drawnet() in aurespf.plotting
+    """
+    colwidth = (3.425)
+    dcolwidth = (2*3.425+0.236)
+
+    if N==None:
+        N=EU_Nodes_usage()
+    G=nx.Graph()
+    nodelist=[]
+
+    # Add nodes and labels to networkx object for plotting
+    for n in N:
+        G.add_node(str(n.label))
+        nodelist.append(str(n.label))
+
+    # LF is a list of links
+    K,h,LF=AtoKh_old(N)
+
+    for l in LF:
+        G.add_edge(l[0], l[1], id=l[2])
+
+    # Define position of nodes
+    pos={}
+    pos['AT']=[0.55,0.45]
+    pos['FI']=[.95,1.1]
+    pos['NL']=[0.40,0.85]
+    pos['BA']=[0.65,0.15]
+    pos['FR']=[0.15,0.60]
+    pos['NO']=[0.5,1.1]
+    pos['BE']=[0.275,0.775]
+    pos['GB']=[0.10,1.05]
+    pos['PL']=[0.75,0.8]
+    pos['BG']=[0.9,0.0]
+    pos['GR']=[0.7,0.0]
+    pos['PT']=[0.0,0.15]
+    pos['CH']=[0.4,0.45]
+    pos['HR']=[0.75,0.3]
+    pos['RO']=[1.0,0.15]
+    pos['CZ']=[0.75,0.60]
+    pos['HU']=[1.0,0.45]
+    pos['RS']=[0.85,0.15]
+    pos['DE']=[0.45,0.7]
+    pos['IE']=[0.0,0.95]
+    pos['SE']=[0.75,1.0]
+    pos['DK']=[0.5,0.875]
+    pos['IT']=[0.4,0.2]
+    pos['SI']=[0.55,0.3]
+    pos['ES']=[0.15,0.35]
+    pos['LU']=[0.325,0.575]
+    pos['SK']=[0.90,0.55]
+    pos['EE']=[1.0,0.985]
+    pos['LV']=[0.975,0.87]
+    pos['LT']=[0.925,0.77]
+
+    # Define color scale for links
+    blueDict = {'red': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
+             'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
+             'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
+
+    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0.5, 0.5),(1.0, 1, 1)),
+             'green': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0, 0),(1.0, 0.0, 0.0)),
+             'blue': ((0.0, 1.0, 1.0),(.2,1,1),(.5, 0.5, 0.5),(1.0, 0, 0))}
+
+    cmap = LinearSegmentedColormap('blue',blueDict2,1000)
+
+    # Load usages for given scheme and direction
+    quantiles = np.load('./results/quantiles_'+str(scheme)+'_70128.npy')
+
+    # Calculate colors of links
+    col = [(cmap(l)) for l in quantiles/max(quantiles)]
+
+    # Create a new figure and plot network below
+    fig = plt.figure(dpi=400,figsize=(0.85*dcolwidth,0.85*0.8*dcolwidth))
+
+    # color bar in bottom of figure
+    ax1 = fig.add_axes([0.05,0.08,0.9,.08])
+    cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='horizontal')
+
+    # Label just above color bar
+    ax1.set_xlabel(r'$\mathcal{K}^T_{l}/\max(\mathcal{K}^T_l)$')
+    ax1.xaxis.set_label_position('top')
+    cbl.set_ticks(np.linspace(0,1,11))
+    cbl.set_ticklabels(np.linspace(0,1,11))
+
+    # Set color of nodes and draw
+    node_c = ["#000000" for node in N]
+    ax2 = fig.add_axes([-0.05,0.15,1.1,0.95])
+    nx.draw_networkx_nodes(G,pos,node_size=500,nodelist=nodelist,node_color=node_c,facecolor=(1,1,1))
+
+    # Draw links colored by usage of node n
+    edges=[(u,v) for (u,v,d) in G.edges(data=True)]
+    edge_id = [d['id'] for (u,v,d) in G.edges(data=True)]
+
+    color_sort = []
+    for i in range(len(col)):
+        color_sort.append(col[edge_id[i]])
+    nx.draw_networkx_edges(G,pos,edgelist=edges,width=3.5,edge_color=color_sort,alpha=1)
+
+    # Draw country names
+    nx.draw_networkx_labels(G,pos,font_size=12,font_color='w',font_family='sans-serif')
+    ax2.axis('off')
+
+    # Save figure
+    plt.savefig(outPath+'fig 2/network-alternate.pdf')
 
 def scatter_plotter(N, F, Fmax, usage, direction, mode):
     """
@@ -690,7 +838,9 @@ if '1' in figNum:
 
 if '2' in figNum:
     print 'Making figure 2'
-    draw_static_network()
+    draw_static_network(mode='old')
+    draw_static_network(mode='new')
+    drawnet_capacities()
 
 if '4' in figNum:
     print 'Making figure 4'
