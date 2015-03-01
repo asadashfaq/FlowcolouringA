@@ -711,3 +711,6 @@ if '5' in figNum:
     N = EU_Nodes_usage('square.npz')
     drawnet_import()
     drawnet_export()
+
+if '6' in figNum:
+    print 'Making figure 6'
