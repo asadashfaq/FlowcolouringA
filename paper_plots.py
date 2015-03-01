@@ -333,7 +333,7 @@ def draw_static_network(N=None,F=None,tit="1",show_link_size=True,typ=0):
 
     plt.savefig(outPath+'fig 2/network.pdf')
 
-def scatter_plotter(N, F, Fmax, usage, direction):
+def scatter_plotter(N, F, Fmax, usage, direction, mode):
     """
     Scatter plots of nodes' import/export usages of links saved to ./figures/.
     """
@@ -343,16 +343,20 @@ def scatter_plotter(N, F, Fmax, usage, direction):
         diag = []
         diagflow = []
         for n in nodes:
+            names = ['diagonal', r'$99\%$ quantile', 'avg. usage', 'usage']
             plt.figure()
             ax = plt.subplot(111)
             linkflow = abs(F[l,:])
-            usages = usage[l,n,:]/Fmax[l]
-
-            # diagonal
-            plt.plot([0, Fmax[l]], [0, 1], '-k',lw=1)
+            if mode == 'old':
+                usages = usage[l,n,:]/Fmax[l]
+                plt.plot([0, Fmax[l]], [0, 1], '-k',lw=1) # diagonal
+                ax.set_ylabel(r'$H_{ln}(t)/max(F_l(t))$')
+            if mode == 'new':
+                usages = usage[l,n,:]/linkflow
+                names = names[1:]
+                ax.set_ylabel(r'$H_{ln}(t)/F_l(t)$')
 
             # scatter
-            #plt.plot(linkflow,usages,'.k', ecolor='none', alpha=.5)
             plt.scatter(linkflow, usages, c='#000099', edgecolor='none', alpha=.2)
 
             # 99 quantile
@@ -370,17 +374,18 @@ def scatter_plotter(N, F, Fmax, usage, direction):
             label = link_label(l,N)
             ax.set_title('Synchronised'+' '+str(direction)+' flows on link '+label)
             ax.set_xlabel(r'$F_l(t)$ [MW]')
-            ax.set_ylabel(r'$H_{ln}/max(F_l)$')
+
 
             # Shrink x-axis to make room for legend
             box = ax.get_position()
             ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
-
-            names = ['diagonal', r'$99\%$ quantile', 'avg. usage', 'usage']
             ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5))#,title='Contributions')
 
             plt.axis([0, Fmax[l], 0, 1])
-            plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.png', bbox_inches='tight')
+            if mode == 'old':
+                plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.png', bbox_inches='tight')
+            if mode == 'new':
+                plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'-'+mode+'.png', bbox_inches='tight')
             plt.close('all') # fixes memory leak.
     return
 
@@ -448,7 +453,7 @@ def drawnet_import(N, scheme='square', direction='import'):
 
     # color scale for nodes
     greenDict = {'red': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0)),
-             'green': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .1, .1)),
+             'green': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .3, .3)),
              'blue': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapNodes = LinearSegmentedColormap('green',greenDict,1000)
 
@@ -591,12 +596,12 @@ def drawnet_export(N, scheme='square', direction='export'):
 
     # color scale for nodes
     greenDict = {'red': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0)),
-             'green': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .1, .1)),
+             'green': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .3, .3)),
              'blue': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapGreen = LinearSegmentedColormap('green',greenDict,1000)
 
     # color scale for nodes
-    redDict = {'red': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .1, .1)),
+    redDict = {'red': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .3, .3)),
              'green': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapNodes = LinearSegmentedColormap('red',redDict,1000)
@@ -695,11 +700,13 @@ if '4' in figNum:
     Fmax = np.max(np.abs(F),1)
 
     export_usage = np.load('./linkcolouring/old_square_copper_link_mix_export_all_alpha=same.npy')
-    scatter_plotter(N, F, Fmax, export_usage, 'export')
+    scatter_plotter(N, F, Fmax, export_usage, 'export', mode='old')
+    scatter_plotter(N, F, Fmax, export_usage, 'export', mode='new')
     export_usage = [] # frees roughly 800 MB RAM before loading import usage.
 
     import_usage = np.load('./linkcolouring/old_square_copper_link_mix_import_all_alpha=same.npy')
-    scatter_plotter(N, F, Fmax, import_usage, 'import')
+    scatter_plotter(N, F, Fmax, import_usage, 'import', mode='old')
+    scatter_plotter(N, F, Fmax, import_usage, 'import', mode='new')
     import_usage = []
 
 if '5' in figNum:
