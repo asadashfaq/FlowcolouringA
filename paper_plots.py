@@ -347,9 +347,10 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             plt.figure()
             ax = plt.subplot(111)
             linkflow = abs(F[l,:])
+            qq = get_q(abs(F[l]),.99)
             if mode == 'old':
                 usages = usage[l,n,:]/Fmax[l]
-                plt.plot([0, Fmax[l]], [0, 1], '-k',lw=1) # diagonal
+                plt.plot([0, Fmax[l]/qq], [0, 1], '-k',lw=1) # diagonal
                 ax.set_ylabel(r'$H_{ln}(t)/max(F_l(t))$')
             if mode == 'new':
                 usages = usage[l,n,:]/linkflow
@@ -357,11 +358,10 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
                 ax.set_ylabel(r'$H_{ln}(t)/F_l(t)$')
 
             # scatter
-            plt.scatter(linkflow, usages, c='#000099', edgecolor='none', alpha=.2)
+            plt.scatter(linkflow/qq, usages, c='#000099', edgecolor='none', alpha=.2)
 
             # 99 quantile
-            qq = get_q(abs(F[l]),.99)
-            plt.plot([qq,qq],[0,1],':k')
+            plt.plot([1,1],[0,1],':k')
 
             # Plot bin avg usage
             F_vert = np.reshape(linkflow,(len(linkflow),1))
@@ -369,19 +369,18 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
             F_matrix[F_matrix[:,0].argsort()]
             H,bin_edges = binMaker(F_matrix, qq, lapse=70128)
-            plt.plot(bin_edges, H[:,1], '-', c='#aa0000', lw=2)
+            plt.plot(bin_edges/qq, H[:,1], '-', c='#aa0000', lw=2)
 
             label = link_label(l,N)
             ax.set_title('Synchronised'+' '+str(direction)+' flows on link '+label)
-            ax.set_xlabel(r'$F_l(t)$ [MW]')
-
+            ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$')
 
             # Shrink x-axis to make room for legend
             box = ax.get_position()
             ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
             ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5))#,title='Contributions')
 
-            plt.axis([0, Fmax[l], 0, 1])
+            plt.axis([0, Fmax[l]/qq, 0, 1])
             if mode == 'old':
                 plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.png', bbox_inches='tight')
             if mode == 'new':
