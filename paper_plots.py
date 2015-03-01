@@ -26,7 +26,7 @@ else:
 outPath = './figures/Paper figures feb 15/'
 
 
-def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1a/network', savepath=outPath, title=None):
+def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network', savepath=outPath, title=None):
     plt.ioff()
     #print node_weights
     #print len(node_weights)
@@ -331,7 +331,7 @@ def draw_static_network(N=None,F=None,tit="1",show_link_size=True,typ=0):
         ax4.axis([0.0,1.0,0.0,1.2])
         ax4.axis('off')
 
-    plt.savefig(outPath+'fig 1b/network.pdf')
+    plt.savefig(outPath+'fig 2/network.pdf')
 
 def scatter_plotter(N, F, Fmax, usage, direction):
     """
@@ -380,7 +380,7 @@ def scatter_plotter(N, F, Fmax, usage, direction):
             ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5))#,title='Contributions')
 
             plt.axis([0, Fmax[l], 0, 1])
-            plt.savefig(outPath+'fig 3/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.png', bbox_inches='tight')
+            plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.png', bbox_inches='tight')
             plt.close('all') # fixes memory leak.
     return
 
@@ -527,7 +527,7 @@ def drawnet_import(N=None, scheme='square', direction='import'):
         ax3.axis('off')
 
         # Save figure
-        plt.savefig(outPath+'fig 4/'+str(n.id)+'_'+str(direction)+".png")
+        plt.savefig(outPath+'fig 5/'+str(n.id)+'_'+str(direction)+".png")
 
 def drawnet_export(N=None, scheme='square', direction='export'):
     colwidth = (3.425)
@@ -677,23 +677,23 @@ def drawnet_export(N=None, scheme='square', direction='export'):
         ax3.axis('off')
 
         # Save figure
-        plt.savefig(outPath+'fig 4/'+str(n.id)+'_'+str(direction)+".png")
+        plt.savefig(outPath+'fig 5/'+str(n.id)+'_'+str(direction)+".png")
 
 
-if '1a' in figNum:
-    print 'Making figure 1a'
+if '1' in figNum:
+    print 'Making figure 1'
     N = np.load('./results/square.npz')
     F = np.load('./results/square-flows.npy')
     for t in range(24): #range(70104,70128):
         node_weights = N['mismatch'][:,t] + N['balancing'][:,t]
         make_europe_graph(F[:,t], node_weights, t)
 
-if '1b' in figNum:
-    print 'Making figure 1b'
+if '2' in figNum:
+    print 'Making figure 2'
     draw_static_network()
 
-if '3' in figNum:
-    print 'Making figure 3'
+if '4' in figNum:
+    print 'Making figure 4'
     N = EU_Nodes_usage('square.npz')
     F = np.load('./results/square-flows.npy')
     Fmax = np.max(np.abs(F),1)
@@ -706,8 +706,8 @@ if '3' in figNum:
     scatter_plotter(N, F, Fmax, import_usage, 'import')
     import_usage = []
 
-if '4' in figNum:
-    print 'Making figure 4'
+if '5' in figNum:
+    print 'Making figure 5'
     N = EU_Nodes_usage('square.npz')
     drawnet_import()
     drawnet_export()
