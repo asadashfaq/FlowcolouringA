@@ -861,8 +861,8 @@ if '4' in figNum:
 if '5' in figNum:
     print 'Making figure 5'
     N = EU_Nodes_usage('square.npz')
-    drawnet_import()
-    drawnet_export()
+    drawnet_import(N)
+    drawnet_export(N)
 
 if '6' in figNum:
     print 'Making figure 6'
