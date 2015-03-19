@@ -259,7 +259,7 @@ def drawnet_usage(N=None,scheme='linear',direction='combined'):
         # Save figure
         plt.savefig("./figures/network_figures/"+scheme+"/"+str(n.id)+'_'+str(direction)+".png")
 
-def bars(scheme, verbose=None):
+def bars(scheme, verbose=None, norm='load'):
     """
     Figure to compare link proportional and usage proportional for a single
     scheme and put them in ./sensitivity/figures/scheme/
@@ -314,6 +314,12 @@ def bars(scheme, verbose=None):
         node_ids = np.array(range(len(N))).reshape((len(N),1))
         node_mean_load = [n.mean for n in N]
 
+        # Vector for normalisation
+        if norm == 'cap':
+            normVec = np.ones(nNodes)*sum(quantiles)
+        else:
+            normVec = node_mean_load
+
         # Calculate node proportional
         EU_load = np.sum(node_mean_load)
         if length:
@@ -321,14 +327,14 @@ def bars(scheme, verbose=None):
             Total_caps = sum(quantiles*linkLengths)
         else:
             Total_caps = sum(quantiles)
-        Node_proportional = node_mean_load/EU_load*Total_caps/node_mean_load
+        Node_proportional = node_mean_load/EU_load*Total_caps/normVec
 
         # Calculate link proportional
         link_proportional = linkProportional(N, link_dic, quantiles, lengths=lengths)
-        link_proportional = [link_proportional[i]/node_mean_load[i] for i in range(nNodes)]
+        link_proportional = [link_proportional[i]/normVec[i] for i in range(nNodes)]
 
         # Calculate usage and sort countries by mean load
-        normed_usage = Total_usage/node_mean_load
+        normed_usage = Total_usage/normVec
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
         node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
         data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional])
@@ -370,8 +376,11 @@ def bars(scheme, verbose=None):
             #ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
             ax.set_ylabel(r'$M_n km/\left\langle L_n \right\rangle$')
         else:
-            #ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
-            ax.set_ylabel(r'$M_n/\left\langle L_n \right\rangle$')
+            if norm == 'cap':
+                ax.set_ylabel(r'$M_n/ \mathcal{K}^T$')
+            else:
+                #ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+                ax.set_ylabel(r'$M_n/\left\langle L_n \right\rangle$')
         maxes = [max(link_proportional), max(data_sort)]
         plt.axis([0,nNodes*2+.5,0,1.15*max(maxes)])
 
@@ -386,17 +395,17 @@ def bars(scheme, verbose=None):
         plt.setp(ltext, fontsize=9.5)    # the legend text fontsize
 
         if (network == 'regions' or network == 'superRegions'):
-            if length: plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'-length.png', bbox_inches='tight')
-            else: plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'.png', bbox_inches='tight')
+            if length: plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'-'+norm+'-length.png', bbox_inches='tight')
+            else: plt.savefig('./figures/sensitivity/'+scheme+'/'+network+'-network-usage-'+direction+'-'+norm+'.png', bbox_inches='tight')
         else:
             if length:
-                plt.savefig('./figures/'+scheme+'/network-usage-'+direction+'-length.png', bbox_inches='tight')
-                plt.savefig('./figures/sensitivity/'+scheme+'/network-usage-'+direction+'-length.png', bbox_inches='tight')
+                plt.savefig('./figures/'+scheme+'/network-usage-'+direction+'-'+norm+'-length.png', bbox_inches='tight')
+                plt.savefig('./figures/sensitivity/'+scheme+'/network-usage-'+direction+'-'+norm+'-length.png', bbox_inches='tight')
             else:
-                plt.savefig('./figures/'+scheme+'/network-usage-'+direction+'.png', bbox_inches='tight')
-                plt.savefig('./figures/sensitivity/'+scheme+'/network-usage-'+direction+'.png', bbox_inches='tight')
+                plt.savefig('./figures/'+scheme+'/network-usage-'+direction+'-'+norm+'.png', bbox_inches='tight')
+                plt.savefig('./figures/sensitivity/'+scheme+'/network-usage-'+direction+'-'+norm+'.png', bbox_inches='tight')
             if verbose:
-                print('Saved figures to ./figures/'+scheme+'/network-usage-'+direction+'.png')
+                print('Saved figures to ./figures/'+scheme+'/network-usage-'+direction+'-'+norm+'.png')
 
 def bars2(scheme, verbose=False):
     """
@@ -894,9 +903,14 @@ if (('total' in task) and ('sensitivity' not in task)):
     N = EU_Nodes_usage()
     print('Building link dictionary')
     link_dic = link_dict(N) # dictionary of links directly connected to each node
-    print('Plotting')
-    p = Pool(len(schemes))
-    p.map(bars, schemes)
+    if 'cap' in task:
+        print('plotting normalised to network capacity')
+        for scheme in schemes:
+            bars(scheme, norm='cap')
+    else:
+        print('Plotting')
+        p = Pool(len(schemes))
+        p.map(bars, schemes)
 
 if (('total' in task) and ('sensitivity' in task)):
     if not length: print('Plotting total network usage for different networks')
