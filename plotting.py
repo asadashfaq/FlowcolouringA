@@ -328,6 +328,7 @@ def bars(scheme, verbose=None, norm='load'):
         else:
             Total_caps = sum(quantiles)
         Node_proportional = node_mean_load/EU_load*Total_caps/normVec
+        Node_proportional = np.reshape(Node_proportional, (len(Node_proportional),1))
 
         # Calculate link proportional
         link_proportional = linkProportional(N, link_dic, quantiles, lengths=lengths)
@@ -337,12 +338,13 @@ def bars(scheme, verbose=None, norm='load'):
         normed_usage = Total_usage/normVec
         normed_usage = np.reshape(normed_usage,(len(normed_usage),1))
         node_mean_load = np.reshape(node_mean_load,(len(node_mean_load),1))
-        data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional])
+        data = np.hstack([normed_usage,node_ids,node_mean_load,link_proportional, Node_proportional])
         data_sort = data[data[:,2].argsort()]
         names_sort = [names[int(i)] for i in data_sort[:,1]]
         # flip order so largest is first
         names_sort = names_sort[::-1]
         link_proportional = data_sort[:,3][::-1]
+        Node_proportional = data_sort[:,4][::-1]
         data_sort = data_sort[:,0][::-1]
 
         plt.figure(figsize=(10, 4), facecolor='w', edgecolor='k')
