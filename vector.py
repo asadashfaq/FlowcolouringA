@@ -18,16 +18,42 @@ if len(sys.argv) < 2:
 else:
     task = str(sys.argv[1:])
 
-modes = ['linear', 'square']
+modes = ['square', 'square']
 directions = ['import', 'export', 'combined']
 outPath = './results/vector/'
 figPath = './figures/vector/'
 
+
+def usageCalc(F, quantiles, Usages, nodes, links, name):
+    """
+    Calculate usages and save to file
+    """
+    Node_contributions = np.zeros((nodes, links))  # empty array for calculated usages
+    for node in range(nodes):
+        print node
+        for link in range(links):
+            # Stacking and sorting data
+            F_vert = np.reshape(F[link, :lapse], (len(F[link, :lapse]), 1))
+            exp_vert = np.reshape(Usages[link, node, :lapse], (len(Usages[link, node, :lapse]), 1))
+            F_matrix = np.hstack([F_vert, exp_vert])
+            F_matrix[F_matrix[:, 0].argsort()]
+
+            H, bin_edges = binMaker(F_matrix, quantiles[link], lapse)
+            Node_contributions[node, link] = node_contrib(H, bin_edges, linkID=link)
+
+    np.save(outPath + 'Node_contrib_' + mode + '_' + direction + '_' + str(name) + '.npy', Node_contributions)
+    return
+
+
 if 'trace' in task:
+    print('tracing')
     for mode in modes:
+        print(str(mode))
         N = np.load('./results/' + mode + '_pm.npz', mmap_mode='r')
-        loads = N['load']
-        nodes = loads.shape[0]
+        F = abs(np.load('./results/' + mode + '-flows.npy'))
+        quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
+        nodes = 30
+        names = ['solar', 'wind']
         meanLoads = np.reshape(N['mean'], (nodes, 1))
         genS = N['normsolar']
         genW = N['normwind']
@@ -37,20 +63,24 @@ if 'trace' in task:
             genB = np.divide(N['balancing'], meanLoads)
             genSum += genB
             normGenB = genB / genSum
+            names.append('backup')
         normGenS = genS / genSum
         normGenW = genW / genSum
 
         for direction in directions:
+            print(str(direction))
             if direction == 'combined':
-                Usages1 = np.load(
+                Usages = np.load(
                     './linkcolouring/old_' + mode + '_copper_link_mix_import_all_alpha=same.npy')
                 Usages2 = np.load(
                     './linkcolouring/old_' + mode + '_copper_link_mix_export_all_alpha=same.npy')
-                Usages = (Usages1 + Usages2) * .5
-                Usages1, Usages2 = None, None
+                Usages += Usages2
+                Usages2 = None
+                Usages /= 2
             else:
-                Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_' + direction + '_all_alpha=same.npy')        links, nodes, lapse = Usages.shape
+                Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_' + direction + '_all_alpha=same.npy')
 
+            links, nodes, lapse = Usages.shape
             usageS = np.zeros((links, nodes, lapse))
             usageW = np.zeros((links, nodes, lapse))
             for l in xrange(links):
@@ -58,5 +88,14 @@ if 'trace' in task:
                 usageW[l] = Usages[l] * normGenW
             if mode == 'square':
                 usageB = np.zeros((links, nodes, lapse))
-                for l in links:
+                for l in range(links):
                     usageB[l] = Usages[l] * normGenB
+            Usages = None
+
+            print('Solar')
+            usageCalc(F, quantiles, usageS, nodes, links, 'solar')
+            print('Wind')
+            usageCalc(F, quantiles, usageW, nodes, links, 'wind')
+            if mode == 'square':
+                print('Backup')
+                usageCalc(F, quantiles, usageB, nodes, links, 'backup')
