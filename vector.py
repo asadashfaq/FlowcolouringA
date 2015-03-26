@@ -11,6 +11,14 @@ from functions import *
 
 """
 Vector flow tracing on top of the up/down stream flow tracing algorithm.
+
+This script can be called from command line with one of the following inputs:
+- trace:    vectorise the flow tracing and save results
+- plot:     load results from above and plot network figures for each color
+- sanity:   check whether the individual colors add to the scalar flow tracing
+
+Results from this script go to the folder: ./results/vector/
+Figures go to the folder: ./figures/vector.
 """
 
 """
