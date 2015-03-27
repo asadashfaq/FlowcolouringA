@@ -4,6 +4,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import networkx as nx
 from pylab import plt
 import matplotlib as mpl
+import scipy.stats as ss
 from aurespf.tools import *
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import node_namer, link_dict
@@ -33,6 +34,15 @@ modes = ['linear', 'square']
 directions = ['import', 'export', 'combined']
 outPath = './results/vector/'
 figPath = './figures/vector/'
+
+# Node indices and names sorted after descending mean load
+loadOrder = [18, 4, 7, 22, 24, 20, 8, 5, 2, 6, 1, 15, 0, 10, 14,
+             9, 11, 12, 16, 21, 17, 19, 3, 26, 13, 29, 27, 23, 28, 25]
+
+loadNames = np.array(['DE', 'FR', 'GB', 'IT', 'ES', 'SE', 'PL', 'NO', 'NL',
+                      'BE', 'FI', 'CZ', 'AT', 'GR', 'RO', 'BG', 'PT', 'CH',
+                      'HU', 'DK', 'RS', 'IE', 'BA', 'SK', 'HR', 'LT', 'EE',
+                      'SI', 'LV', 'LU'], dtype='|S4')
 
 
 def usageCalc(F, quantiles, Usages, nodes, links, name):
@@ -252,3 +262,31 @@ if 'plot' in task:
             print('Direction: ' + direction)
             for color in colors:
                 drawnet_usage(N, mode, direction, color)
+
+if 'sanity' in task:
+    for mode in modes:
+        for direction in directions:
+            S = np.load('./results/vector/Node_contrib_' + mode + '_' + direction + '_solar.npy')
+            S += np.load('./results/vector/Node_contrib_' + mode + '_' + direction + '_wind.npy')
+            if mode == 'square':
+                S += np.load('./results/vector/Node_contrib_' + mode + '_' + direction + '_backup.npy')
+            N = np.load('./results/Node_contrib_' + mode + '_' + direction + '_70128.npy')
+
+            error = abs(S - N) / N * 100
+            means = np.mean(error, axis=1)
+            stds = np.std(error, axis=1)
+            nodeMean = np.mean(means)
+
+            plt.figure()
+            ax = plt.subplot()
+            x = np.linspace(.5, 29.5, 30)
+            plt.errorbar(x, means[loadOrder], yerr=stds * 0, marker='s', lw=0, elinewidth=1)
+            plt.plot([0, 30], [nodeMean, nodeMean], '--k', lw=2)
+            plt.title(mode + ' ' + direction + ', sum of colors vs. total network usage')
+            plt.ylabel('Mean link deviation in %')
+            ax.set_xticks(np.linspace(1, 30, 30))
+            ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=9)
+            plt.axis([0, 30, min(means) - (.1 * min(means)), max(means) + (.1 * max(means))])
+            plt.legend(('individual country', 'mean of countries'), loc=2, ncol=2)
+            plt.savefig(figPath + 'error/' + mode + '_' + direction + '_.png', bbox_inches='tight')
+            plt.close()
