@@ -1,10 +1,11 @@
+import os
 import sys
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
+from multiprocessing import Pool
 import networkx as nx
 from pylab import plt
 import matplotlib as mpl
-import scipy.stats as ss
+from matplotlib.colors import LinearSegmentedColormap
 from aurespf.tools import *
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import node_namer, link_dict
@@ -14,9 +15,10 @@ from functions import *
 Vector flow tracing on top of the up/down stream flow tracing algorithm.
 
 This script can be called from command line with one of the following inputs:
-- trace:    vectorise the flow tracing and save results
-- plot:     load results from above and plot network figures for each color
-- sanity:   check whether the individual colors add to the scalar flow tracing
+- trace:        vectorise the flow tracing and save results
+- plot network: load results from above and plot network figures for each color
+- plot usage:   plot average usage for each color
+- sanity:       check whether the individual colors add to the scalar flow tracing
 
 Results from this script go to the folder: ./results/vector/
 Figures go to the folder: ./figures/vector.
@@ -196,6 +198,69 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar'):
         plt.close()
 
 
+def usagePlotter(direction):
+    """
+    Scatter plots of nodes' import/export usages of links saved to ./figures/.
+    """
+    legendNames = ['diagonal', r'$99\%$ quantile', 'avg. usage', 'usage']
+    modes = ['linear', 'square']
+    modeNames = ['localised', 'synchronised']
+    names = ['usageS', 'usageW']
+    colors = ['#ffa500', '#0000aa']
+    for mode in modes:
+        N = EU_Nodes_usage(mode + '.npz')
+        F = np.load('./results/' + mode + '-flows.npy')
+        Fmax = np.max(np.abs(F), 1)
+        nodes = len(N)
+        links = F.shape[0]
+
+        usageS = np.load(outPath + mode + '_' + direction + '_' + 'usageS.npy')
+        usageW = np.load(outPath + mode + '_' + direction + '_' + 'usageW.npy')
+        if mode == 'square':
+            usageB = np.load(outPath + mode + '_' + direction + '_' + 'usageB.npy')
+            names.append('usageB')
+            colors.append('#874a2b')
+
+        for node in xrange(nodes):
+            nodeLabel = N[node].label
+            nodePath = figPath + 'usage/' + nodeLabel.tostring()
+            if not os.path.exists(nodePath):
+                os.makedirs(nodePath)
+            for link in xrange(links):
+                linkLabel = link_label(link, N)
+                linkflow = abs(F[link, :])
+                qq = get_q(abs(F[link]), .99)
+
+                plt.figure()
+                ax = plt.subplot()
+                totUsage = np.zeros((10))
+                for i, color in enumerate(names):
+                    usages = eval(color)
+                    usages = usages[link, node, :] / linkflow
+                    F_vert = np.reshape(linkflow, (len(linkflow), 1))
+                    exp_vert = np.reshape(usages, (len(usages), 1))
+                    F_matrix = np.hstack([F_vert, exp_vert])
+                    F_matrix[F_matrix[:, 0].argsort()]
+                    H, bin_edges = binMaker(F_matrix, qq, lapse=70128)
+                    plt.plot(bin_edges / qq, H[:, 1], '-', c=colors[i], lw=2)
+                    totUsage += H[:, 1]
+                plt.plot(bin_edges / qq, totUsage, '-', c="#aa0000", lw=2)
+
+                plt.axis([0, 1, 0, 1])
+                ax.set_xticks(np.linspace(0, 1, 11))
+                plt.xlabel(r'$|F_l|/\mathcal{K}_l^T$')
+                plt.ylabel(r'$H_{ln}/F_l$')
+                if mode == 'square':
+                    modeName = modeNames[1]
+                    plt.legend(('solar usage', 'wind usage', 'backup usage', 'total usage'), loc=1)
+                else:
+                    modeName = modeNames[0]
+                    plt.legend(('solar usage', 'wind usage', 'total usage'), loc=1)
+                plt.title(nodeLabel.tostring() + ' ' + modeName + ' ' + direction + ' flows on link ' + linkLabel)
+                plt.savefig(nodePath + '/' + str(link) + '_' + direction + '_' + modeName + '.png', bbox_inches='tight')
+                plt.close()
+
+
 if 'trace' in task:
     print('tracing')
     for mode in modes:
@@ -222,9 +287,7 @@ if 'trace' in task:
             print(str(direction))
             if direction == 'combined':
                 Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_import_all_alpha=same.npy')
-                Usages2 = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_export_all_alpha=same.npy')
-                Usages += Usages2
-                Usages2 = None
+                Usages += np.load('./linkcolouring/old_' + mode + '_copper_link_mix_export_all_alpha=same.npy')
                 Usages /= 2
             else:
                 Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_' + direction + '_all_alpha=same.npy')
@@ -235,10 +298,13 @@ if 'trace' in task:
             for l in xrange(links):
                 usageS[l] = Usages[l] * normGenS
                 usageW[l] = Usages[l] * normGenW
+            np.save(outPath + mode + '_' + direction + '_' + 'usageS.npy', usageS)
+            np.save(outPath + mode + '_' + direction + '_' + 'usageW.npy', usageW)
             if mode == 'square':
                 usageB = np.zeros((links, nodes, lapse))
                 for l in range(links):
                     usageB[l] = Usages[l] * normGenB
+                np.save(outPath + mode + '_' + direction + '_' + 'usageB.npy', usageB)
             Usages = None
 
             print('Solar')
@@ -251,17 +317,24 @@ if 'trace' in task:
 
 
 if 'plot' in task:
-    print('Plotting network figures')
-    N = EU_Nodes_usage()
-    colors = ['solar', 'wind']
-    for mode in modes:
-        print('Mode: ' + mode)
-        if mode == 'square':
-            colors.append('backup')
-        for direction in directions:
-            print('Direction: ' + direction)
-            for color in colors:
-                drawnet_usage(N, mode, direction, color)
+    if 'network' in task:
+        print('Plotting network figures')
+        N = EU_Nodes_usage()
+        colors = ['solar', 'wind']
+        for mode in modes:
+            print('Mode: ' + mode)
+            if mode == 'square':
+                colors.append('backup')
+            for direction in directions:
+                print('Direction: ' + direction)
+                for color in colors:
+                    drawnet_usage(N, mode, direction, color)
+
+    if 'usage' in task:
+        print('Plotting usage figures')
+        p = Pool(len(directions))
+        p.map(usagePlotter, directions)
+
 
 if 'sanity' in task:
     for mode in modes:
