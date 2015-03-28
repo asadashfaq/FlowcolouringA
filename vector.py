@@ -282,11 +282,13 @@ if 'sanity' in task:
             x = np.linspace(.5, 29.5, 30)
             plt.errorbar(x, means[loadOrder], yerr=stds * 0, marker='s', lw=0, elinewidth=1)
             plt.plot([0, 30], [nodeMean, nodeMean], '--k', lw=2)
-            plt.title(mode + ' ' + direction + ', sum of colors vs. total network usage')
+            if mode == 'linear': title = 'localised'
+            if mode == 'square': title = 'synchronised'
+            plt.title(title + ' ' + direction + ', sum of colors vs. total network usage')
             plt.ylabel('Mean link deviation in %')
             ax.set_xticks(np.linspace(1, 30, 30))
             ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=9)
             plt.axis([0, 30, min(means) - (.1 * min(means)), max(means) + (.1 * max(means))])
             plt.legend(('individual country', 'mean of countries'), loc=2, ncol=2)
-            plt.savefig(figPath + 'error/' + mode + '_' + direction + '_.png', bbox_inches='tight')
+            plt.savefig(figPath + 'error/' + title + '_' + direction + '_.png', bbox_inches='tight')
             plt.close()
