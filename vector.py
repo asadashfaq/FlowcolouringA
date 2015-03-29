@@ -53,7 +53,6 @@ def usageCalc(F, quantiles, Usages, nodes, links, name):
     """
     Node_contributions = np.zeros((nodes, links))  # empty array for calculated usages
     for node in range(nodes):
-        print node
         for link in range(links):
             # Stacking and sorting data
             F_vert = np.reshape(F[link, :lapse], (len(F[link, :lapse]), 1))
@@ -233,7 +232,8 @@ def usagePlotter(direction):
 
                 plt.figure()
                 ax = plt.subplot()
-                totUsage = np.zeros((10))
+                nBins = 90
+                totUsage = np.zeros((nBins))
                 for i, color in enumerate(names):
                     usages = eval(color)
                     usages = usages[link, node, :] / linkflow
@@ -241,7 +241,7 @@ def usagePlotter(direction):
                     exp_vert = np.reshape(usages, (len(usages), 1))
                     F_matrix = np.hstack([F_vert, exp_vert])
                     F_matrix[F_matrix[:, 0].argsort()]
-                    H, bin_edges = binMaker(F_matrix, qq, lapse=70128)
+                    H, bin_edges = binMaker(F_matrix, qq, lapse=70128, nbins=nBins)
                     plt.plot(bin_edges / qq, H[:, 1], '-', c=colors[i], lw=2)
                     totUsage += H[:, 1]
                 plt.plot(bin_edges / qq, totUsage, '-', c="#aa0000", lw=2)
@@ -249,7 +249,7 @@ def usagePlotter(direction):
                 plt.axis([0, 1, 0, 1])
                 ax.set_xticks(np.linspace(0, 1, 11))
                 plt.xlabel(r'$|F_l|/\mathcal{K}_l^T$')
-                plt.ylabel(r'$H_{ln}/F_l$')
+                plt.ylabel(r'$\left\langle H_{ln} \right\rangle /|F_l|$')
                 if mode == 'square':
                     modeName = modeNames[1]
                     plt.legend(('solar usage', 'wind usage', 'backup usage', 'total usage'), loc=1)
