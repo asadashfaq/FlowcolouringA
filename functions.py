@@ -197,4 +197,4 @@ def dcov_all(x, y):
     dvx = (dnx ** 2).sum() / denom
     dvy = (dny ** 2).sum() / denom
     dr = dc / (np.sqrt(dvx) * np.sqrt(dvy))
-    return dc, dr, dvx, dvy
+    return dc, np.sqrt(dr), dvx, dvy
