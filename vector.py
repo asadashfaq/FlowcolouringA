@@ -338,6 +338,7 @@ if 'plot' in task:
 
 if 'sanity' in task:
     for mode in modes:
+        quantiles = np.load('./results/quantiles_' + str(mode) + '_70128.npy')
         for direction in directions:
             S = np.load('./results/vector/Node_contrib_' + mode + '_' + direction + '_solar.npy')
             S += np.load('./results/vector/Node_contrib_' + mode + '_' + direction + '_wind.npy')
@@ -346,17 +347,20 @@ if 'sanity' in task:
             N = np.load('./results/Node_contrib_' + mode + '_' + direction + '_70128.npy')
 
             error = abs(S - N) / N * 100
+            weightedError = abs(S - N) / N * quantiles / np.mean(quantiles) * 100
             means = np.mean(error, axis=1)
+            weightedMeans = np.mean(weightedError, axis=1)
             stds = np.std(error, axis=1)
             nodeMean = np.mean(means)
+            weightedNodeMean = np.mean(weightedMeans)
 
-            plt.figure()
-            ax = plt.subplot()
             x = np.linspace(.5, 29.5, 30)
-            plt.errorbar(x, means[loadOrder], yerr=stds * 0, marker='s', lw=0, elinewidth=1)
-            plt.plot([0, 30], [nodeMean, nodeMean], '--k', lw=2)
             if mode == 'linear': title = 'localised'
             if mode == 'square': title = 'synchronised'
+            plt.figure()
+            ax = plt.subplot()
+            plt.errorbar(x, means[loadOrder], yerr=stds * 0, marker='s', lw=0, elinewidth=1)
+            plt.plot([0, 30], [nodeMean, nodeMean], '--k', lw=2)
             plt.title(title + ' ' + direction + ', sum of colors vs. total network usage')
             plt.ylabel('Mean link deviation in %')
             ax.set_xticks(np.linspace(1, 30, 30))
@@ -364,4 +368,16 @@ if 'sanity' in task:
             plt.axis([0, 30, min(means) - (.1 * min(means)), max(means) + (.1 * max(means))])
             plt.legend(('individual country', 'mean of countries'), loc=2, ncol=2)
             plt.savefig(figPath + 'error/' + title + '_' + direction + '_.png', bbox_inches='tight')
+
+            plt.figure()
+            ax = plt.subplot()
+            plt.errorbar(x, weightedMeans[loadOrder], yerr=stds * 0, marker='s', lw=0, elinewidth=1)
+            plt.plot([0, 30], [weightedNodeMean, weightedNodeMean], '--k', lw=2)
+            plt.title(title + ' ' + direction + ', sum of colors vs. total network usage')
+            plt.ylabel(r'Weighed mean link deviation in % normalised to $\left\langle \mathcal{K}^T \right\rangle$')
+            ax.set_xticks(np.linspace(1, 30, 30))
+            ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=9)
+            plt.axis([0, 30, min(weightedMeans) - (.1 * min(weightedMeans)), max(weightedMeans) + (.1 * max(weightedMeans))])
+            plt.legend(('individual country', 'mean of countries'), loc=2, ncol=2)
+            plt.savefig(figPath + 'error/' + 'weighted_' + title + '_' + direction + '_.png', bbox_inches='tight')
             plt.close()
