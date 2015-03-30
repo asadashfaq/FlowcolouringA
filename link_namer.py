@@ -62,6 +62,24 @@ def node_namer(N=None):
     return nnames
 
 
+def link_id(n1, n2, ln):
+    """
+    Find link id from attached nodes' labels
+    """
+    name1 = str(n1) + '-' + str(n2)
+    name2 = str(n2) + '-' + str(n1)
+    try:
+        ID = np.where(ln == name1)[0][0]
+        return ID
+    except:
+        try:
+            ID = np.where(ln == name2)[0][0]
+            return ID
+        except:
+            print('link_id error: ' + str(n1) + ' and ' + str(n2) + ' not connected')
+            return
+
+
 def link_dict(N=None, F=None):
     """
     Return a dictionary of node labels and IDs of their directly connected links
