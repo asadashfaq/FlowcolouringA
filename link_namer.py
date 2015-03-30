@@ -80,6 +80,15 @@ def link_id(n1, n2, ln):
             return
 
 
+def link_ids(n1, n2, ln):
+    """
+    Similar to link_id but takes a list of labels as n2
+    """
+    ids = [link_id(n1, i, ln) for i in n2]
+    ids = np.array(ids)
+    return ids[np.where(ids)]
+
+
 def link_dict(N=None, F=None):
     """
     Return a dictionary of node labels and IDs of their directly connected links
