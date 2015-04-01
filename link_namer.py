@@ -1,16 +1,12 @@
 #! /usr/bin/env/python
 from __future__ import division
 import re
-import sys
 import numpy as np
-import matplotlib.pyplot as plt
-from multiprocessing import Pool
 import aurespf.solvers as au
-from aurespf.tools import get_q
 from EUgrid import *
 
 """
-Script to print link IDs  and labels.
+Various functions regarding names of nodes and links.
 """
 
 
@@ -107,3 +103,12 @@ def link_dict(N=None, F=None):
             else:
                 ldict.update({str(l.label): [link]})
     return ldict
+
+
+def get_neighbors(node, admat):
+    """
+    Function to find a node's directly connected neighbors. Input shold be an
+    integer and an adjacency matrix as an array.
+    """
+    temp = np.where(admat[node] != 0)[0]
+    return temp[np.where(temp != node)]
