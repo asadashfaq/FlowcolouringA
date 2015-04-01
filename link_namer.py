@@ -123,3 +123,21 @@ def get_multi_neighbors(nodes, admat):
     temp = [get_neighbors(i, admat) for i in nodes]
     temp = np.concatenate(temp)
     return np.unique(temp)
+
+
+def neighbor_levels(node, levels, admat):
+    """
+    Get a list of neighbors at different levels. Level 0 is the node it self,
+    level 1 is the first neighbors and so on.
+    """
+    neighbors = [[node]]
+    for lvl in range(levels):
+        temp = get_multi_neighbors(neighbors[lvl], admat)
+        ignoreList = np.concatenate(neighbors)
+        ignore = [np.where(temp == i)[0].tolist() for i in ignoreList]
+        temp2 = np.delete(temp, np.concatenate(ignore)).tolist()
+        if len(temp2) == 0:
+            return neighbors
+        else:
+            neighbors.append(temp2)
+    return neighbors
