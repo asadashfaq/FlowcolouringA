@@ -62,6 +62,7 @@ def link_id(n1, n2, ln):
     """
     Find link id from attached nodes' labels
     """
+    ln = np.array(ln)
     name1 = str(n1) + '-' + str(n2)
     name2 = str(n2) + '-' + str(n1)
     try:
@@ -112,3 +113,13 @@ def get_neighbors(node, admat):
     """
     temp = np.where(admat[node] != 0)[0]
     return temp[np.where(temp != node)]
+
+
+def get_multi_neighbors(nodes, admat):
+    """
+    Similar to get_neighbors but supports multiple input nodes and returns
+    unique neighbors to these.
+    """
+    temp = [get_neighbors(i, admat) for i in nodes]
+    temp = np.concatenate(temp)
+    return np.unique(temp)
