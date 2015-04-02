@@ -58,7 +58,7 @@ def node_namer(N=None):
     return nnames
 
 
-def link_id(n1, n2, ln):
+def link_id(n1, n2, ln, silent=False):
     """
     Find link id from attached nodes' labels
     """
@@ -73,15 +73,16 @@ def link_id(n1, n2, ln):
             ID = np.where(ln == name2)[0][0]
             return ID
         except:
-            print('link_id error: ' + str(n1) + ' and ' + str(n2) + ' not connected')
+            if not silent:
+                print('link_id error: ' + str(n1) + ' and ' + str(n2) + ' not connected')
             return
 
 
-def link_ids(n1, n2, ln):
+def link_ids(n1, n2, ln, silent=False):
     """
     Similar to link_id but takes a list of labels as n2
     """
-    ids = [link_id(n1, i, ln) for i in n2]
+    ids = [link_id(n1, i, ln, silent) for i in n2]
     ids = np.array(ids)
     return ids[np.where(ids)]
 
