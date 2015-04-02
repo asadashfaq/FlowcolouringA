@@ -142,3 +142,15 @@ def neighbor_levels(node, levels, admat):
         else:
             neighbors.append(temp2)
     return neighbors
+
+
+def link_level(nl, lvl, nnames, lnames):
+    """
+    Return a list of ids for the links that connect a node's neighbors at level
+    lvl - 1 with those at level lvl. Takes neighbor_levels as first input.
+    Examples:
+    lvl=0 gives the links from a node to it's first neighbors.
+    lvl=1 gives the between a node's first and secondary neighbors.
+    """
+    ll = [link_ids(nnames[i], nnames[nl[lvl + 1]], lnames, silent=True) for i in nl[lvl]]
+    return np.concatenate(ll)
