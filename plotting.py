@@ -7,7 +7,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import networkx as nx
 import matplotlib as mpl
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
-from link_namer import node_namer, link_dict
+from link_namer import *
 from scipy.stats import pearsonr
 from functions import *
 
@@ -35,6 +35,15 @@ directions = ['import', 'export', 'combined']
 
 if 'length' in task: length = True # modelling of link lengths
 else: length = False
+
+# Node indices and names sorted after descending mean load
+loadOrder = [18, 4, 7, 22, 24, 20, 8, 5, 2, 6, 1, 15, 0, 10, 14,
+             9, 11, 12, 16, 21, 17, 19, 3, 26, 13, 29, 27, 23, 28, 25]
+
+loadNames = np.array(['DE', 'FR', 'GB', 'IT', 'ES', 'SE', 'PL', 'NO', 'NL',
+                      'BE', 'FI', 'CZ', 'AT', 'GR', 'RO', 'BG', 'PT', 'CH',
+                      'HU', 'DK', 'RS', 'IE', 'BA', 'SK', 'HR', 'LT', 'EE',
+                      'SI', 'LV', 'LU'], dtype='|S4')
 
 def simpleMerger(data, merge_dict):
     """
@@ -889,6 +898,54 @@ def bars4(scheme):
         print('Saved figures to ./figures/sensitivity/'+scheme+'/compared-all-network-usage-'+direction+'.png')
 
 
+def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames, admat=None):
+    """
+    Bar plots of nodes' link usage of links at different levels.
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    nodes, links = N_usages.shape
+    usageLevels = np.zeros((nodes, levels))
+    for node in range(nodes):
+        nl = neighbor_levels(node, levels, admat)
+        for lvl in range(levels):
+            ll = link_level(nl, lvl, nnames, lnames)
+            ll = np.array(ll, dtype='int')
+            usageSum = sum(usages[node, ll])
+            linkSum = sum(quantiles[ll])
+            usageLevels[node, lvl] = usageSum / linkSum
+
+        # plot single node
+        x = range(levels)
+        plt.figure()
+        ax = plt.subplot()
+        plt.bar(x, usageLevels[node], width=.8, ec='none')
+        ax.set_xticks(np.linspace(.4, levels - .6, levels))
+        ax.set_xticklabels(range(1, levels+1))
+        ax.xaxis.set_tick_params(width=0)
+        plt.axis([0, 5, 0, 1])
+        plt.ylabel(r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$')
+        plt.xlabel('Link level')
+        plt.title(str(direction) + ' link usage of ' + str(nnames[node]))
+        plt.savefig('./figures/levels/' + str(scheme) + '/' + str(node) + '_' + str(direction) + '.png', bbox_inches='tight')
+        plt.close()
+
+    # plot all nodes
+    usages = usageLevels.transpose()
+    plt.figure(figsize=(11, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(usages[:, loadOrder])
+    plt.colorbar()
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels+1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(1, nodes, nodes))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total' + '_' + str(direction) + '.png', bbox_inches='tight')
+
+
 if 'network' in task:
     print('Plotting network figures')
     N = EU_Nodes_usage()
@@ -967,3 +1024,17 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
         link_dic_superRegions = link_dict(N,nlinks)
 
         bars4(scheme)
+
+if 'level' in task:
+    print('Plotting link levels')
+    levels = 5
+    N = EU_Nodes_usage()
+    lnames = np.array(link_namer(N))
+    nnames = np.array(node_namer(N))
+    schemeNames = ['localised', 'synchronised']
+    for i, scheme in enumerate(schemes):
+        name = schemeNames[i]
+        quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
+        for direction in directions:
+                N_usages = np.load('./results/Node_contrib_' + scheme + '_' + direction + '_70128.npy')
+                link_level_bars(levels, N_usages, quantiles, name, direction, nnames, lnames)
