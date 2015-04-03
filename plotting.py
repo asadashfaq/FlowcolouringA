@@ -17,6 +17,7 @@ the combination
 
 Call the script using only one of the following command line arguments:
 - network:                  network figures with coloured links, only works for N=30
+- level:                    Bar plots of nodes' link usage at different levels.
 - total:                    barplots comparing total network usage for different export schemes
 - total sensitivity:        same as above, but for N=8 and N=50 networks
 - sensitivity compare:      compare different networks: N=30 & N=8 ; N=30 & N=53
@@ -921,7 +922,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
         ax = plt.subplot()
         plt.bar(x, usageLevels[node], width=.8, ec='none')
         ax.set_xticks(np.linspace(.4, levels - .6, levels))
-        ax.set_xticklabels(range(1, levels+1))
+        ax.set_xticklabels(range(1, levels + 1))
         ax.xaxis.set_tick_params(width=0)
         plt.axis([0, 5, 0, 1])
         plt.ylabel(r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$')
@@ -937,7 +938,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     plt.pcolormesh(usages[:, loadOrder])
     plt.colorbar()
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
-    ax.set_yticklabels(range(1, levels+1))
+    ax.set_yticklabels(range(1, levels + 1))
     ax.yaxis.set_tick_params(width=0)
     ax.xaxis.set_tick_params(width=0)
     ax.set_xticks(np.linspace(1, nodes, nodes))
