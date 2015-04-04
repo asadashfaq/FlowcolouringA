@@ -907,6 +907,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
         admat = np.genfromtxt('./settings/eadmat.txt')
     nodes, links = N_usages.shape
     usageLevels = np.zeros((nodes, levels))
+    usageLevelsNorm = np.zeros((nodes, levels))
     for node in range(nodes):
         nl = neighbor_levels(node, levels, admat)
         for lvl in range(levels):
@@ -915,6 +916,11 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
             usageSum = sum(usages[node, ll])
             linkSum = sum(quantiles[ll])
             usageLevels[node, lvl] = usageSum / linkSum
+            if lvl == 0:
+                usageLevelsNorm[node, lvl] = usageSum
+            else:
+                usageLevelsNorm[node, lvl] = usageSum / usageLevelsNorm[node, 0]
+        usageLevelsNorm[:, 0] = 1
 
         # plot single node
         x = range(levels)
@@ -945,6 +951,23 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
     plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total' + '_' + str(direction) + '.png', bbox_inches='tight')
+    plt.close()
+
+    # plot all nodes normalised to usage of first level
+    usages = usageLevelsNorm.transpose()
+    plt.figure(figsize=(11, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(usages[:, loadOrder])
+    plt.colorbar()
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(1, nodes, nodes))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '.png', bbox_inches='tight')
+    plt.close()
 
 
 if 'network' in task:
