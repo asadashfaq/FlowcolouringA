@@ -154,3 +154,16 @@ def link_level(nl, lvl, nnames, lnames):
     """
     ll = [link_ids(nnames[i], nnames[nl[lvl + 1]], lnames, silent=True) for i in nl[lvl]]
     return np.concatenate(ll)
+
+
+def get_diameter(admat=None):
+    """
+    Find diameter of network
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    nodes = admat.shape[0]
+    d = []
+    for n in range(nodes):
+        d.append(len(neighbor_levels(n, 20, admat)))
+    return min(d) - 1, max(d) - 1
