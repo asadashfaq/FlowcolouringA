@@ -950,7 +950,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     """
     if not admat:
         admat = np.genfromtxt('./settings/eadmat.txt')
-    nodes, links = N_usages.shape
+    nodes, links = usages.shape
     usageLevels = np.zeros((nodes, levels))
     usageLevelsNorm = np.zeros((nodes, levels))
     for node in range(nodes):
@@ -1014,6 +1014,46 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '.png', bbox_inches='tight')
     plt.close()
 
+
+def link_level_norm(levels, usages, quantiles, scheme, direction, nnames, lnames, admat=None):
+    """
+    Bar plots of nodes' link usage of links at different levels normed to the
+    usage at the first level.
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    links, nodes, lapse = usages.shape
+    usageLevels = np.zeros((nodes, levels))
+    usageLevelsNorm = np.zeros((nodes, levels))
+    for node in range(nodes):
+        nl = neighbor_levels(node, levels, admat)
+        for lvl in range(levels):
+            ll = link_level(nl, lvl, nnames, lnames)
+            ll = np.array(ll, dtype='int')
+            usageSum = sum(sum(usages[ll, node, :]))
+            linkSum = sum(quantiles[ll])
+            usageLevels[node, lvl] = usageSum / linkSum
+            if lvl == 0:
+                usageLevelsNorm[node, lvl] = usageSum
+            else:
+                usageLevelsNorm[node, lvl] = usageSum / usageLevelsNorm[node, 0]
+        usageLevelsNorm[:, 0] = 1
+
+    # plot all nodes normalised to usage of first level
+    usages = usageLevelsNorm.transpose()
+    plt.figure(figsize=(11, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(usages[:, loadOrder])
+    plt.colorbar()
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(1, nodes, nodes))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '.png', bbox_inches='tight')
+    plt.close()
 
 if 'network' in task:
     print('Plotting network figures')
@@ -1109,9 +1149,22 @@ if 'level' in task:
     lnames = np.array(link_namer(N))
     nnames = np.array(node_namer(N))
     schemeNames = ['localised', 'synchronised']
-    for i, scheme in enumerate(schemes):
-        name = schemeNames[i]
-        quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
-        for direction in directions:
-                N_usages = np.load('./results/Node_contrib_' + scheme + '_' + direction + '_70128.npy')
-                link_level_bars(levels, N_usages, quantiles, name, direction, nnames, lnames)
+    if 'norm' not in task:
+        for i, scheme in enumerate(schemes):
+            name = schemeNames[i]
+            quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
+            for direction in directions:
+                    N_usages = np.load('./results/Node_contrib_' + scheme + '_' + direction + '_70128.npy')
+                    link_level_bars(levels, N_usages, quantiles, name, direction, nnames, lnames)
+    else:
+        for i, scheme in enumerate(schemes):
+            name = schemeNames[i]
+            quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
+            for direction in directions:
+                    if direction == 'combined':
+                        Usages = np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_import_all_alpha=same.npy')
+                        Usages += np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_export_all_alpha=same.npy')
+                        Usages /= 2
+                    else:
+                        Usages = np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_' + direction + '_all_alpha=same.npy')
+                    link_level_norm(levels, Usages, quantiles, name, direction, nnames, lnames)
