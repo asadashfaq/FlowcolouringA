@@ -8,7 +8,7 @@ import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap
 from aurespf.tools import *
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
-from link_namer import node_namer, link_dict
+from link_namer import *
 from functions import *
 
 """
@@ -261,6 +261,103 @@ def usagePlotter(direction):
                 plt.close()
 
 
+def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames, lnames, admat=None):
+    """
+    Bar plots of nodes' link usage of links at different levels.
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    nodes, links = usages.shape
+    usageLevels = np.zeros((nodes, levels))
+    usageLevelsNorm = np.zeros((nodes, levels))
+    for node in range(nodes):
+        nl = neighbor_levels(node, levels, admat)
+        for lvl in range(levels):
+            ll = link_level(nl, lvl, nnames, lnames)
+            ll = np.array(ll, dtype='int')
+            usageSum = sum(usages[node, ll])
+            linkSum = sum(quantiles[ll])
+            usageLevels[node, lvl] = usageSum / linkSum
+            if lvl == 0:
+                usageLevelsNorm[node, lvl] = usageSum
+            else:
+                usageLevelsNorm[node, lvl] = usageSum / usageLevelsNorm[node, 0]
+        usageLevelsNorm[:, 0] = 1
+
+    # plot all nodes
+    usages = usageLevels.transpose()
+    plt.figure(figsize=(11, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.colorbar().set_label(label=r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(1, nodes, nodes))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total' + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+    plt.close()
+
+    # plot all nodes normalised to usage of first level
+    usages = usageLevelsNorm.transpose()
+    plt.figure(figsize=(11, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.colorbar().set_label(label=r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(1, nodes, nodes))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total_norm_cont_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+    plt.close()
+
+
+def link_level_norm(levels, usages, quantiles, scheme, direction, color, nnames, lnames, admat=None):
+    """
+    Bar plots of nodes' link usage of links at different levels normed to the
+    usage at the first level.
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    links, nodes, lapse = usages.shape
+    usageLevels = np.zeros((nodes, levels))
+    usageLevelsNorm = np.zeros((nodes, levels))
+    for node in range(nodes):
+        nl = neighbor_levels(node, levels, admat)
+        for lvl in range(levels):
+            ll = link_level(nl, lvl, nnames, lnames)
+            ll = np.array(ll, dtype='int')
+            usageSum = sum(sum(usages[ll, node, :]))
+            linkSum = sum(quantiles[ll])
+            usageLevels[node, lvl] = usageSum / linkSum
+            if lvl == 0:
+                usageLevelsNorm[node, lvl] = usageSum
+            else:
+                usageLevelsNorm[node, lvl] = usageSum / usageLevelsNorm[node, 0]
+        usageLevelsNorm[:, 0] = 1
+
+    # plot all nodes normalised to usage of first level
+    usages = usageLevelsNorm.transpose()
+    plt.figure(figsize=(11, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.colorbar().set_label(label=r'$ \sum_l\, (H_{ln}(t)) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(1, nodes, nodes))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+    plt.close()
+
+
 if 'trace' in task:
     print('tracing')
     for mode in modes:
@@ -335,6 +432,37 @@ if 'plot' in task:
         p = Pool(len(directions))
         p.map(usagePlotter, directions)
 
+    if 'levels' in task:
+        levels = 5
+        N = EU_Nodes_usage()
+        colors = ['solar', 'wind']
+        c = ['S', 'W']
+        lnames = np.array(link_namer(N))
+        nnames = np.array(node_namer(N))
+        schemeNames = ['localised', 'synchronised']
+        if 'norm' not in task:
+            print('Plotting link levels')
+            for i, scheme in enumerate(modes):
+                if scheme == 'synchronised':
+                    colors.append('backup')
+                name = schemeNames[i]
+                quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
+                for direction in directions:
+                    for color in colors:
+                            N_usages = np.load(outPath + 'Node_contrib_' + scheme + '_' + direction + '_' + color + '.npy')
+                            link_level_bars(levels, N_usages, quantiles, name, direction, color, nnames, lnames)
+        else:
+            print('Plotting normed link levels')
+            for i, scheme in enumerate(modes):
+                if scheme == 'synchronised':
+                    colors.append('backup')
+                    c.append('B')
+                name = schemeNames[i]
+                quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
+                for direction in directions:
+                    for j, color in enumerate(colors):
+                        Usages = np.load(outPath + scheme + '_' + direction + '_' + 'usage' + c[j] + '.npy')
+                        link_level_norm(levels, Usages, quantiles, name, direction, color, nnames, lnames)
 
 if 'sanity' in task:
     for mode in modes:
