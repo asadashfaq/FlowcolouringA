@@ -1011,7 +1011,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '.png', bbox_inches='tight')
+    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm_cont_' + str(direction) + '.png', bbox_inches='tight')
     plt.close()
 
 
@@ -1161,10 +1161,10 @@ if 'level' in task:
             name = schemeNames[i]
             quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
             for direction in directions:
-                    if direction == 'combined':
-                        Usages = np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_import_all_alpha=same.npy')
-                        Usages += np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_export_all_alpha=same.npy')
-                        Usages /= 2
-                    else:
-                        Usages = np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_' + direction + '_all_alpha=same.npy')
-                    link_level_norm(levels, Usages, quantiles, name, direction, nnames, lnames)
+                if direction == 'combined':
+                    Usages = np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_import_all_alpha=same.npy')
+                    Usages += np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_export_all_alpha=same.npy')
+                    Usages /= 2
+                else:
+                    Usages = np.load('./linkcolouring/old_' + scheme + '_copper_link_mix_' + direction + '_all_alpha=same.npy')
+                link_level_norm(levels, Usages, quantiles, name, direction, nnames, lnames)
