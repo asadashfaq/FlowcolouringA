@@ -358,6 +358,47 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, color, nnames,
     plt.close()
 
 
+def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames, lnames, admat=None):
+    """
+    Make a color mesh of a node's average hourly usage of links at different
+    levels.
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    if color == 'solar':
+        cmap = 'Oranges'
+    elif color == 'wind':
+        cmap = 'Blues'
+    elif color == 'backup':
+        cmap = 'Greys'
+    links, nodes, lapse = usages.shape
+    usages = np.reshape(usages, (links, nodes, lapse / 24, 24))
+    for node in range(nodes):
+        nl = neighbor_levels(node, levels, admat)
+        hourSums = np.zeros((levels, 24))
+        for lvl in range(levels):
+            ll = link_level(nl, lvl, nnames, lnames)
+            ll = np.array(ll, dtype='int')
+            meanSum = np.sum(np.mean(usages[ll, node], axis=1), axis=0)
+            linkSum = sum(quantiles[ll])
+            hourSums[lvl] = meanSum / linkSum
+
+        plt.figure(figsize=(9, 3))
+        ax = plt.subplot()
+        plt.pcolormesh(hourSums, cmap=cmap)
+        plt.colorbar().set_label(label=r'$ \sum_l\, \left\langle H_{ln}(t) \right\rangle / \sum_l\, (\mathcal{K}^T_l)$', size=10)
+        ax.set_yticks(np.linspace(.5, levels - .5, levels))
+        ax.set_yticklabels(range(1, levels + 1))
+        ax.yaxis.set_tick_params(width=0)
+        ax.xaxis.set_tick_params(width=0)
+        ax.set_xticks(np.linspace(.5, 23.5, 24))
+        ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
+        plt.ylabel('Link level')
+        plt.axis([0, 24, 0, 5])
+        plt.title(nnames[node] + ' ' + direction + ' ' + color)
+        plt.savefig(figPath + '/hourly/' + str(scheme) + '/' + str(node) + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+        plt.close()
+
 if 'trace' in task:
     print('tracing')
     for mode in modes:
@@ -463,6 +504,26 @@ if 'plot' in task:
                     for j, color in enumerate(colors):
                         Usages = np.load(outPath + scheme + '_' + direction + '_' + 'usage' + c[j] + '.npy')
                         link_level_norm(levels, Usages, quantiles, name, direction, color, nnames, lnames)
+
+    if 'hour' in task:
+        print('Plotting hourly link levels')
+        levels = 5
+        N = EU_Nodes_usage()
+        colors = ['solar', 'wind']
+        c = ['S', 'W']
+        lnames = np.array(link_namer(N))
+        nnames = np.array(node_namer(N))
+        schemeNames = ['localised', 'synchronised']
+        for i, scheme in enumerate(modes):
+            if scheme == 'synchronised':
+                colors.append('backup')
+                c.append('B')
+            name = schemeNames[i]
+            quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
+            for direction in directions:
+                for j, color in enumerate(colors):
+                    Usages = np.load(outPath + scheme + '_' + direction + '_' + 'usage' + c[j] + '.npy')
+                    link_level_hour(levels, Usages, quantiles, name, direction, color, nnames, lnames)
 
 if 'sanity' in task:
     for mode in modes:
