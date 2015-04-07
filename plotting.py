@@ -986,8 +986,8 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     usages = usageLevels.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder])
-    plt.colorbar()
+    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.colorbar().set_label(label=r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
     ax.yaxis.set_tick_params(width=0)
@@ -1002,8 +1002,8 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     usages = usageLevelsNorm.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder])
-    plt.colorbar()
+    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.colorbar().set_label(label=r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
     ax.yaxis.set_tick_params(width=0)
@@ -1043,8 +1043,8 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, nnames, lnames
     usages = usageLevelsNorm.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder])
-    plt.colorbar()
+    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.colorbar().set_label(label=r'$ \sum_l\, (H_{ln(t)}) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
     ax.yaxis.set_tick_params(width=0)
@@ -1143,13 +1143,13 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
         bars4(scheme)
 
 if 'level' in task:
-    print('Plotting link levels')
     levels = 5
     N = EU_Nodes_usage()
     lnames = np.array(link_namer(N))
     nnames = np.array(node_namer(N))
     schemeNames = ['localised', 'synchronised']
     if 'norm' not in task:
+        print('Plotting link levels')
         for i, scheme in enumerate(schemes):
             name = schemeNames[i]
             quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
@@ -1157,6 +1157,7 @@ if 'level' in task:
                     N_usages = np.load('./results/Node_contrib_' + scheme + '_' + direction + '_70128.npy')
                     link_level_bars(levels, N_usages, quantiles, name, direction, nnames, lnames)
     else:
+        print('Plotting normed link levels')
         for i, scheme in enumerate(schemes):
             name = schemeNames[i]
             quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
