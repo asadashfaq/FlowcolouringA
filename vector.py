@@ -396,7 +396,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         plt.ylabel('Link level')
         plt.axis([0, 24, 0, 5])
         plt.title(nnames[node] + ' ' + direction + ' ' + color)
-        plt.savefig(figPath + '/hourly/' + str(scheme) + '/' + str(node) + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+        plt.savefig(figPath + '/hourly/' + str(scheme) + '/' + str(node) + '_' + color + '_' + direction + '.png', bbox_inches='tight')
         plt.close()
 
         hourSums = hourSums / np.sum(hourSums, axis=1)[:, None]
@@ -413,7 +413,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         plt.ylabel('Link level')
         plt.axis([0, 24, 0, 5])
         plt.title(nnames[node] + ' ' + direction)
-        plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+        plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + color + '_' + direction + '.png', bbox_inches='tight')
         plt.close()
 
 if 'trace' in task:
