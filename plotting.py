@@ -1077,7 +1077,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
 
         plt.figure(figsize=(9, 3))
         ax = plt.subplot()
-        plt.pcolormesh(hourSums, cmap='Blues')
+        plt.pcolormesh(hourSums, cmap='OrRd')
         plt.colorbar().set_label(label=r'$ \sum_l\, \left\langle H_{ln}(t) \right\rangle / \sum_l\, (\mathcal{K}^T_l)$', size=10)
         ax.set_yticks(np.linspace(.5, levels - .5, levels))
         ax.set_yticklabels(range(1, levels + 1))
@@ -1094,7 +1094,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
         hourSums = hourSums / np.sum(hourSums, axis=1)[:, None]
         plt.figure(figsize=(9, 3))
         ax = plt.subplot()
-        plt.pcolormesh(hourSums, cmap='Blues')
+        plt.pcolormesh(hourSums, cmap='OrRd')
         plt.colorbar().set_label(label=r'$ \sum_l\, \left\langle H_{ln}(t) \right\rangle / \sum_l\, (\mathcal{K}^T_l)$', size=10)
         ax.set_yticks(np.linspace(.5, levels - .5, levels))
         ax.set_yticklabels(range(1, levels + 1))
