@@ -169,7 +169,7 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar'):
         else:
             xlabel = 'Market'
         # ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
-        ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
+        ax1.set_xlabel(r'$C_{ln}/\mathcal{K}^T_l$')
         ax1.xaxis.set_label_position('top')
 
         ax2 = fig.add_axes([-0.05, 0.15, 1.1, 0.95])
@@ -193,7 +193,7 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar'):
         ax2.axis('off')
 
         # Save figure
-        plt.savefig(figPath + "network/" + scheme + "/" + str(n.id) + '_' + str(direction) + '_' + color + ".png")
+        plt.savefig(figPath + "network/" + scheme + "/" + str(n.id) + '_' + color + '_' + direction + ".png")
         plt.close()
 
 
@@ -257,7 +257,7 @@ def usagePlotter(direction):
                     modeName = modeNames[0]
                     plt.legend(('solar usage', 'wind usage', 'total usage'), loc=1)
                 plt.title(nodeLabel.tostring() + ' ' + modeName + ' ' + direction + ' flows on link ' + linkLabel)
-                plt.savefig(nodePath + '/' + str(link) + '_' + direction + '_' + modeName + '.png', bbox_inches='tight')
+                plt.savefig(nodePath + '/' + str(link) + '_' + modeName + '_' + direction + '.png', bbox_inches='tight')
                 plt.close()
 
 
