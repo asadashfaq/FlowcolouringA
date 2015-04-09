@@ -399,6 +399,23 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         plt.savefig(figPath + '/hourly/' + str(scheme) + '/' + str(node) + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
         plt.close()
 
+        hourSums = hourSums / np.sum(hourSums, axis=1)[:, None]
+        plt.figure(figsize=(9, 3))
+        ax = plt.subplot()
+        plt.pcolormesh(hourSums, cmap=cmap)
+        plt.colorbar().set_label(label=r'$ \sum_l\, \left\langle H_{ln}(t) \right\rangle / \sum_l\, (\mathcal{K}^T_l)$', size=10)
+        ax.set_yticks(np.linspace(.5, levels - .5, levels))
+        ax.set_yticklabels(range(1, levels + 1))
+        ax.yaxis.set_tick_params(width=0)
+        ax.xaxis.set_tick_params(width=0)
+        ax.set_xticks(np.linspace(.5, 23.5, 24))
+        ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
+        plt.ylabel('Link level')
+        plt.axis([0, 24, 0, 5])
+        plt.title(nnames[node] + ' ' + direction)
+        plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+        plt.close()
+
 if 'trace' in task:
     print('tracing')
     for mode in modes:
