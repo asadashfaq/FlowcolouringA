@@ -267,6 +267,12 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     """
     if not admat:
         admat = np.genfromtxt('./settings/eadmat.txt')
+    if color == 'solar':
+        cmap = 'Oranges'
+    elif color == 'wind':
+        cmap = 'Blues'
+    elif color == 'backup':
+        cmap = 'Greys'
     nodes, links = usages.shape
     usageLevels = np.zeros((nodes, levels))
     usageLevelsNorm = np.zeros((nodes, levels))
@@ -288,7 +294,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     usages = usageLevels.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.pcolormesh(usages[:, loadOrder], cmap=cmap)
     plt.colorbar().set_label(label=r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
@@ -304,7 +310,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     usages = usageLevelsNorm.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.pcolormesh(usages[:, loadOrder], cmap=cmap)
     plt.colorbar().set_label(label=r'$ \sum_l\, (C_{ln}) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
@@ -324,6 +330,12 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, color, nnames,
     """
     if not admat:
         admat = np.genfromtxt('./settings/eadmat.txt')
+    if color == 'solar':
+        cmap = 'Oranges'
+    elif color == 'wind':
+        cmap = 'Blues'
+    elif color == 'backup':
+        cmap = 'Greys'
     links, nodes, lapse = usages.shape
     usageLevels = np.zeros((nodes, levels))
     usageLevelsNorm = np.zeros((nodes, levels))
@@ -345,7 +357,7 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, color, nnames,
     usages = usageLevelsNorm.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder], cmap='Blues')
+    plt.pcolormesh(usages[:, loadOrder], cmap=cmap)
     plt.colorbar().set_label(label=r'$ \sum_l\, (H_{ln}(t)) / \sum_l\, (\mathcal{K}^T_l)$', size=10)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
@@ -501,7 +513,7 @@ if 'plot' in task:
         if 'norm' not in task:
             print('Plotting link levels')
             for i, scheme in enumerate(modes):
-                if scheme == 'synchronised':
+                if scheme == 'square':
                     colors.append('backup')
                 name = schemeNames[i]
                 quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
@@ -512,7 +524,7 @@ if 'plot' in task:
         else:
             print('Plotting normed link levels')
             for i, scheme in enumerate(modes):
-                if scheme == 'synchronised':
+                if scheme == 'square':
                     colors.append('backup')
                     c.append('B')
                 name = schemeNames[i]
@@ -532,7 +544,7 @@ if 'plot' in task:
         nnames = np.array(node_namer(N))
         schemeNames = ['localised', 'synchronised']
         for i, scheme in enumerate(modes):
-            if scheme == 'synchronised':
+            if scheme == 'square':
                 colors.append('backup')
                 c.append('B')
             name = schemeNames[i]
