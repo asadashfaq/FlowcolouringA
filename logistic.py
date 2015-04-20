@@ -15,6 +15,7 @@ Ways to call the program:
 - solve:        solve power flows
 - color:        do flow tracing
 - solve gamma:  solve power flows for gammas larger than 1
+- color gamma:  do flow tracing for gammas larger than 1
 
 Example call:
 python logistic.py solve
@@ -27,10 +28,11 @@ else:
 
 setPath = './settings/logistic/'
 resPath = './results/logistic/'
-
 modes = ['linear', 'square']
 years = range(2015, 2055, 5)
 lapse = 70128
+alphas = np.ones(30) * .7
+gammas = [1.25, 1.5, 1.75, 2.]
 
 
 def logSolver(year):
@@ -79,16 +81,41 @@ def calcUsage(year):
         boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=mode, alph='same', lapse=lapse, logistic=year)
 
 
-if 'solve' in task:
+def calcUsageGamma(gamma):
+    """
+    Calculate powermixes and nodes' usages of links and save results to file.
+    """
+    for mode in modes:
+        N = EU_Nodes_log('logistic/' + mode + '-g-' + str(gamma) + '.npz', year=year)
+        F = np.load(resPath + mode + '-g-' + str(gamma) + '-flows.npy')
+
+        """
+        N2 is a new nodes object containing individual powermixes for import and
+        export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
+        """
+        N2, power_mixes_total = track_flows(N, F, lapse=lapse)
+        N2.save_nodes(mode + '-g-' + str(gamma) + '_pm', path=resPath)  # save node object including powermix
+        N = None
+
+        """
+        track_link_usage_total tracks each nodes usage of all links. The results
+        are saved to files '..._links_ex_...' and '..._links_im_...'.
+        """
+        boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=mode, alph='same', lapse=lapse, gamma=gamma)
+
+
+if 'solve' in task and not 'gamma' in task:
     p = Pool(4)
     p.map(logSolver, years)
 
-if 'color' in task:
+if 'color' in task and not 'gamma' in task:
     p = Pool(3)
     p.map(calcUsage, years)
 
-if 'solve' and 'gamma' in task:
-    alphas = np.ones(30) * .7
-    gammas = [1.25, 1.5, 1.75, 2.]
+if 'solve' in task and 'gamma' in task:
     p = Pool(4)
     p.map(gammaSolver, gammas)
+
+if 'color' in task and 'gamma' in task:
+    p = Pool(2)
+    p.map(calcUsageGamma, gammas)
