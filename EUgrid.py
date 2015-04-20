@@ -33,7 +33,7 @@ def EU_Nodes_gamma2(load_filename=None, full_load=False):
     return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=np.ones(30)*2)
 
 def EU_Nodes_log(load_filename=None, full_load=False,year=0): # used to create a nodes object with the alphas and gammas calculated from Sarahs logistic fit function
-    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=np.load("./alphas/alpha"+str(year)+".npy"), gammas=np.load("./gammas/gamma"+str(year-2014)+".npy"))
+    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=np.load("./settings/logistic/alphas/alpha"+str(year)+".npy"), gammas=np.load("./settings/logistic/gammas/gamma"+str(year-2014)+".npy"))
 
 def EU_Nodes_Ben(load_filename=None, full_load=False,alphas=None,gammas=None):
     return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=np.ones(30))
@@ -49,7 +49,7 @@ def EU_Nodes_regions(load_filename=None, full_load=False):
 # Nodes object containing 8 super regions, alphas=.7, gammas=1
 def EU_Nodes_superRegions(load_filename=None, full_load=False):
     return au.Nodes(admat='./settings/superregionadmat.txt', path='./data/superregions/', prefix = "", files=superRegions, load_filename=load_filename, full_load=full_load, alphas=np.ones(len(superRegions))*.7, gammas=np.ones(len(superRegions)))
-	
+
 def linfo():
     link_info = open("line_info")
     LI = []
