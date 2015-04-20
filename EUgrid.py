@@ -50,6 +50,10 @@ def EU_Nodes_regions(load_filename=None, full_load=False):
 def EU_Nodes_superRegions(load_filename=None, full_load=False):
     return au.Nodes(admat='./settings/superregionadmat.txt', path='./data/superregions/', prefix = "", files=superRegions, load_filename=load_filename, full_load=full_load, alphas=np.ones(len(superRegions))*.7, gammas=np.ones(len(superRegions)))
 
+# Nodes object with custom alpha and gamma
+def EU_Nodes_custom(alphas, gammas, load_filename=None, full_load=False):
+    return au.Nodes(admat='./settings/eadmat.txt', path='./data/', prefix = "ISET_country_", files=files, load_filename=load_filename, full_load=full_load, alphas=alphas, gammas=gammas)
+
 def linfo():
     link_info = open("line_info")
     LI = []
