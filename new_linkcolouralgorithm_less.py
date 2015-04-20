@@ -38,7 +38,7 @@ def get_link_direction(n,N): #getting the first country-node in the link-label a
 	return [start_node,end_node]
 
 
-def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copper=True,sensitivity=False,constrained=False,logistic=False): 
+def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copper=True,sensitivity=False,constrained=False,logistic=False,gamma=False): 
 #tracks the usage of each link for each country, 
 #alph sets the value of homogenous alphas.
 #Mode can be "linear", "square", "random" or "capped".
@@ -285,6 +285,9 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 			elif logistic:
 				np.save('./results/logistic/linkcolouring/'+str(mode)+'-'+str(logistic)+'_link_mix_import',link_mix_import_all)
 				np.save('./results/logistic/linkcolouring/'+str(mode)+'-'+str(logistic)+'_link_mix_export',link_mix_export_all)
+			elif gamma:
+				np.save('./results/logistic/linkcolouring/'+str(mode)+'-g-'+str(gamma)+'_link_mix_import',link_mix_import_all)
+				np.save('./results/logistic/linkcolouring/'+str(mode)+'-g-'+str(gamma)+'_link_mix_export',link_mix_export_all)
 			else:
 				np.save('linkcolouring/old_'+str(mode)+'_copper_boxplot_alpha='+str(alph),boxplot) 
 				np.save('linkcolouring/old_'+str(mode)+'_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
