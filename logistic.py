@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from multiprocessing import Pool
 import aurespf.solvers as au
-from EUgrid import EU_Nodes_log
+from EUgrid import EU_Nodes_log, EU_Nodes_custom
 from aurespf.tools import *
 from functions import *
 from link_colour_less import track_flows
@@ -12,8 +12,9 @@ from new_linkcolouralgorithm_less import track_link_usage_total
 Flow tracing for logistic alphas and gammas and for gammas larger than 1.
 
 Ways to call the program:
-- solve:    solve power flows
-- color:    do flow tracing
+- solve:        solve power flows
+- color:        do flow tracing
+- solve gamma:  solve power flows for gammas larger than 1
 
 Example call:
 python logistic.py solve
@@ -33,11 +34,26 @@ lapse = 70128
 
 
 def logSolver(year):
+    """
+    Solve power flows for logistic alphas and gammas for two export schemes for
+    a specific year.
+    """
     Nodes = EU_Nodes_log(year=year)
     for mode in modes:
         N, F = au.solve(Nodes, mode=mode + ' copper', lapse=lapse)
         N.save_nodes(mode + '-' + str(year), path=resPath)
         np.save(resPath + mode + '-' + str(year) + '-flows', F)
+
+
+def gammaSolver(gamma):
+    """
+    Solve power flows for a given gamma larger than 1.
+    """
+    Nodes = EU_Nodes_custom(alphas=alphas, gammas=np.ones(30) * gamma)
+    for mode in modes:
+        N, F = au.solve(Nodes, mode=mode + ' copper', lapse=lapse)
+        N.save_nodes(mode + '-g-' + str(gamma), path=resPath)
+        np.save(resPath + mode + '-g-' + str(gamma) + '-flows', F)
 
 
 def calcUsage(year):
@@ -68,5 +84,11 @@ if 'solve' in task:
     p.map(logSolver, years)
 
 if 'color' in task:
-    p = Pool(4)
+    p = Pool(3)
     p.map(calcUsage, years)
+
+if 'solve' and 'gamma' in task:
+    alphas = np.ones(30) * .7
+    gammas = [1.25, 1.5, 1.75, 2.]
+    p = Pool(4)
+    p.map(gammaSolver, gammas)
