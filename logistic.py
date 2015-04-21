@@ -86,7 +86,7 @@ def calcUsageGamma(gamma):
     Calculate powermixes and nodes' usages of links and save results to file.
     """
     for mode in modes:
-        N = EU_Nodes_log('logistic/' + mode + '-g-' + str(gamma) + '.npz', year=year)
+        N = EU_Nodes_custom(alphas=alphas, gammas=np.ones(30) * gamma, load_filename='logistic/' + mode + '-g-' + str(gamma) + '.npz')
         F = np.load(resPath + mode + '-g-' + str(gamma) + '-flows.npy')
 
         """
