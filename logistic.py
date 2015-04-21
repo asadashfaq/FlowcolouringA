@@ -14,8 +14,10 @@ Flow tracing for logistic alphas and gammas and for gammas larger than 1.
 Ways to call the program:
 - solve:        solve power flows
 - color:        do flow tracing
+- usage:        calculate usages
 - solve gamma:  solve power flows for gammas larger than 1
 - color gamma:  do flow tracing for gammas larger than 1
+- usage gamma:  calculate usages for gammas larger than 1
 
 Example call:
 python logistic.py solve
@@ -29,6 +31,7 @@ else:
 setPath = './settings/logistic/'
 resPath = './results/logistic/'
 modes = ['linear', 'square']
+directions = ['import', 'export', 'combined']
 years = range(2015, 2055, 5)
 lapse = 70128
 alphas = np.ones(30) * .7
@@ -58,7 +61,7 @@ def gammaSolver(gamma):
         np.save(resPath + mode + '-g-' + str(gamma) + '-flows', F)
 
 
-def calcUsage(year):
+def calcPowerMix(year):
     """
     Calculate powermixes and nodes' usages of links and save results to file.
     """
@@ -81,7 +84,7 @@ def calcUsage(year):
         boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=mode, alph='same', lapse=lapse, logistic=year)
 
 
-def calcUsageGamma(gamma):
+def calcPowerMixGamma(gamma):
     """
     Calculate powermixes and nodes' usages of links and save results to file.
     """
@@ -104,12 +107,78 @@ def calcUsageGamma(gamma):
         boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=mode, alph='same', lapse=lapse, gamma=gamma)
 
 
+def calcUsage(year):
+    """
+    Calculate usages and save to file
+    """
+    for mode in modes:
+        F = abs(np.load(resPath + mode + '-' + str(year) + '-flows.npy'))
+        quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
+        for direction in directions:
+            if direction == 'combined':
+                Usages = np.load(resPath + 'linkcolouring/' + mode + '-' + str(year) + '_link_mix_import.npy')
+                Usages += np.load(resPath + 'linkcolouring/' + mode + '-' + str(year) + '_link_mix_export.npy')
+                Usages /= 2
+            else:
+                Usages = np.load(resPath + 'linkcolouring/' + mode + '-' + str(year) + '_link_mix_' + direction + '.npy')
+
+            links, nodes, lapse = Usages.shape
+            Node_contribs = np.zeros((nodes, links))  # empty array for calculated usages
+            for node in range(nodes):
+                for link in range(links):
+                    # Stacking and sorting data
+                    F_vert = np.reshape(F[link, :lapse], (len(F[link, :lapse]), 1))
+                    exp_vert = np.reshape(Usages[link, node, :lapse], (len(Usages[link, node, :lapse]), 1))
+                    F_matrix = np.hstack([F_vert, exp_vert])
+                    F_matrix[F_matrix[:, 0].argsort()]
+
+                    H, bin_edges = binMaker(F_matrix, quantiles[link], lapse)
+                    Node_contribs[node, link] = node_contrib(H, bin_edges, linkID=link)
+
+            np.save(resPath + 'usages/Ncontrib-' + mode + '-' + str(year) + '_' + direction + '_' + '.npy', Node_contribs)
+
+
+def calcUsageGamma(gamma):
+    """
+    Calculate usages and save to file
+    """
+    for mode in modes:
+        F = abs(np.load(resPath + mode + '-g-' + str(gamma) + '-flows.npy'))
+        quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
+        for direction in directions:
+            if direction == 'combined':
+                Usages = np.load(resPath + 'linkcolouring/' + mode + '-g-' + str(gamma) + '_link_mix_import.npy')
+                Usages += np.load(resPath + 'linkcolouring/' + mode + '-g-' + str(gamma) + '_link_mix_export.npy')
+                Usages /= 2
+            else:
+                Usages = np.load(resPath + 'linkcolouring/' + mode + '-g-' + str(gamma) + '_link_mix_' + direction + '.npy')
+
+            links, nodes, lapse = Usages.shape
+            Node_contribs = np.zeros((nodes, links))  # empty array for calculated usages
+            for node in range(nodes):
+                for link in range(links):
+                    # Stacking and sorting data
+                    F_vert = np.reshape(F[link, :lapse], (len(F[link, :lapse]), 1))
+                    exp_vert = np.reshape(Usages[link, node, :lapse], (len(Usages[link, node, :lapse]), 1))
+                    F_matrix = np.hstack([F_vert, exp_vert])
+                    F_matrix[F_matrix[:, 0].argsort()]
+
+                    H, bin_edges = binMaker(F_matrix, quantiles[link], lapse)
+                    Node_contribs[node, link] = node_contrib(H, bin_edges, linkID=link)
+
+            np.save(resPath + 'usages/Ncontrib-' + mode + '-g-' + str(gamma) + '_' + direction + '_' + '.npy', Node_contribs)
+
+
 if 'solve' in task and not 'gamma' in task:
     p = Pool(4)
     p.map(logSolver, years)
 
 if 'color' in task and not 'gamma' in task:
     p = Pool(3)
+    p.map(calcPowerMix, years)
+
+if 'usage' in task and not 'gamma' in task:
+    p = Pool(4)
     p.map(calcUsage, years)
 
 if 'solve' in task and 'gamma' in task:
@@ -118,4 +187,8 @@ if 'solve' in task and 'gamma' in task:
 
 if 'color' in task and 'gamma' in task:
     p = Pool(2)
+    p.map(calcPowerMixGamma, gammas)
+
+if 'usage' in task and 'gamma' in task:
+    p = Pool(4)
     p.map(calcUsageGamma, gammas)
