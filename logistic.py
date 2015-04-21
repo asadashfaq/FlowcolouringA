@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from multiprocessing import Pool
 import aurespf.solvers as au
+import aurespf.plotting as auplot
 from EUgrid import EU_Nodes_log, EU_Nodes_custom
 from aurespf.tools import *
 from functions import *
@@ -31,6 +32,7 @@ else:
 
 setPath = './settings/logistic/'
 resPath = './results/logistic/'
+figPath = './figures/logistic/'
 modes = ['linear', 'square']
 directions = ['import', 'export', 'combined']
 years = range(2015, 2055, 5)
@@ -206,7 +208,7 @@ def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
     plt.plot(years, N[18].g_share, color=auplot.yellow, lw=3, label="Germany")
     plt.plot(years, N[21].g_share, color=auplot.red, lw=3, label="Denmark")
     plt.plot(years, N[10].g_share, color=auplot.lightblue, lw=3, label="Greece")
-    plt.ylabel("VRES penetration <L>")
+    plt.ylabel(r'VRES penetration $\gamma$')
     plt.xlabel("year")
     plt.yticks([0.2, 0.4, 0.6, 0.8, 1.0])
     handles, labels = ax.get_legend_handles_labels()
@@ -218,7 +220,7 @@ def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig("./figures/multilines_GC.pdf")
+    plt.savefig(figPath + 'logistic_gammas.pdf')
 
 
 if 'solve' in task and not 'gamma' in task:
