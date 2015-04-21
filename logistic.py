@@ -18,6 +18,7 @@ Ways to call the program:
 - solve gamma:  solve power flows for gammas larger than 1
 - color gamma:  do flow tracing for gammas larger than 1
 - usage gamma:  calculate usages for gammas larger than 1
+- plot:         something
 
 Example call:
 python logistic.py solve
@@ -135,7 +136,7 @@ def calcUsage(year):
                     H, bin_edges = binMaker(F_matrix, quantiles[link], lapse)
                     Node_contribs[node, link] = node_contrib(H, bin_edges, linkID=link)
 
-            np.save(resPath + 'usages/Ncontrib-' + mode + '-' + str(year) + '_' + direction + '_' + '.npy', Node_contribs)
+            np.save(resPath + 'usages/Ncontrib-' + mode + '-' + str(year) + '_' + direction + '.npy', Node_contribs)
 
 
 def calcUsageGamma(gamma):
@@ -166,7 +167,58 @@ def calcUsageGamma(gamma):
                     H, bin_edges = binMaker(F_matrix, quantiles[link], lapse)
                     Node_contribs[node, link] = node_contrib(H, bin_edges, linkID=link)
 
-            np.save(resPath + 'usages/Ncontrib-' + mode + '-g-' + str(gamma) + '_' + direction + '_' + '.npy', Node_contribs)
+            np.save(resPath + 'usages/Ncontrib-' + mode + '-g-' + str(gamma) + '_' + direction + '.npy', Node_contribs)
+
+
+def transcaps(N, mode):
+    for n in N:
+        n.t_share = []
+        n.g_share = []
+    for y in years:
+        T_C = sum(au.link_q(f) for f in np.load(resPath + mode + '-' + str(y) + '-flows.npy'))
+        Uim = np.load(resPath + 'usages/Ncontrib-' + mode + '-' + str(y) + '_import' + '.npy')
+        Uex = np.load(resPath + 'usages/Ncontrib-' + mode + '-' + str(y) + '_export' + '.npy')
+        Gs = np.load(setPath + '/gammas/gamma' + str(y - 2014) + '.npy')
+        totU = [Uex[m.id].sum() + Uim[m.id].sum() for m in N]
+        for n in N:
+            n.t_share.append(T_C * totU[n.id] / (np.sum(totU) * n.mean))
+            n.g_share.append(Gs[n.id])
+    return N
+
+
+def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
+    EU_T = sum(np.array(n.g_share) * n.mean for n in N) / np.sum(n.mean for n in N)
+    western = [2, 4, 6, 7]
+    northern = [1, 5, 20, 21, 27, 28, 29]
+    central = [0, 18, 12, 25]
+    balcans = [3, 9, 10, 13, 17, 23]
+    southern = [11, 24, 22]
+    eastern = [8, 14, 15, 16]
+    plt.close()
+    ax = plt.subplot(1, 1, 1)
+    BA_T = sum(np.array(n.g_share) * n.mean * (n.id in balcans) for n in N) / np.sum(n.mean * (n.id in balcans) for n in N)
+    WE_T = sum(np.array(n.g_share) * n.mean * (n.id in western) for n in N) / np.sum(n.mean * (n.id in western) for n in N)
+    for n in N:
+        plt.plot(years, n.g_share, alpha=0.15)
+    plt.plot(years, EU_T, color=auplot.blue, lw=3, label="Europe")
+    plt.plot(years, BA_T, color=auplot.orange, lw=3, label="Balkans")
+    plt.plot(years, WE_T, color=auplot.green, lw=3, label="Western Europe")
+    plt.plot(years, N[18].g_share, color=auplot.yellow, lw=3, label="Germany")
+    plt.plot(years, N[21].g_share, color=auplot.red, lw=3, label="Denmark")
+    plt.plot(years, N[10].g_share, color=auplot.lightblue, lw=3, label="Greece")
+    plt.ylabel("VRES penetration <L>")
+    plt.xlabel("year")
+    plt.yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    handles, labels = ax.get_legend_handles_labels()
+    leg = plt.legend(handles, labels, loc=0, prop={'size': 8}, handletextpad=0.15, columnspacing=1.0)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    plt.setp(leg.get_texts(), fontsize="small")
+
+    plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
+    plt.gcf().set_dpi(400)
+    plt.tight_layout()
+    plt.savefig("./figures/multilines_GC.pdf")
 
 
 if 'solve' in task and not 'gamma' in task:
@@ -192,3 +244,8 @@ if 'color' in task and 'gamma' in task:
 if 'usage' in task and 'gamma' in task:
     p = Pool(4)
     p.map(calcUsageGamma, gammas)
+
+if 'plot' in task:
+    N = EU_Nodes_log(year=2015)
+    N = transcaps(N, 'linear')
+    multi_GS(N)
