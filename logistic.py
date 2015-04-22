@@ -3,7 +3,7 @@ import numpy as np
 from multiprocessing import Pool
 import aurespf.solvers as au
 import aurespf.plotting as auplot
-from EUgrid import EU_Nodes_log, EU_Nodes_custom
+from EUgrid import *
 from aurespf.tools import *
 from functions import *
 from link_colour_less import track_flows
@@ -39,6 +39,13 @@ years = range(2015, 2055, 5)
 lapse = 70128
 alphas = np.ones(30) * .7
 gammas = [1.25, 1.5, 1.75, 2.]
+
+western = [2, 4, 6, 7]
+northern = [1, 5, 20, 21, 27, 28, 29]
+central = [0, 18, 12, 25]
+balcans = [3, 9, 10, 13, 17, 23]
+southern = [11, 24, 22]
+eastern = [8, 14, 15, 16]
 
 
 def logSolver(year):
@@ -190,13 +197,6 @@ def transcaps(N, mode):
 
 def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
     EU_T = sum(np.array(n.g_share) * n.mean for n in N) / np.sum(n.mean for n in N)
-    western = [2, 4, 6, 7]
-    northern = [1, 5, 20, 21, 27, 28, 29]
-    central = [0, 18, 12, 25]
-    balcans = [3, 9, 10, 13, 17, 23]
-    southern = [11, 24, 22]
-    eastern = [8, 14, 15, 16]
-    plt.close()
     ax = plt.subplot(1, 1, 1)
     BA_T = sum(np.array(n.g_share) * n.mean * (n.id in balcans) for n in N) / np.sum(n.mean * (n.id in balcans) for n in N)
     WE_T = sum(np.array(n.g_share) * n.mean * (n.id in western) for n in N) / np.sum(n.mean * (n.id in western) for n in N)
@@ -220,8 +220,47 @@ def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig(figPath + 'logistic_gammas.pdf')
+    plt.savefig(figPath + 'logistic_gammas.png')
 
+
+def capPlotter(mode, direction):
+    nodes = 30
+    nodeCaps = np.zeros((nodes, len(years)))
+    for i, year in enumerate(years):
+        usages = np.load(resPath + 'usages/Ncontrib-' + mode + '-' + str(year) + '_' + direction + '.npy')
+        F = np.load(resPath + mode + '-' + str(year) + '-flows.npy')
+        quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
+        NTC = sum(quantiles)
+        nodeCaps[:, i] = np.sum(usages, 1) / NTC
+
+    # plot
+    EU = np.sum(nodeCaps, 0) / nodes
+    BA = np.sum(nodeCaps[balcans], 0)
+    WE = np.sum(nodeCaps[western], 0)
+    plt.figure()
+    ax = plt.subplot(1, 1, 1)
+    for node in range(nodes):
+        plt.plot(years, nodeCaps[node], alpha=.15)
+    plt.plot(years, EU, color=auplot.blue, lw=3, label="avg. Europe")
+    plt.plot(years, BA, color=auplot.orange, lw=3, label="Balkans")
+    plt.plot(years, WE, color=auplot.green, lw=3, label="Western Europe")
+    plt.plot(years, nodeCaps[18], color=auplot.yellow, lw=3, label="Germany")
+    plt.plot(years, nodeCaps[21], color=auplot.red, lw=3, label="Denmark")
+    plt.plot(years, nodeCaps[10], color=auplot.lightblue, lw=3, label="Greece")
+    plt.ylabel(r'$\mathcal{K}^T_n(t) / \mathcal{K}^T(t)$')
+    plt.xlabel("year")
+    plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5])
+    handles, labels = ax.get_legend_handles_labels()
+    leg = plt.legend(handles, labels, loc=0, prop={'size': 8}, handletextpad=0.15, columnspacing=1.0)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    plt.setp(leg.get_texts(), fontsize="small")
+
+    plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
+    plt.gcf().set_dpi(400)
+    plt.tight_layout()
+    plt.savefig(figPath + 'caps_' + mode + '_' + direction + '.png')
+    plt.close()
 
 if 'solve' in task and not 'gamma' in task:
     p = Pool(4)
@@ -247,7 +286,12 @@ if 'usage' in task and 'gamma' in task:
     p = Pool(4)
     p.map(calcUsageGamma, gammas)
 
-if 'plot' in task:
+if 'plot' in task and 'cap' not in task:
     N = EU_Nodes_log(year=2015)
     N = transcaps(N, 'linear')
     multi_GS(N)
+
+if 'plot' in task and 'cap' in task:
+    for mode in modes:
+        for direction in directions:
+            capPlotter(mode, direction)
