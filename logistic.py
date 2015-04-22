@@ -9,7 +9,7 @@ from functions import *
 from link_colour_less import track_flows
 from new_linkcolouralgorithm_less import track_link_usage_total
 
-"""
+'''
 Flow tracing for logistic alphas and gammas and for gammas larger than 1.
 
 Ways to call the program:
@@ -19,11 +19,13 @@ Ways to call the program:
 - solve gamma:  solve power flows for gammas larger than 1
 - color gamma:  do flow tracing for gammas larger than 1
 - usage gamma:  calculate usages for gammas larger than 1
-- plot:         something
+- plot:         plot gammas and network usage
+- plot cap:     plot nodes contribution to link capacities
+- plot gamma:   same as above but for gammas larger than one
 
 Example call:
 python logistic.py solve
-"""
+'''
 
 if len(sys.argv) < 2:
     raise Exception('Not enough inputs!')
@@ -49,10 +51,10 @@ eastern = [8, 14, 15, 16]
 
 
 def logSolver(year):
-    """
+    '''
     Solve power flows for logistic alphas and gammas for two export schemes for
     a specific year.
-    """
+    '''
     Nodes = EU_Nodes_log(year=year)
     for mode in modes:
         N, F = au.solve(Nodes, mode=mode + ' copper', lapse=lapse)
@@ -61,9 +63,9 @@ def logSolver(year):
 
 
 def gammaSolver(gamma):
-    """
+    '''
     Solve power flows for a given gamma larger than 1.
-    """
+    '''
     Nodes = EU_Nodes_custom(alphas=alphas, gammas=np.ones(30) * gamma)
     for mode in modes:
         N, F = au.solve(Nodes, mode=mode + ' copper', lapse=lapse)
@@ -72,55 +74,55 @@ def gammaSolver(gamma):
 
 
 def calcPowerMix(year):
-    """
+    '''
     Calculate powermixes and nodes' usages of links and save results to file.
-    """
+    '''
     for mode in modes:
         N = EU_Nodes_log('logistic/' + mode + '-' + str(year) + '.npz', year=year)
         F = np.load(resPath + mode + '-' + str(year) + '-flows.npy')
 
-        """
+        '''
         N2 is a new nodes object containing individual powermixes for import and
         export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
-        """
+        '''
         N2, power_mixes_total = track_flows(N, F, lapse=lapse)
         N2.save_nodes(mode + '-' + str(year) + '_pm', path=resPath)  # save node object including powermix
         N = None
 
-        """
+        '''
         track_link_usage_total tracks each nodes usage of all links. The results
         are saved to files '..._links_ex_...' and '..._links_im_...'.
-        """
+        '''
         boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=mode, alph='same', lapse=lapse, logistic=year)
 
 
 def calcPowerMixGamma(gamma):
-    """
+    '''
     Calculate powermixes and nodes' usages of links and save results to file.
-    """
+    '''
     for mode in modes:
         N = EU_Nodes_custom(alphas=alphas, gammas=np.ones(30) * gamma, load_filename='logistic/' + mode + '-g-' + str(gamma) + '.npz')
         F = np.load(resPath + mode + '-g-' + str(gamma) + '-flows.npy')
 
-        """
+        '''
         N2 is a new nodes object containing individual powermixes for import and
         export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
-        """
+        '''
         N2, power_mixes_total = track_flows(N, F, lapse=lapse)
         N2.save_nodes(mode + '-g-' + str(gamma) + '_pm', path=resPath)  # save node object including powermix
         N = None
 
-        """
+        '''
         track_link_usage_total tracks each nodes usage of all links. The results
         are saved to files '..._links_ex_...' and '..._links_im_...'.
-        """
+        '''
         boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=mode, alph='same', lapse=lapse, gamma=gamma)
 
 
 def calcUsage(year):
-    """
+    '''
     Calculate usages and save to file
-    """
+    '''
     for mode in modes:
         F = abs(np.load(resPath + mode + '-' + str(year) + '-flows.npy'))
         quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
@@ -149,9 +151,9 @@ def calcUsage(year):
 
 
 def calcUsageGamma(gamma):
-    """
+    '''
     Calculate usages and save to file
-    """
+    '''
     for mode in modes:
         F = abs(np.load(resPath + mode + '-g-' + str(gamma) + '-flows.npy'))
         quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
@@ -195,32 +197,73 @@ def transcaps(N, mode):
     return N
 
 
-def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
+def multi_TC(N, mode):  # N must be N = transcaps(EU_Nodes())
+    EU_T = sum(np.array(n.t_share) * n.mean for n in N) / np.sum(n.mean for n in N)
+    western = [2, 4, 6, 7]
+    northern = [1, 5, 20, 21, 27, 28, 29]
+    central = [0, 18, 12, 25]
+    balcans = [3, 9, 10, 13, 17, 23]
+    southern = [11, 24, 22]
+    eastern = [8, 14, 15, 16]
+    ax = plt.subplot(1, 1, 1)
+    BA_T = sum(np.array(n.t_share) * n.mean * (n.id in balcans) for n in N) / np.sum(n.mean * (n.id in balcans) for n in N)
+    WE_T = sum(np.array(n.t_share) * n.mean * (n.id in western) for n in N) / np.sum(n.mean * (n.id in western) for n in N)
+    ax = plt.subplot(1, 1, 1)
+    for n in N:
+        plt.plot(years[1:], n.t_share[1:], alpha=0.15)
+    plt.plot(years[1:], EU_T[1:], color=auplot.blue, lw=3, label='Europe')
+    plt.plot(years[1:], BA_T[1:], color=auplot.orange, lw=3, label='Balkans')
+    plt.plot(years[1:], WE_T[1:], color=auplot.green, lw=3, label='Western Europe')
+    plt.plot(years[1:], N[18].t_share[1:], color=auplot.yellow, lw=3, label='Germany')
+    plt.plot(years[1:], N[21].t_share[1:], color=auplot.red, lw=3, label='Denmark')
+    plt.plot(years[1:], N[10].t_share[1:], color=auplot.lightblue, lw=3, label='Greece')
+    plt.ylabel('Network usage [MW$_T$/MW$_L$]')
+    plt.xlabel('year')
+    if mode == 'linear':
+        plt.yticks([0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5])
+    elif mode == 'square':
+        plt.yticks([1, 2, 3, 4, 5])
+    handles, labels = ax.get_legend_handles_labels()
+    leg = plt.legend(handles, labels, loc=0, prop={'size': 8}, handletextpad=0.15, columnspacing=1.0)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    plt.setp(leg.get_texts(), fontsize='small')
+
+    plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
+    plt.gcf().set_dpi(400)
+    plt.tight_layout()
+    plt.savefig(figPath + 'network_usage_' + mode + '_ex.png')
+    plt.close()
+
+
+def multi_GS(N, mode):  # N must be N = transcaps(EU_Nodes())
     EU_T = sum(np.array(n.g_share) * n.mean for n in N) / np.sum(n.mean for n in N)
     ax = plt.subplot(1, 1, 1)
     BA_T = sum(np.array(n.g_share) * n.mean * (n.id in balcans) for n in N) / np.sum(n.mean * (n.id in balcans) for n in N)
     WE_T = sum(np.array(n.g_share) * n.mean * (n.id in western) for n in N) / np.sum(n.mean * (n.id in western) for n in N)
+    ax = plt.subplot(1, 1, 1)
     for n in N:
         plt.plot(years, n.g_share, alpha=0.15)
-    plt.plot(years, EU_T, color=auplot.blue, lw=3, label="Europe")
-    plt.plot(years, BA_T, color=auplot.orange, lw=3, label="Balkans")
-    plt.plot(years, WE_T, color=auplot.green, lw=3, label="Western Europe")
-    plt.plot(years, N[18].g_share, color=auplot.yellow, lw=3, label="Germany")
-    plt.plot(years, N[21].g_share, color=auplot.red, lw=3, label="Denmark")
-    plt.plot(years, N[10].g_share, color=auplot.lightblue, lw=3, label="Greece")
+    plt.plot(years, EU_T, color=auplot.blue, lw=3, label='Europe')
+    plt.plot(years, BA_T, color=auplot.orange, lw=3, label='Balkans')
+    plt.plot(years, WE_T, color=auplot.green, lw=3, label='Western Europe')
+    plt.plot(years, N[18].g_share, color=auplot.yellow, lw=3, label='Germany')
+    plt.plot(years, N[21].g_share, color=auplot.red, lw=3, label='Denmark')
+    plt.plot(years, N[10].g_share, color=auplot.lightblue, lw=3, label='Greece')
     plt.ylabel(r'VRES penetration $\gamma$')
-    plt.xlabel("year")
+    plt.xlabel('year')
     plt.yticks([0.2, 0.4, 0.6, 0.8, 1.0])
     handles, labels = ax.get_legend_handles_labels()
     leg = plt.legend(handles, labels, loc=0, prop={'size': 8}, handletextpad=0.15, columnspacing=1.0)
     leg.get_frame().set_alpha(0)
     leg.get_frame().set_edgecolor('white')
-    plt.setp(leg.get_texts(), fontsize="small")
+    plt.setp(leg.get_texts(), fontsize='small')
 
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig(figPath + 'logistic_gammas.png')
+    plt.savefig(figPath + 'logistic_gammas_' + mode + '.png')
+    plt.close()
 
 
 def capPlotter(mode, direction):
@@ -241,26 +284,69 @@ def capPlotter(mode, direction):
     ax = plt.subplot(1, 1, 1)
     for node in range(nodes):
         plt.plot(years, nodeCaps[node], alpha=.15)
-    plt.plot(years, EU, color=auplot.blue, lw=3, label="avg. Europe")
-    plt.plot(years, BA, color=auplot.orange, lw=3, label="Balkans")
-    plt.plot(years, WE, color=auplot.green, lw=3, label="Western Europe")
-    plt.plot(years, nodeCaps[18], color=auplot.yellow, lw=3, label="Germany")
-    plt.plot(years, nodeCaps[21], color=auplot.red, lw=3, label="Denmark")
-    plt.plot(years, nodeCaps[10], color=auplot.lightblue, lw=3, label="Greece")
+    plt.plot(years, EU, color=auplot.blue, lw=3, label='avg. Europe')
+    plt.plot(years, BA, color=auplot.orange, lw=3, label='Balkans')
+    plt.plot(years, WE, color=auplot.green, lw=3, label='Western Europe')
+    plt.plot(years, nodeCaps[18], color=auplot.yellow, lw=3, label='Germany')
+    plt.plot(years, nodeCaps[21], color=auplot.red, lw=3, label='Denmark')
+    plt.plot(years, nodeCaps[10], color=auplot.lightblue, lw=3, label='Greece')
     plt.ylabel(r'$\mathcal{K}^T_n(t) / \mathcal{K}^T(t)$')
-    plt.xlabel("year")
+    plt.xlabel('year')
     plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5])
     handles, labels = ax.get_legend_handles_labels()
     leg = plt.legend(handles, labels, loc=0, prop={'size': 8}, handletextpad=0.15, columnspacing=1.0)
     leg.get_frame().set_alpha(0)
     leg.get_frame().set_edgecolor('white')
-    plt.setp(leg.get_texts(), fontsize="small")
+    plt.setp(leg.get_texts(), fontsize='small')
 
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
     plt.savefig(figPath + 'caps_' + mode + '_' + direction + '.png')
     plt.close()
+
+
+def capPlotterGamma(mode, direction, gammas):
+    nodes = 30
+    nodeCaps = np.zeros((nodes, len(gammas)))
+    for i, gamma in enumerate(gammas):
+        usages = np.load(resPath + 'usages/Ncontrib-' + mode + '-g-' + str(gamma) + '_' + direction + '.npy')
+        F = np.load(resPath + mode + '-g-' + str(gamma) + '-flows.npy')
+        quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
+        NTC = sum(quantiles)
+        nodeCaps[:, i] = np.sum(usages, 1) / NTC
+
+    # plot
+    EU = np.sum(nodeCaps, 0) / nodes
+    BA = np.sum(nodeCaps[balcans], 0)
+    WE = np.sum(nodeCaps[western], 0)
+    plt.figure()
+    ax = plt.subplot(1, 1, 1)
+    for node in range(nodes):
+        plt.plot(gammas, nodeCaps[node], alpha=.15)
+    plt.plot(gammas, EU, color=auplot.blue, lw=3, label='avg. Europe')
+    plt.plot(gammas, BA, color=auplot.orange, lw=3, label='Balkans')
+    plt.plot(gammas, WE, color=auplot.green, lw=3, label='Western Europe')
+    plt.plot(gammas, nodeCaps[18], color=auplot.yellow, lw=3, label='Germany')
+    plt.plot(gammas, nodeCaps[21], color=auplot.red, lw=3, label='Denmark')
+    plt.plot(gammas, nodeCaps[10], color=auplot.lightblue, lw=3, label='Greece')
+    plt.ylabel(r'$\mathcal{K}^T_n(t) / \mathcal{K}^T(t)$')
+    plt.xlabel('gamma')
+    plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5])
+    plt.xticks([1.25, 1.5, 1.75, 2.])
+    plt.xlim(xmin=1.25)
+    handles, labels = ax.get_legend_handles_labels()
+    leg = plt.legend(handles, labels, loc=0, prop={'size': 8}, handletextpad=0.15, columnspacing=1.0)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    plt.setp(leg.get_texts(), fontsize='small')
+
+    plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
+    plt.gcf().set_dpi(400)
+    plt.tight_layout()
+    plt.savefig(figPath + 'caps_g_' + mode + '_' + direction + '.png')
+    plt.close()
+
 
 if 'solve' in task and not 'gamma' in task:
     p = Pool(4)
@@ -286,12 +372,20 @@ if 'usage' in task and 'gamma' in task:
     p = Pool(4)
     p.map(calcUsageGamma, gammas)
 
+
 if 'plot' in task and 'cap' not in task:
     N = EU_Nodes_log(year=2015)
-    N = transcaps(N, 'linear')
-    multi_GS(N)
+    for mode in modes:
+        N = transcaps(N, mode)
+        multi_GS(N, mode)
+        multi_TC(N, mode)
 
-if 'plot' in task and 'cap' in task:
+if 'plot' in task and 'cap' in task and 'gamma' not in task:
     for mode in modes:
         for direction in directions:
             capPlotter(mode, direction)
+
+if 'plot' in task and 'cap' in task and 'gamma' in task:
+    for mode in modes:
+        for direction in directions:
+            capPlotterGamma(mode, direction, gammas)
