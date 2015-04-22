@@ -125,7 +125,8 @@ def node_contrib(H, bin_edges, linkID=None, lengths=None):
         if i == 0:
             c1 += (flows[i + 1] - flows[i])
         else:
-            c1 += (flows[i + 1] - flows[i]) / (1 - bin_CDF(i, H))
+            if (1 - bin_CDF(i, H)) != 0:
+                c1 += (flows[i + 1] - flows[i]) / (1 - bin_CDF(i, H))
         l = i + 1
         while l < nbins:
             c2 += bin_prob(l, H) * H[l, 1] / flows[l]
