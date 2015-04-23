@@ -19,6 +19,7 @@ Call the script using only one of the following command line arguments:
 - network:                  network figures with coloured links, only works for N=30
 - level:                    Bar plots of nodes' link usage at different levels.
 - total:                    barplots comparing total network usage for different export schemes
+- total cap:                Normalize to NTC in stead of load
 - total sensitivity:        same as above, but for N=8 and N=50 networks
 - sensitivity compare:      compare different networks: N=30 & N=8 ; N=30 & N=53
 - sensitivity compare all:  as just above for N=53, N=30, N=8
@@ -413,13 +414,12 @@ def bars(scheme, verbose=None, norm='load'):
 
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
-        # LABS = ['node proportional M$^1$','link proportional M$^2$','usage proportional M$^3$']
-        LABS = ['node based M$^1$', 'link based M$^2$', 'usage based M$^3$']
+        LABS = ['M$^1$', 'M$^2$', 'M$^3$']
         leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
-        plt.setp(ltext, fontsize=9.5)    # the legend text fontsize
+        plt.setp(ltext, fontsize=12)    # the legend text fontsize
 
         if (network == 'regions' or network == 'superRegions'):
             if length:
@@ -561,12 +561,12 @@ def bars2(scheme, verbose=False):
 
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
-        LABS = ['node proportional M$^1$', 'link proportional M$^2$', 'usage proportional M$^3$']
+        LABS = ['M$^1$', 'M$^2$', 'M$^3$']
         leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
-        plt.setp(ltext, fontsize=9.5)
+        plt.setp(ltext, fontsize=12)
 
         # Calculate correlations between countries and merged regions
         link1 = link_proportional[np.where(link_proportional_merged > 0)]
@@ -716,12 +716,12 @@ def bars3(scheme, verbose=False):
 
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
-        LABS = ['node proportional M$^1$', 'link proportional M$^2$', 'usage proportional M$^3$']
+        LABS = ['M$^1$', 'M$^2$', 'M$^3$']
         leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
-        plt.setp(ltext, fontsize=9.5)
+        plt.setp(ltext, fontsize=12)
 
         # Calculate correlations between countries and merged regions
         link1 = SR_link_proportional[np.where(country_link_proportional > 0)]
@@ -899,12 +899,12 @@ def bars4(scheme):
 
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green[0], fc=green[0]), plt.Rectangle((0, 0), 0, 0, ec=blue[0], fc=blue[0])]
-        LABS = ['node proportional M$^1$', 'link proportional M$^2$', 'usage proportional M$^3$']
+        LABS = ['M$^1$', 'M$^2$', 'M$^3$']
         leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
-        plt.setp(ltext, fontsize=9.5)
+        plt.setp(ltext, fontsize=12)
 
         # Calculate correlations between countries and merged regions
         link1 = SR_link_proportional
