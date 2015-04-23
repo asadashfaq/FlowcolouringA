@@ -2,12 +2,14 @@ from __future__ import division
 import sys
 import copy
 import numpy as np
+from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap
 from EUgrid import EU_Nodes_usage
 from functions import link_label, binMaker
 from aurespf.tools import get_q, AtoKh_old
+from link_namer import link_namer
 import networkx as nx
 
 """
@@ -25,11 +27,16 @@ else:
 
 outPath = './figures/Paper figures feb 15/'
 
+# Node indices and names sorted after descending mean load
+loadOrder = [18, 4, 7, 22, 24, 20, 8, 5, 2, 6, 1, 15, 0, 10, 14,
+             9, 11, 12, 16, 21, 17, 19, 3, 26, 13, 29, 27, 23, 28, 25]
+
+loadNames = np.array(['DE', 'FR', 'GB', 'IT', 'ES', 'SE', 'PL', 'NO', 'NL',
+                      'BE', 'FI', 'CZ', 'AT', 'GR', 'RO', 'BG', 'PT', 'CH',
+                      'HU', 'DK', 'RS', 'IE', 'BA', 'SK', 'HR', 'LT', 'EE',
+                      'SI', 'LV', 'LU'], dtype='|S4')
 
 def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network', savepath=outPath, title=None):
-    plt.ioff()
-    #print node_weights
-    #print len(node_weights)
     G = nx.Graph()
 
     dcolwidth = (2*3.425+0.236)
@@ -174,8 +181,8 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
     phi_length = np.sqrt(np.sum(node_weights**2))
     norm_node_weights = [w/(2*phi_length) + 0.5 for w in node_weights]
 
-    #print norm_node_weights
-    node_colors = [cmap(w) for w in norm_node_weights]
+    # node_colors = [cmap(w) for w in norm_node_weights]
+    node_colors = [cmap(w) for w in node_weights]
     nx.draw_networkx_nodes(G, pos, node_size=400, nodelist=nodelist,\
             node_color=node_colors)
     nx.draw_networkx_labels(G, pos, font_size=10.8, font_color='k', \
@@ -207,14 +214,15 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
     cb1 = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
     cb1.set_ticks([0, 0.5, 1])
     cb1.set_ticklabels(['-1', '0', '1'])
-    ax1.set_xlabel(r'$\Phi_n$' + ' [normalized]')
+    #ax1.set_xlabel(r'$\Phi_n$' + ' [normalized]')
+    ax1.set_xlabel(r'$P_n / \left\langleL_n\right\rangle$')
     ax1.xaxis.set_label_position('top')
     ax1.set_xticks('none')
     ax2.axis('off')
     if title!=None:
         fig.suptitle(title)
     fig.savefig(savepath+figfilename+'-'+str(t)+'.png')
-
+    plt.close()
     return
 
 def draw_static_network(N=None, F=None, tit="1", show_link_size=True, typ=0, mode=''):
@@ -499,17 +507,17 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             if mode == 'old':
                 usages = usage[l,n,:]/Fmax[l]
                 plt.plot([0, Fmax[l]/qq], [0, 1], '-k',lw=1) # diagonal
-                ax.set_ylabel(r'$H_{ln}(t)/max(F_l(t))$')
+                ax.set_ylabel(r'$C_{ln}(t)$')
             if mode == 'new':
                 usages = usage[l,n,:]/linkflow
                 names = names[1:]
-                ax.set_ylabel(r'$H_{ln}(t)/F_l(t)$')
+                ax.set_ylabel(r'$C_{ln}(t)$')
 
             # scatter
             plt.scatter(linkflow/qq, usages, c='#000099', edgecolor='none', alpha=.2)
 
             # 99 quantile
-            plt.plot([1,1],[0,1],':k')
+            # plt.plot([1,1],[0,1],':k')
 
             # Plot bin avg usage
             F_vert = np.reshape(linkflow,(len(linkflow),1))
@@ -520,15 +528,19 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             plt.plot(bin_edges/qq, H[:,1], '-', c='#aa0000', lw=2)
 
             label = link_label(l,N)
-            ax.set_title('Synchronised'+' '+str(direction)+' flows on link '+label)
+            # ax.set_title('Synchronised'+' '+str(direction)+' flows on link '+label)
             ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$')
 
-            # Shrink x-axis to make room for legend
-            box = ax.get_position()
-            ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
-            ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5))#,title='Contributions')
+            # Plot link name and direction in figure
+            plt.text(.9, .95, label)
+            plt.text(.9, .9, direction)
 
-            plt.axis([0, Fmax[l]/qq, 0, 1])
+            # Shrink x-axis to make room for legend
+            # box = ax.get_position()
+            # ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
+            # ax.legend((names),loc='center left', bbox_to_anchor=(1,0.5))#,title='Contributions')
+
+            plt.axis([0, 1, 0, 1])
             if mode == 'old':
                 plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.png', bbox_inches='tight')
             if mode == 'new':
@@ -599,9 +611,9 @@ def drawnet_import(N, scheme='square', direction='import'):
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
 
     # color scale for nodes
-    greenDict = {'red': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0)),
-             'green': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .3, .3)),
-             'blue': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0))}
+    greenDict = {'red': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0)),
+             'green': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .3, .3)),
+             'blue': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapNodes = LinearSegmentedColormap('green',greenDict,1000)
 
     # Load usages for given scheme and direction
@@ -616,12 +628,12 @@ def drawnet_import(N, scheme='square', direction='import'):
     # Pick a particular node
     for n in N:
         # Calculate colors of links
-        N_usages[n.id] = N_usages[n.id]/quantiles
+        N_usages[n.id] = (N_usages[n.id]/quantiles)*2
         col = [ (cmap(l)) for l in N_usages[n.id]]
 
         # Calculate colors of nodes
         pmim[n.id,n.id] = 0
-        pm = pmim[n.id]/sum(pmim[n.id])
+        pm = (pmim[n.id]/sum(pmim[n.id]))*2
         node_col = [ (cmapNodes(nn)) for nn in pm]
 
         # Create a new figure and plot network below
@@ -629,7 +641,6 @@ def drawnet_import(N, scheme='square', direction='import'):
 
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05,0.04,0.4,.08])
-        # cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='vhorizontal')
         cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='horizontal')
         ax2 = fig.add_axes([0.55,0.04,0.40,.08])
         cbl2 = mpl.colorbar.ColorbarBase(ax2,cmapNodes,orientation='horizontal')
@@ -640,16 +651,15 @@ def drawnet_import(N, scheme='square', direction='import'):
         elif scheme == 'square':
             xlabel = 'Synchronised'
 
-        #ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
         ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
-        cbl.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
+        cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
 
-        ax2.set_xlabel(r'import fraction [normalized]')
+        ax2.set_xlabel(r'$\mathcal{I}_{n\leftarrow m}$')
         ax2.xaxis.set_label_position('top')
         cbl2.set_ticks(np.linspace(0,1,6))
-        cbl2.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
+        cbl2.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
 
         ax3 = fig.add_axes([-0.05,0.15,1.1,0.95])
 
@@ -678,6 +688,8 @@ def drawnet_import(N, scheme='square', direction='import'):
 
         # Save figure
         plt.savefig(outPath+'fig 5/'+str(n.id)+'_'+str(direction)+".png")
+        plt.close()
+
 
 def drawnet_export(N, scheme='square', direction='export'):
     colwidth = (3.425)
@@ -742,13 +754,13 @@ def drawnet_export(N, scheme='square', direction='export'):
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
 
     # color scale for nodes
-    greenDict = {'red': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0)),
-             'green': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .3, .3)),
-             'blue': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0))}
+    greenDict = {'red': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0)),
+             'green': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .3, .3)),
+             'blue': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapGreen = LinearSegmentedColormap('green',greenDict,1000)
 
     # color scale for nodes
-    redDict = {'red': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .3, .3)),
+    redDict = {'red': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .4, .4)),
              'green': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapNodes = LinearSegmentedColormap('red',redDict,1000)
@@ -764,12 +776,12 @@ def drawnet_export(N, scheme='square', direction='export'):
     # Pick a particular node
     for n in N:
         # Calculate colors of links
-        N_usages[n.id] = N_usages[n.id]/quantiles
+        N_usages[n.id] = (N_usages[n.id]/quantiles)*2
         col = [ (cmap(l)) for l in N_usages[n.id]]
 
         # Calculate colors of nodes
         pmex[n.id,n.id] = 0
-        pm = pmex[n.id]/sum(pmex[n.id])
+        pm = (pmex[n.id]/sum(pmex[n.id]))*2
         node_col = [ (cmapNodes(nn)) for nn in pm]
 
         # Create a new figure and plot network below
@@ -777,7 +789,6 @@ def drawnet_export(N, scheme='square', direction='export'):
 
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05,0.04,0.4,.08])
-        # cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='vhorizontal')
         cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='horizontal')
         ax2 = fig.add_axes([0.55,0.04,0.40,.08])
         cbl2 = mpl.colorbar.ColorbarBase(ax2,cmapNodes,orientation='horizontal')
@@ -788,16 +799,15 @@ def drawnet_export(N, scheme='square', direction='export'):
         elif scheme == 'square':
             xlabel = 'Synchronised'
 
-        #ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
         ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
-        cbl.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
+        cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
 
-        ax2.set_xlabel(r'export fraction [normalized]')
+        ax2.set_xlabel(r'$\mathcal{E}_{n\rightarrow m}$')
         ax2.xaxis.set_label_position('top')
         cbl2.set_ticks(np.linspace(0,1,6))
-        cbl2.set_ticklabels(['0','0.2','0.4','0.6','0.8','1'])
+        cbl2.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
 
         ax3 = fig.add_axes([-0.05,0.15,1.1,0.95])
 
@@ -826,14 +836,39 @@ def drawnet_export(N, scheme='square', direction='export'):
 
         # Save figure
         plt.savefig(outPath+'fig 5/'+str(n.id)+'_'+str(direction)+".png")
+        plt.close()
 
+
+def usageMesh(direction):
+    scheme = 'square'
+    N_usages = np.load('./results/Node_contrib_' + scheme + '_' + direction + '_70128.npy')
+    quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
+    usages = N_usages / quantiles
+    usages = usages[loadOrder]
+    plt.figure(figsize=(10, 11))
+    ax = plt.subplot(1, 1, 1)
+    plt.pcolormesh(usages.T, cmap='Blues')
+    plt.colorbar().set_label(label=r'$\mathcal{K}_{ln}^T / \mathcal{K}_{l}^T$', size=13)
+    ax.set_xticks(np.linspace(1, 30, 30))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
+    plt.grid(True)
+    #ax.xaxis.grid(False)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_yticks(np.linspace(1, 50, 50))
+    ax.set_yticklabels(lnames, ha="right", va="top", fontsize=10.5)
+    #ax.yaxis.grid(False)
+    ax.yaxis.set_tick_params(width=0)
+    plt.savefig(outPath + 'table 3/usages-' + direction + '.pdf', bbox_inches='tight')
 
 if '1' in figNum:
     print 'Making figure 1'
-    N = np.load('./results/square.npz')
+    N = np.load('./results/square.npz', mmap_mode='r')
     F = np.load('./results/square-flows.npy')
     for t in range(24): #range(70104,70128):
         node_weights = N['mismatch'][:,t] + N['balancing'][:,t]
+        means = N['mean']
+        node_weights =  node_weights / means
+        #print node_weights
         make_europe_graph(F[:,t], node_weights, t)
 
 if '2' in figNum:
@@ -841,6 +876,13 @@ if '2' in figNum:
     draw_static_network(mode='old')
     draw_static_network(mode='new')
     drawnet_capacities()
+
+if '3' in figNum:
+    print 'Making table 3'
+    directions = ['import', 'export', 'combined']
+    lnames = np.array(link_namer())
+    p = Pool(len(directions))
+    p.map(usageMesh, directions)
 
 if '4' in figNum:
     print 'Making figure 4'
