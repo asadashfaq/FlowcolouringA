@@ -864,12 +864,16 @@ if '1' in figNum:
     print 'Making figure 1'
     N = np.load('./results/square.npz', mmap_mode='r')
     F = np.load('./results/square-flows.npy')
-    for t in range(24): #range(70104,70128):
-        node_weights = N['mismatch'][:,t] + N['balancing'][:,t]
-        means = N['mean']
-        node_weights =  node_weights / means
-        #print node_weights
-        make_europe_graph(F[:,t], node_weights, t)
+    ranges = [range(24), range(70104,70128)]
+    for r in ranges:
+        for t in r:
+            node_weights = N['mismatch'][:,t] + N['balancing'][:,t]
+            means = N['mean']
+            node_weights =  node_weights / means
+            # Scaling to the colorbar so [-1, 1] becomes [0, 1]
+            node_weights += 1
+            node_weights /= 2
+            make_europe_graph(F[:,t], node_weights, t)
 
 if '2' in figNum:
     print 'Making figure 2'
