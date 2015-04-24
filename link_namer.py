@@ -1,6 +1,7 @@
 #! /usr/bin/env/python
 from __future__ import division
 import re
+import os
 import numpy as np
 import aurespf.solvers as au
 from EUgrid import *
@@ -36,14 +37,17 @@ def link_namer(N=None, F=None):
     """
     Return a list of link labels: 'from-to'
     """
-    if not N:
-        N = EU_Nodes_usage('linear.npz')
-    if not F:
-        F = np.load('./results/linear-flows.npy')
-    lnames = []
-    for link in range(len(F)):
-        lnames.append(link_label(link, N))
-    return lnames
+    if os.path.exists('lnames.npy'):
+        return np.load('lnames.npy').tolist()
+    else:
+        if not N:
+            N = EU_Nodes_usage('linear.npz')
+        if not F:
+            F = np.load('./results/linear-flows.npy')
+        lnames = []
+        for link in range(len(F)):
+            lnames.append(link_label(link, N))
+        return lnames
 
 
 def node_namer(N=None):
