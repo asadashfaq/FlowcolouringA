@@ -47,6 +47,7 @@ def link_namer(N=None, F=None):
         lnames = []
         for link in range(len(F)):
             lnames.append(link_label(link, N))
+        np.save('lnames.npy', lnames)
         return lnames
 
 
