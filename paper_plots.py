@@ -5,7 +5,7 @@ import numpy as np
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 from EUgrid import EU_Nodes_usage
 from functions import link_label, binMaker
 from aurespf.tools import get_q, AtoKh_old
@@ -845,20 +845,39 @@ def usageMesh(direction):
     quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
     usages = N_usages / quantiles
     usages = usages[loadOrder]
-    plt.figure(figsize=(10, 11))
-    ax = plt.subplot(1, 1, 1)
-    plt.pcolormesh(usages.T, cmap='Blues')
-    plt.colorbar().set_label(label=r'$\mathcal{K}_{ln}^T / \mathcal{K}_{l}^T$', size=13)
-    ax.set_xticks(np.linspace(1, 30, 30))
-    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
-    plt.grid(True)
-    #ax.xaxis.grid(False)
-    ax.xaxis.set_tick_params(width=0)
-    ax.set_yticks(np.linspace(1, 50, 50))
-    ax.set_yticklabels(lnames, ha="right", va="top", fontsize=10.5)
-    #ax.yaxis.grid(False)
-    ax.yaxis.set_tick_params(width=0)
-    plt.savefig(outPath + 'table 3/usages-' + direction + '.pdf', bbox_inches='tight')
+
+    # adapted from the official "jet" colormap: /lib/matplotlib/_cm.py
+    jet_data = {'red': ((0., 1, 1), (0.015, 0, 0), (0.35, 0, 0), (0.66, 1, 1), (0.89, 1, 1), (1, 0.5, 0.5)),
+                'green': ((0., 1, 1), (0.015, 0, 0), (0.125, 0, 0), (0.375, 1, 1), (0.64, 1, 1), (0.91, 0, 0), (1, 0, 0)),
+                'blue': ((0., 1, 1), (0.015, 1, 1), (0.11, 1, 1), (0.34, 1, 1), (0.65, 0, 0), (1, 0, 0))}
+    cmap = LinearSegmentedColormap('jet', jet_data, 1000)
+
+    for r in range(2):
+        name = ''
+        if r == 1:
+            cmap = plt.get_cmap('Blues')
+            name = '-blue'
+
+        levels = [0, 0.01, 0.02, 0.04, 0.06, .12, .25, .50, 1.00]
+        norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+        plt.figure(figsize=(10, 11))
+        ax = plt.subplot(1, 1, 1)
+        plt.pcolormesh(usages.T, cmap=cmap, norm=norm)
+        cbl = plt.colorbar()
+        cbl.set_label(label=r'$\mathcal{K}_{ln}^T / \mathcal{K}_{l}^T$', size=14)
+        cbl.set_ticks(levels)
+        cbl.set_ticklabels(levels)
+        ax.set_xticks(np.linspace(1, 30, 30))
+        ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
+        plt.grid(True)
+        #ax.xaxis.grid(False)
+        ax.xaxis.set_tick_params(width=0)
+        ax.set_yticks(np.linspace(1, 50, 50))
+        ax.set_yticklabels(lnames, ha="right", va="top", fontsize=10.5)
+        #ax.yaxis.grid(False)
+        ax.yaxis.set_tick_params(width=0)
+        plt.savefig(outPath + 'table 3/usages-' + direction + name + '.pdf', bbox_inches='tight')
 
 if '1' in figNum:
     print 'Making figure 1'
