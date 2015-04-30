@@ -8,9 +8,9 @@ F = np.load('./results/linear-flows.npy')
 f, bins = np.histogram(F[0], bins=400, normed=True)
 
 qs = [get_q(F[0], q) for q in [0.005, 0.01, 0.99, 0.995]]
-topBot = [0, 0.00015]
+topBot = [0, 0.00010]
 
-textHeight = 0.000153
+textHeight = 0.000103
 
 plt.figure(figsize=(11, 8))
 plt.subplot(211)
@@ -30,7 +30,7 @@ plt.ylabel(r'$p(F_l)$')
 
 f, bins = np.histogram(abs(F[0]), bins=400, normed=True)
 qs = [get_q(abs(F[0]), q) for q in [0.99, 0.995]]
-topBot = [0, 0.00015]
+topBot = [0, 0.00010]
 
 plt.subplot(212)
 plt.fill_between(bins[:-1], f, color='#0000aa', edgecolor='#0000aa')
