@@ -64,11 +64,12 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             plt.text(txtCoor, .95, label)
             plt.text(txtCoor, .9, direction)
 
+            ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$')
             plt.axis([0, Fmax[l] / qq, 0, 1])
             if mode == 'old':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.png', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.pdf', bbox_inches='tight')
             if mode == 'new':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.png', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.pdf', bbox_inches='tight')
             plt.close()
     return
 
