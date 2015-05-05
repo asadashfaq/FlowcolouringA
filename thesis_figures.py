@@ -165,10 +165,10 @@ if 'balancing' in task:
         elif n in [25, 28]:
             top = 0.0016
         else:
-            top = 0.00035
+            top = 0.0003
         b, bins = np.histogram(N[n].balancing, bins=100, normed=True)
         q = get_q(N[n].balancing, .99)
-        plt.figure()
+        plt.figure(figsize=(7, 4))
         plt.fill_between(bins[:-1], b, color='#0000aa', edgecolor='#0000aa')
         plt.plot([q, q], [0, .4 * top], '-', lw=2, color='#aa0000')
         plt.text(q, (.4 * top) + 0.000005, '99%')

@@ -311,9 +311,9 @@ if 'converge' in task:
 
     # Plot comparison
     print('Plotting results')
-    plt.figure()
+    plt.figure(figsize=(7, 4))
     plt.plot([0, 200], [0.995, 0.995], ':k')
-    plt.plot([90, 90], [0.9, 1], '-.k')
+    plt.plot([90, 90], [0.9, 1], '--k')
     plt.plot(test_bins, means, '-', color='#0000aa', lw=2)
     plt.plot(test_bins, mins, '-k', lw=2)
     plt.plot(test_bins, maxs, '-k', lw=2)
