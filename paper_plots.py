@@ -162,7 +162,7 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
     pos['LT']=[0.925,0.72]
 
 
-    redgreendict = {'red':[(0.0, .3, .3), (0.2, .7, .7), (0.5, 1.0, 1.0) ,(.8, 0.0, 0.0) ,(1.0, 0.0, 0.0)],
+    redgreendict = {'red':[(0.0, .4, .4), (0.2, .7, .7), (0.5, 1.0, 1.0) ,(.8, 0.0, 0.0) ,(1.0, 0.0, 0.0)],
                     'green':[(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.5, 1.0, 1.0),(.8, .7, .7), (1.0, .3, .3)],
                     'blue':[(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.5, 1.0, 1.0), (.8, 0.0, 0.0), (1.0, 0.0, 0.0)]}
 
@@ -221,7 +221,7 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
     ax2.axis('off')
     if title!=None:
         fig.suptitle(title)
-    fig.savefig(savepath+figfilename+'-'+str(t)+'.png')
+    fig.savefig(savepath+figfilename+'-'+str(t)+'.pdf')
     plt.close()
     return
 
@@ -883,7 +883,7 @@ if '1' in figNum:
     print 'Making figure 1'
     N = np.load('./results/square.npz', mmap_mode='r')
     F = np.load('./results/square-flows.npy')
-    ranges = [range(24), range(70104,70128)]
+    ranges = [range(100), range(70104,70128)]
     for r in ranges:
         for t in r:
             node_weights = N['mismatch'][:,t] + N['balancing'][:,t]
