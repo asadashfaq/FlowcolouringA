@@ -29,9 +29,9 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
     """
     Scatter plots of nodes' import/export usages of links saved to ./figures/.
     """
-    nodes = [0]#, 3, 18, 21, 24]
+    nodes = [0, 3, 18, 21, 24]
     links = usage.shape[0]
-    for l in [0]:#range(links):
+    for l in range(links):
         diag = []
         diagflow = []
         for n in nodes:
@@ -61,10 +61,13 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             plt.scatter(linkflow / qq, usages, c='#000099', edgecolor='none', alpha=.2)
 
             # plot example bin
-            bLeft = 30 / 90
-            bRight = 31 / 90
+            sampleBin = 30
+            bLeft = sampleBin / 90
+            bRight = (sampleBin + 1) / 90
+            avg = np.mean(usages[np.where(np.logical_and((linkflow / qq) > bLeft, (linkflow / qq) < bRight))])
             plt.plot([bLeft, bLeft], [0, 1], '-', color='#aa0000')
             plt.plot([bRight, bRight], [0, 1], '-', color='#aa0000')
+            plt.plot([1.01 * bLeft, .99 * bRight], [avg, avg], '-', lw=2, color='#aa0000')
 
             # Plot link name and direction in figure
             label = link_label(l, N)
@@ -74,9 +77,9 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$')
             plt.axis([0, Fmax[l] / qq, 0, 1])
             if mode == 'old':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.pdf', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.png', bbox_inches='tight')
             if mode == 'new':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.pdf', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.png', bbox_inches='tight')
             plt.close()
     return
 
