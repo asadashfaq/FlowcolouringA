@@ -1,5 +1,6 @@
 #! /usr/bin/env/python
 from __future__ import division
+import os
 import sys
 import time
 import numpy as np
@@ -116,7 +117,7 @@ def convergence(test):
             F_matrix[F_matrix[:,0].argsort()]
             H,bin_edges = binMaker(F_matrix,quantiles[link],lapse,nbins=test,verbose=verbose)
             Node_contributions[node,link] = node_contrib(H,bin_edges)
-    # save results to file 
+    # save results to file
     np.save('./results/convergence/Node_contrib_'+str(test)+'.npy',Node_contributions)
 
 def solver(mode,verbose=None):
@@ -131,7 +132,7 @@ def solver(mode,verbose=None):
     F = abs(np.load('./results/'+mode+'-flows.npy'))
     # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
-    
+
     # Do everything below for both import and export usages unless we want the combined case
     for direction in directions:
         if verbose:
@@ -144,7 +145,7 @@ def solver(mode,verbose=None):
         else:
             Usages = np.load('./linkcolouring/old_'+mode+'_copper_link_mix_'+direction+'_all_alpha=same.npy')
         print('Loaded '+mode+' usages')
-        
+
         # Calculate usages and save to file
         Node_contributions = np.zeros((len(N),len(F))) # empty array for calculated usages
         for node in range(len(N)):
@@ -156,10 +157,10 @@ def solver(mode,verbose=None):
                 exp_vert = np.reshape(Usages[link,node,:lapse],(len(Usages[link,node,:lapse]),1))
                 F_matrix = np.hstack([F_vert,exp_vert]) # [flow, usage]
                 F_matrix[F_matrix[:,0].argsort()]
-                
+
                 H,bin_edges = binMaker(F_matrix, quantiles[link], lapse, N_bins)
                 Node_contributions[node,link] = node_contrib(H, bin_edges, linkID=link, lengths=length)
-                
+
         # save results to file
         if not length:
             np.save('./results/Node_contrib_'+mode+'_'+direction+'_'+str(lapse)+'.npy',Node_contributions)
@@ -202,7 +203,7 @@ def plotter(mode):
             ax.set_ylabel(r'Usage, $C_n$')
             plt.savefig('./figures/'+mode+'/'+direction+'-link-usage-'+str(node)+'.png')
         print('Saved figures to ./figures/'+mode+'/'+direction+'-link-usage-node.png')
-    
+
         # For every link, plot each node's usage, C_n
         print('Plotting usage of each link - '+mode+' - '+direction)
         node_ids = np.array(range(len(N))).reshape((len(N),1))
@@ -218,7 +219,7 @@ def plotter(mode):
             # flip order so largest is first
             names_sort = names_sort[::-1]
             data_sort = data_sort[:,0][::-1]
-            
+
             plt.figure()
             ax = plt.subplot(111)
             plt.bar(nodes,np.divide(data_sort,quantiles[link]),width=1,color="#0000ff")
@@ -228,7 +229,7 @@ def plotter(mode):
             ax.set_ylabel(r'Usage, $C_n$')
             plt.savefig('./figures/'+mode+'/'+direction+'-node-usage-'+str(link)+'.png')
         print('Saved figures to ./figures/'+mode+'/'+direction+'-node-usage-link.png')
-    
+
         # Compare node transmission to mean load
         print('Plotting node comparison - '+mode+' - '+direction)
         # sort node names for x-axis
@@ -241,7 +242,7 @@ def plotter(mode):
         data_sort = data[data[:,2].argsort()]
         # flip order so largest is first
         data_sort = data_sort[:,0][::-1]
-    
+
         plt.figure()
         ax = plt.subplot(111)
         plt.bar(nodes,data_sort,width=1,color="#0000ff")
@@ -262,55 +263,68 @@ if 'converge' in task:
     r2 = range(25,105,5)
     r3 = range(110,210,10)
     test_bins = np.hstack([r1, r2, r3]) # how many bins to test
-    print('Geting ready to test convergence')
-    print('Lapse: '+str(lapse)+', Number of runs: '+str(len(test_bins)))
 
-    # Pick a transmission paradigm
-    N = EU_Nodes_usage('linear.npz')
-    F = abs(np.load('./results/linear-flows.npy'))
-    Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
-    print('Loaded import usages')
-    # Get 99% quantile of link flow
-    quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
-    np.save('./results/convergence/quantiles.npy',quantiles)
+    if not os.path.exists('./results/convergence/results.npz'):
+        print('Geting ready to test convergence')
+        print('Lapse: '+str(lapse)+', Number of runs: '+str(len(test_bins)))
 
-    # Calculate usages
-    print('Populating workers')
-    p = Pool(8)
-    p.map(convergence,test_bins)
+        # Pick a transmission paradigm
+        N = EU_Nodes_usage('linear.npz')
+        F = abs(np.load('./results/linear-flows.npy'))
+        Usages = np.load('./linkcolouring/old_linear_copper_link_mix_export_all_alpha=same.npy')
+        print('Loaded import usages')
+        # Get 99% quantile of link flow
+        quantiles = [get_q(abs(F[link,:lapse]),.99) for link in range(len(F))]
+        np.save('./results/convergence/quantiles.npy',quantiles)
 
-    # Compare results
-    print('Comparing results')
-    mins = np.zeros(len(test_bins))
-    means = np.zeros(len(test_bins))
-    maxs = np.zeros(len(test_bins))
-    stds = np.zeros(len(test_bins))
+        # Calculate usages
+        print('Populating workers')
+        p = Pool(8)
+        p.map(convergence,test_bins)
 
-    index = 0
-    for i in test_bins:
-        N_usages = np.load('./results/convergence/Node_contrib_'+str(i)+'.npy')
-        Total = np.sum(N_usages,0)/quantiles
-        mins[index] = Total.min()
-        means[index] = Total.mean()
-        maxs[index] = Total.max()
-        stds[index] = Total.std()
-        index+=1
-    np.savez('./results/convergence/results.npz',mins=mins,means=means,maxs=maxs,stds=stds)
-    print('Saved results to ./results/convergence/results.npz')
+        # Compare results
+        print('Comparing results')
+        mins = np.zeros(len(test_bins))
+        means = np.zeros(len(test_bins))
+        maxs = np.zeros(len(test_bins))
+        stds = np.zeros(len(test_bins))
+
+        index = 0
+        for i in test_bins:
+            N_usages = np.load('./results/convergence/Node_contrib_'+str(i)+'.npy')
+            Total = np.sum(N_usages,0)/quantiles
+            mins[index] = Total.min()
+            means[index] = Total.mean()
+            maxs[index] = Total.max()
+            stds[index] = Total.std()
+            index+=1
+        np.savez('./results/convergence/results.npz',mins=mins,means=means,maxs=maxs,stds=stds)
+        print('Saved results to ./results/convergence/results.npz')
+
+    else:
+        results = np.load('./results/convergence/results.npz')
+        mins = results['mins']
+        means = results['means']
+        maxs = results['maxs']
+        stds = results['stds']
+        print('Loaded results from ./results/convergence/results.npz')
 
     # Plot comparison
     print('Plotting results')
     plt.figure()
-    plt.plot(test_bins,mins,'-k',lw=2)
-    plt.plot(test_bins,means,'-b',lw=2)
-    plt.plot(test_bins,maxs,'-k',lw=2)
-    plt.plot(test_bins,means+stds,'--k')
-    plt.plot(test_bins,means-stds,'--k')
+    plt.plot([0, 200], [0.995, 0.995], ':k')
+    plt.plot([90, 90], [0.9, 1], '-.k')
+    plt.plot(test_bins, means, '-', color='#0000aa', lw=2)
+    plt.plot(test_bins, mins, '-k', lw=2)
+    plt.plot(test_bins, maxs, '-k', lw=2)
+    # plt.plot(test_bins,means+stds,'--k')
+    # plt.plot(test_bins,means-stds,'--k')
     plt.xlabel('Number of bins')
-    plt.ylabel(r'$C/T^{99\%}$')
-    plt.title('Convergence check for different bin sizes')
-    plt.savefig('./figures/convergence/convergence.png')
-    print('Saved results to ./figures/convergence/convergence.png')
+    plt.ylabel(r'$C/\mathcal{K}^T$')
+    plt.legend((r'99.5$\%$', '90 bins', 'mean', 'min/max'), loc=0)
+    #plt.title('Convergence check for different bin sizes')
+    plt.savefig('./figures/convergence/convergence.pdf', bbox_inches='tight')
+    print('Saved results to ./figures/convergence/convergence.pdf')
 
 if 'solve' in task:
     """
@@ -321,7 +335,7 @@ if 'solve' in task:
     p = Pool(len(modes))
     print('Populating '+str(len(modes))+' workers')
     p.map(solver,modes)
-    
+
 if 'combined' in task:
     """
     Calculate nodes' contributions for the combination of import and export and save results to file.
