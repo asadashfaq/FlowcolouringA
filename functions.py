@@ -1,12 +1,19 @@
 #! /usr/bin/env/python
 from __future__ import division
-from link_colour_less import get_link_direction
 import numpy as np
+from aurespf.solvers import AtoKh
 
 """
 A collection of commonly used functions.
 """
 
+def get_link_direction(n,N):
+	a,b,c,d,e=AtoKh(N)
+
+	for k in N:
+		if str(k.label)==e[n][0][0:2]: start_node=k
+		if str(k.label)==e[n][0][6:8]: end_node=k
+	return [start_node,end_node]
 
 def link_label(num, N):
     """
