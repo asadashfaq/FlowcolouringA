@@ -15,6 +15,10 @@ Call modes:
 - balancing:        histogram of a country's balancing
 - scatter:          scatter plot to motivate calculation of usage
 - scatter diagonal: includes diagonal on un-normalized scatter plots
+- scatter bin:      includes a sample bin with conditional usage
+- scatter usage:    includes line showing conditional usage
+
+The optional parameters {diagonal, bin, usage} can be used separately or combined
 """
 
 if len(sys.argv) < 2:
@@ -60,14 +64,24 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             # scatter
             plt.scatter(linkflow / qq, usages, c='#000099', edgecolor='none', alpha=.2)
 
-            # plot example bin
-            sampleBin = 30
-            bLeft = sampleBin / 90
-            bRight = (sampleBin + 1) / 90
-            avg = np.mean(usages[np.where(np.logical_and((linkflow / qq) > bLeft, (linkflow / qq) < bRight))])
-            plt.plot([bLeft, bLeft], [0, 1], '-', color='#aa0000')
-            plt.plot([bRight, bRight], [0, 1], '-', color='#aa0000')
-            plt.plot([1.01 * bLeft, .99 * bRight], [avg, avg], '-', lw=2, color='#aa0000')
+            if 'usage' in task:
+                # Plot bin avg usage
+                F_vert = np.reshape(linkflow, (len(linkflow), 1))
+                exp_vert = np.reshape(usages, (len(usages), 1))
+                F_matrix = np.hstack([F_vert, exp_vert])
+                F_matrix[F_matrix[:, 0].argsort()]
+                H, bin_edges = binMaker(F_matrix, qq, lapse=70128)
+                plt.plot(bin_edges / qq, H[:, 1], '-', c='#aa0000', lw=2)
+
+            if 'bin' in task:
+                # plot example bin
+                sampleBin = 30
+                bLeft = sampleBin / 90
+                bRight = (sampleBin + 1) / 90
+                avg = np.mean(usages[np.where(np.logical_and((linkflow / qq) > bLeft, (linkflow / qq) < bRight))])
+                plt.plot([bLeft, bLeft], [0, 1], '-', color='#aa0000')
+                plt.plot([bRight, bRight], [0, 1], '-', color='#aa0000')
+                plt.plot([1.01 * bLeft, .99 * bRight], [avg, avg], '-', lw=2, color='#aa0000')
 
             # Plot link name and direction in figure
             label = link_label(l, N)
