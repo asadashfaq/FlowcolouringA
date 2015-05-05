@@ -12,6 +12,7 @@ Special figures for my thesis.
 
 Call modes:
 - flowhist:         flow histogram to explain quantiles
+- balancing:        histogram of a country's balancing
 - scatter:          scatter plot to motivate calculation of usage
 - scatter diagonal: includes diagonal on un-normalized scatter plots
 """
@@ -67,9 +68,9 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$')
             plt.axis([0, Fmax[l] / qq, 0, 1])
             if mode == 'old':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.pdf', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.png', bbox_inches='tight')
             if mode == 'new':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.pdf', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.png', bbox_inches='tight')
             plt.close()
     return
 
@@ -132,3 +133,24 @@ if 'flowhist' in task:
     plt.ylabel(r'$p(F_l)$')
 
     plt.savefig(figPath + 'flowHist.pdf', bbox_inches='tight')
+
+if 'balancing' in task:
+    N = EU_Nodes_usage('square.npz')
+    for n in range(30):  # [21]:
+        if n in [13, 23, 27, 29]:
+            top = 0.0008
+        elif n in [25, 28]:
+            top = 0.0016
+        else:
+            top = 0.00035
+        b, bins = np.histogram(N[n].balancing, bins=100, normed=True)
+        q = get_q(N[n].balancing, .99)
+        plt.figure()
+        plt.fill_between(bins[:-1], b, color='#0000aa', edgecolor='#0000aa')
+        plt.plot([q, q], [0, .4 * top], '-', lw=2, color='#aa0000')
+        plt.text(q, (.4 * top) + 0.000005, '99%')
+        plt.xlabel(r'$B_n$ [MW]')
+        plt.ylabel(r'$p(B_n)$')
+        plt.axis([0, bins[-1], 0, top])
+        plt.savefig(figPath + '/balancing/' + str(n) + '-' + str(N[n].label) + '.pdf', bbox_inches='tight')
+        plt.close()
