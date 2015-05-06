@@ -548,7 +548,7 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             plt.close('all') # fixes memory leak.
     return
 
-def drawnet_import(N, scheme='square', direction='import'):
+def drawnet_import(N, scheme='square', direction='import', norm=True):
     colwidth = (3.425)
     dcolwidth = (2*3.425+0.236)
 
@@ -604,9 +604,9 @@ def drawnet_import(N, scheme='square', direction='import'):
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
 
-    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0.5, 0.5),(1.0, .7, .7)),
-             'green': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(.15,.8,.8),(.4, 0.5, 0.5),(1.0, 0, 0))}
+    blueDict2 = {'red': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0.5, 0.5),(1.0, .7, .7)),
+             'green': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
+             'blue': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,.8,.8),(.4, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
 
@@ -618,7 +618,12 @@ def drawnet_import(N, scheme='square', direction='import'):
 
     # Load usages for given scheme and direction
     N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_70128.npy')
-    quantiles = np.load('./results/quantiles_'+str(scheme)+'_70128.npy')
+    if norm:
+        quantiles = np.load('./results/quantiles_'+str(scheme)+'_70128.npy')
+        normString = '_norm'
+    else:
+        quantiles = np.ones(N_usages.shape[1]) * 20000
+        normString = ''
 
     # Load power mixes
     pmim = np.load('./results/square_pm.npz', mmap_mode='r')['power_mix']
@@ -645,16 +650,14 @@ def drawnet_import(N, scheme='square', direction='import'):
         ax2 = fig.add_axes([0.55,0.04,0.40,.08])
         cbl2 = mpl.colorbar.ColorbarBase(ax2,cmapNodes,orientation='horizontal')
 
-        # Label just above color bar
-        if scheme == 'linear':
-            xlabel = 'Most localised'
-        elif scheme == 'square':
-            xlabel = 'Synchronised'
-
-        ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
-        cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
+        if norm:
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
+            cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
+        else:
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}$ [GW]')
+            cbl.set_ticklabels(['0','4','8','12','16','20'])
 
         ax2.set_xlabel(r'$\mathcal{I}_{n\leftarrow m}$')
         ax2.xaxis.set_label_position('top')
@@ -687,11 +690,11 @@ def drawnet_import(N, scheme='square', direction='import'):
         ax3.axis('off')
 
         # Save figure
-        plt.savefig(outPath+'fig 5/'+str(n.id)+'_'+str(direction)+".png")
+        plt.savefig(outPath+'fig 5/'+scheme+'/'+str(n.id)+'_'+str(direction)+normString+".png")
         plt.close()
 
 
-def drawnet_export(N, scheme='square', direction='export'):
+def drawnet_export(N, scheme='square', direction='export', norm=True):
     colwidth = (3.425)
     dcolwidth = (2*3.425+0.236)
 
@@ -747,9 +750,9 @@ def drawnet_export(N, scheme='square', direction='export'):
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
 
-    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0.5, 0.5),(1.0, .7, .7)),
-             'green': ((0.0, 1.0, 1.0),(.15,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(.15,.8,.8),(.4, 0.5, 0.5),(1.0, 0, 0))}
+    blueDict2 = {'red': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0.5, 0.5),(1.0, .7, .7)),
+             'green': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
+             'blue': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,.8,.8),(.4, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
 
@@ -760,14 +763,19 @@ def drawnet_export(N, scheme='square', direction='export'):
     cmapGreen = LinearSegmentedColormap('green',greenDict,1000)
 
     # color scale for nodes
-    redDict = {'red': ((0.0, 1.0, 1.0),(.15, .7, .7),(1, .4, .4)),
-             'green': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(.15, 0.0, 0.0),(1, 0.0, 0.0))}
+    redDict = {'red': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .4, .4)),
+             'green': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0)),
+             'blue': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapNodes = LinearSegmentedColormap('red',redDict,1000)
 
     # Load usages for given scheme and direction
     N_usages = np.load('./results/Node_contrib_'+scheme+'_'+direction+'_70128.npy')
-    quantiles = np.load('./results/quantiles_'+str(scheme)+'_70128.npy')
+    if norm:
+        quantiles = np.load('./results/quantiles_'+str(scheme)+'_70128.npy')
+        normString = '_norm'
+    else:
+        quantiles = np.ones(N_usages.shape[1]) * 20000
+        normString = ''
 
     # Load power mixes
     pmex = np.load('./results/square_pm.npz', mmap_mode='r')['power_mix_ex']
@@ -793,16 +801,14 @@ def drawnet_export(N, scheme='square', direction='export'):
         ax2 = fig.add_axes([0.55,0.04,0.40,.08])
         cbl2 = mpl.colorbar.ColorbarBase(ax2,cmapNodes,orientation='horizontal')
 
-        # Label just above color bar
-        if scheme == 'linear':
-            xlabel = 'Most localised'
-        elif scheme == 'square':
-            xlabel = 'Synchronised'
-
-        ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
-        cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
+        if norm:
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
+            cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
+        else:
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}$ [GW]')
+            cbl.set_ticklabels(['0','4','8','12','16','20'])
 
         ax2.set_xlabel(r'$\mathcal{E}_{n\rightarrow m}$')
         ax2.xaxis.set_label_position('top')
@@ -835,7 +841,7 @@ def drawnet_export(N, scheme='square', direction='export'):
         ax3.axis('off')
 
         # Save figure
-        plt.savefig(outPath+'fig 5/'+str(n.id)+'_'+str(direction)+".png")
+        plt.savefig(outPath+'fig 5/'+scheme+'/'+str(n.id)+'_'+str(direction)+normString+".png")
         plt.close()
 
 
@@ -925,9 +931,11 @@ if '4' in figNum:
 
 if '5' in figNum:
     print 'Making figure 5'
-    N = EU_Nodes_usage('square.npz')
-    drawnet_import(N)
-    drawnet_export(N)
+    for scheme in ['linear', 'square']:
+        for norm in [0, 1]:
+            N = EU_Nodes_usage(scheme + '.npz')
+            drawnet_import(N, scheme=scheme, norm=norm)
+            drawnet_export(N, scheme=scheme, norm=norm)
 
 if '6' in figNum:
     print 'Making figure 6'
