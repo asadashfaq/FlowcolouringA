@@ -17,6 +17,7 @@ Call modes:
 - scatter diagonal: includes diagonal on un-normalized scatter plots
 - scatter bin:      includes a sample bin with conditional usage
 - scatter usage:    includes line showing conditional usage
+- compare:          figures to compare export schemes
 
 The optional parameters {diagonal, bin, usage} can be used separately or combined
 """
@@ -27,6 +28,14 @@ else:
     task = str(sys.argv[1:])
 
 figPath = './figures/thesis/'
+
+loadOrder = [18, 4, 7, 22, 24, 20, 8, 5, 2, 6, 1, 15, 0, 10, 14,
+             9, 11, 12, 16, 21, 17, 19, 3, 26, 13, 29, 27, 23, 28, 25]
+
+loadNames = np.array(['DE', 'FR', 'GB', 'IT', 'ES', 'SE', 'PL', 'NO', 'NL',
+                      'BE', 'FI', 'CZ', 'AT', 'GR', 'RO', 'BG', 'PT', 'CH',
+                      'HU', 'DK', 'RS', 'IE', 'BA', 'SK', 'HR', 'LT', 'EE',
+                      'SI', 'LV', 'LU'], dtype='|S4')
 
 
 def scatter_plotter(N, F, Fmax, usage, direction, mode):
@@ -177,3 +186,40 @@ if 'balancing' in task:
         plt.axis([0, bins[-1], 0, top])
         plt.savefig(figPath + '/balancing/' + str(n) + '-' + str(N[n].label) + '.pdf', bbox_inches='tight')
         plt.close()
+
+if 'compare' in task:
+    schemes = ['linear', 'square']
+    bars = np.zeros((2, 30))
+    for i, scheme in enumerate(schemes):
+        N = EU_Nodes_usage(scheme + '.npz')
+        for n in N:
+            bars[i, n.id] = np.mean(abs(n.mismatch + n.balancing + n.curtailment)) / n.mean
+
+    print np.mean((bars[1] - bars[0]) * 100 / bars[0])
+
+    nodes = np.linspace(0.5, 2 * 30 - 1.5, 30)
+    nodes_shift = nodes + .5
+    green = '#009900'
+    blue = '#000099'
+
+    plt.figure(figsize=(10, 4))
+    ax = plt.subplot(111)
+    plt.bar(nodes, bars[0][loadOrder], width=1, color=green, edgecolor='none')
+    plt.bar(nodes_shift, bars[1][loadOrder], width=1, color=blue, edgecolor='none')
+    ax.set_xticks(np.linspace(2, len(N) * 2 + 2, len(N) + 1))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
+    ax.xaxis.grid(False)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_ylabel(r'$\left\langle |P_n| \right\rangle / \left\langle L_n \right\rangle$')
+    maxes = [max(bars[0]), max(bars[1])]
+    plt.axis([0, 30 * 2 + .5, 0, 1.10 * max(maxes)])
+
+    # Legend
+    artists = [plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
+    LABS = ['Localized', 'Synchronized']
+    leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    ltext = leg.get_texts()
+    plt.setp(ltext, fontsize=12)    # the legend text fontsize
+    plt.savefig(figPath + 'imex.pdf', bbox_inches='tight')
