@@ -190,17 +190,20 @@ if 'balancing' in task:
 if 'compare' in task:
     schemes = ['linear', 'square']
     bars = np.zeros((2, 30))
-    for i, scheme in enumerate(schemes):
-        N = EU_Nodes_usage(scheme + '.npz')
-        for n in N:
-            bars[i, n.id] = np.mean(abs(n.mismatch + n.balancing + n.curtailment)) / n.mean
-
-    print np.mean((bars[1] - bars[0]) * 100 / bars[0])
-
     nodes = np.linspace(0.5, 2 * 30 - 1.5, 30)
     nodes_shift = nodes + .5
     green = '#009900'
     blue = '#000099'
+
+    # Imports
+    for i, scheme in enumerate(schemes):
+        N = EU_Nodes_usage(scheme + '.npz')
+        for n in N:
+            P = n.mismatch + n.balancing - n.curtailment
+            P[np.where(P < 0)] = 0
+            bars[i, n.id] = np.mean(abs(P)) / n.mean
+
+    print 'Imports:', np.mean((bars[1] - bars[0]) * 100 / bars[0])
 
     plt.figure(figsize=(10, 4))
     ax = plt.subplot(111)
@@ -210,7 +213,7 @@ if 'compare' in task:
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
     ax.xaxis.grid(False)
     ax.xaxis.set_tick_params(width=0)
-    ax.set_ylabel(r'$\left\langle |P_n| \right\rangle / \left\langle L_n \right\rangle$')
+    ax.set_ylabel(r'$\left\langle \max(-P_n,0) \right\rangle / \left\langle L_n \right\rangle$')
     maxes = [max(bars[0]), max(bars[1])]
     plt.axis([0, 30 * 2 + .5, 0, 1.10 * max(maxes)])
 
@@ -221,5 +224,99 @@ if 'compare' in task:
     leg.get_frame().set_alpha(0)
     leg.get_frame().set_edgecolor('white')
     ltext = leg.get_texts()
-    plt.setp(ltext, fontsize=12)    # the legend text fontsize
-    plt.savefig(figPath + 'imex.pdf', bbox_inches='tight')
+    plt.setp(ltext, fontsize=12)
+    plt.savefig(figPath + 'imports.pdf', bbox_inches='tight')
+    plt.close()
+
+    # Net exports
+    for i, scheme in enumerate(schemes):
+        N = EU_Nodes_usage(scheme + '.npz')
+        for n in N:
+            bars[i, n.id] = np.mean(n.mismatch + n.balancing - n.curtailment) / n.mean
+
+    print 'Exports:', np.mean((bars[1] - bars[0]) * 100 / bars[0])
+
+    plt.figure(figsize=(10, 4))
+    ax = plt.subplot(111)
+    plt.plot([0, 61], [0, 0], '-k')
+    plt.bar(nodes, bars[0][loadOrder], width=1, color=green, edgecolor='none')
+    plt.bar(nodes_shift, bars[1][loadOrder], width=1, color=blue, edgecolor='none')
+    ax.set_xticks(np.linspace(2, len(N) * 2 + 2, len(N) + 1))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
+    ax.xaxis.grid(False)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_ylabel(r'$\left\langle P_n \right\rangle / \left\langle L_n \right\rangle$')
+    plt.axis([0, 30 * 2 + .5, 1.1 * min(bars[0]), 1.1 * max(bars[0])])
+
+    # Legend
+    artists = [plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
+    LABS = ['Localized', 'Synchronized']
+    leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    ltext = leg.get_texts()
+    plt.setp(ltext, fontsize=12)
+    plt.savefig(figPath + 'exports.pdf', bbox_inches='tight')
+    plt.close()
+
+    # Balancing capacity
+    for i, scheme in enumerate(schemes):
+        N = EU_Nodes_usage(scheme + '.npz')
+        for n in N:
+            bars[i, n.id] = get_q(n.balancing, .99) / n.mean
+
+    print 'Balancing capacity:', np.mean((bars[1] - bars[0]) * 100 / bars[0])
+
+    plt.figure(figsize=(10, 4))
+    ax = plt.subplot(111)
+    plt.bar(nodes, bars[0][loadOrder], width=1, color=green, edgecolor='none')
+    plt.bar(nodes_shift, bars[1][loadOrder], width=1, color=blue, edgecolor='none')
+    ax.set_xticks(np.linspace(2, len(N) * 2 + 2, len(N) + 1))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
+    ax.xaxis.grid(False)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_ylabel(r'$\mathcal{K}^B / \left\langle L_n \right\rangle$')
+    maxes = [max(bars[0]), max(bars[1])]
+    plt.axis([0, 30 * 2 + .5, 0, 1.10 * max(maxes)])
+
+    # Legend
+    artists = [plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
+    LABS = ['Localized', 'Synchronized']
+    leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    ltext = leg.get_texts()
+    plt.setp(ltext, fontsize=12)
+    plt.savefig(figPath + 'backup_capacity.pdf', bbox_inches='tight')
+    plt.close()
+
+    # Balancing energy
+    for i, scheme in enumerate(schemes):
+        N = EU_Nodes_usage(scheme + '.npz')
+        for n in N:
+            bars[i, n.id] = np.mean(n.balancing) / n.mean
+
+    print 'Balancing energy:', np.mean((bars[1] - bars[0]) * 100 / bars[0])
+
+    plt.figure(figsize=(10, 4))
+    ax = plt.subplot(111)
+    plt.bar(nodes, bars[0][loadOrder], width=1, color=green, edgecolor='none')
+    plt.bar(nodes_shift, bars[1][loadOrder], width=1, color=blue, edgecolor='none')
+    ax.set_xticks(np.linspace(2, len(N) * 2 + 2, len(N) + 1))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
+    ax.xaxis.grid(False)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_ylabel(r'$ E^B / \left\langle L_n \right\rangle$')
+    maxes = [max(bars[0]), max(bars[1])]
+    plt.axis([0, 30 * 2 + .5, 0, 1.10 * max(maxes)])
+
+    # Legend
+    artists = [plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
+    LABS = ['Localized', 'Synchronized']
+    leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+    leg.get_frame().set_alpha(0)
+    leg.get_frame().set_edgecolor('white')
+    ltext = leg.get_texts()
+    plt.setp(ltext, fontsize=12)
+    plt.savefig(figPath + 'balancing_energy.pdf', bbox_inches='tight')
+    plt.close()
