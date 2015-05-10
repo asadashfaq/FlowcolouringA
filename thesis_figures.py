@@ -192,6 +192,7 @@ if 'compare' in task:
     bars = np.zeros((2, 30))
     nodes = np.linspace(0.5, 2 * 30 - 1.5, 30)
     nodes_shift = nodes + .5
+    scatter_points = nodes + 1.35
     green = '#009900'
     blue = '#000099'
 
@@ -241,12 +242,13 @@ if 'compare' in task:
     plt.plot([0, 61], [0, 0], '-k')
     plt.bar(nodes, bars[0][loadOrder], width=1, color=green, edgecolor='none')
     plt.bar(nodes_shift, bars[1][loadOrder], width=1, color=blue, edgecolor='none')
+    plt.scatter(scatter_points, np.zeros(30), s=30, marker=u's', c=blue, edgecolor=blue)
     ax.set_xticks(np.linspace(2, len(N) * 2 + 2, len(N) + 1))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
     ax.xaxis.grid(False)
     ax.xaxis.set_tick_params(width=0)
     ax.set_ylabel(r'$\left\langle P_n \right\rangle / \left\langle L_n \right\rangle$')
-    plt.axis([0, 30 * 2 + .5, 1.1 * min(bars[0]), 1.1 * max(bars[0])])
+    plt.axis([0, 30 * 2 + .5, 1.05 * min(bars[0]), 1.05 * max(bars[0])])
 
     # Legend
     artists = [plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
