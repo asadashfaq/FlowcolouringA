@@ -342,9 +342,18 @@ def capPlotterGamma(mode, direction, gammas):
     plt.plot(gammas, nodeCaps[10], color=auplot.lightblue, lw=3, label='Greece')
     plt.ylabel(r'$\mathcal{K}^T_n(\gamma) / \mathcal{K}^T(\gamma)$')
     plt.xlabel('gamma')
-    plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5])
+    #plt.yticks([0.1, 0.2, 0.3, 0.4])
     plt.xticks([1.25, 1.5, 1.75, 2.])
-    plt.xlim(xmin=1.25)
+    if mode == 'square':
+        top = .4
+    elif mode == 'linear':
+        if direction == 'combined':
+            top = .5
+        elif direction == 'import':
+            top = .6
+        else:
+            top = 1
+    plt.axis([1.25, 2, 0, top])
     handles, labels = ax.get_legend_handles_labels()
     leg = plt.legend(handles, labels, loc=0, prop={'size': 8}, handletextpad=0.15, columnspacing=1.0)
     leg.get_frame().set_alpha(0)
@@ -353,7 +362,7 @@ def capPlotterGamma(mode, direction, gammas):
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig(figPath + 'caps_g_' + mode + '_' + direction + '.png')
+    plt.savefig(figPath + 'caps_g_' + mode + '_' + direction + '.pdf')
     plt.close()
 
 
