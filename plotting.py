@@ -536,9 +536,9 @@ def bars2(scheme, verbose=False):
         blue = '#000099'
 
         # Plot node proportional
-        plt.rc('lines', lw=2)
-        plt.rc('lines', dash_capstyle='round')
-        plt.plot(np.linspace(0, len(N) * 2 + 2, len(N)), Node_proportional, '--k')
+        # plt.rc('lines', lw=2)
+        # plt.rc('lines', dash_capstyle='round')
+        # plt.plot(np.linspace(0, len(N) * 2 + 2, len(N)), Node_proportional, '--k')
         # Plot link proportional
         plt.bar(nodes, link_proportional, width=bw, color=green, edgecolor='none')
         plt.bar(nodes + 1.5 * bw, link_proportional_merged, width=bw, color=green, edgecolor='none')
@@ -553,16 +553,16 @@ def bars2(scheme, verbose=False):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
+            ax.set_ylabel(r'$M_n$km/$\left\langle L_n\right\rangle$')
         else:
-            ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(link_proportional), max(usage_proportional), max(link_proportional_merged), max(usage_proportional_merged)]
         plt.axis([0, nNodes * 2 + .5, 0, 1.15 * max(maxes)])
 
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
         LABS = ['M$^1$', 'M$^2$', 'M$^3$']
-        leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+        leg = plt.legend(artists[1:], LABS[1:], loc='upper left', ncol=2, columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
@@ -697,9 +697,9 @@ def bars3(scheme, verbose=False):
         blue = '#000099'
 
         # Plot node proportional
-        plt.rc('lines', lw=2)
-        plt.rc('lines', dash_capstyle='round')
-        plt.plot(np.linspace(0, len(N_superRegions) * 2 + 2, len(N_superRegions)), SR_node_proportional, '--k')
+        # plt.rc('lines', lw=2)
+        # plt.rc('lines', dash_capstyle='round')
+        # plt.plot(np.linspace(0, len(N_superRegions) * 2 + 2, len(N_superRegions)), SR_node_proportional, '--k')
         # Plot link proportional
         plt.bar(nodes, SR_link_proportional, width=bw, color=green, edgecolor='none')
         plt.bar(nodes + 1.5 * bw, country_link_proportional, width=bw, color=green, edgecolor='none')
@@ -714,16 +714,16 @@ def bars3(scheme, verbose=False):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
+            ax.set_ylabel(r'$M_n$km/$\left\langle L_n\right\rangle$')
         else:
-            ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(SR_link_proportional), max(SR_usage_proportional), max(country_link_proportional), max(country_usage_proportional)]
         plt.axis([0, nNodes * 2 + .5, 0, 1.15 * max(maxes)])
 
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
         LABS = ['M$^1$', 'M$^2$', 'M$^3$']
-        leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+        leg = plt.legend(artists[1:], LABS[1:], loc='upper left', ncol=2, columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
