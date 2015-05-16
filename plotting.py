@@ -578,6 +578,12 @@ def bars2(scheme, verbose=False):
         s = 'linkCorr = ' + linkCorr + ', usageCorr = ' + usageCorr
         plt.text(6, .9 * max(maxes), s)
 
+        # Calculate distance correlations
+        dc, dr1, dvx, dvy = dcov_all(link1, link2)
+        dc, dr2, dvx, dvy = dcov_all(usage1, usage2)
+        s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
+        plt.text(6, .8 * max(maxes), s)
+
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '-length.png', bbox_inches='tight')
         else:
@@ -732,6 +738,12 @@ def bars3(scheme, verbose=False):
         usageCorr = '%0.2f' % pearsonr(usage1, usage2)[0]
         s = 'linkCorr = ' + linkCorr + ', usageCorr = ' + usageCorr
         plt.text(2, .9 * max(maxes), s)
+
+        # Calculate distance correlations
+        dc, dr1, dvx, dvy = dcov_all(link1, link2)
+        dc, dr2, dvx, dvy = dcov_all(usage1, usage2)
+        s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
+        plt.text(2, .8 * max(maxes), s)
 
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '-length.png', bbox_inches='tight')
