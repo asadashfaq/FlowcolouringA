@@ -99,7 +99,7 @@ def link_dict(N=None, F=None):
     """
     if not N:
         N = EU_Nodes_usage('linear.npz')
-    if not F:
+    if F == None:
         F = np.load('./results/linear-flows.npy')
     ldict = {}
     for link in range(len(F)):
