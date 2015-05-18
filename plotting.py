@@ -150,7 +150,7 @@ def superRegionMerger(N, usages, countryNames, region_mean_load=None, md=None):
         countries = merge_dict[d]
         for country in countries:
             merged_usages[merge_index] += usages[country]
-            if region_mean_load:
+            if region_mean_load != None:
                 merged_mean_load[merge_index] += region_mean_load[country]
             else:
                 merged_mean_load[merge_index] += N[country].mean
@@ -903,16 +903,16 @@ def bars4(scheme):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
+            ax.set_ylabel(r'$M_n$km/$\left\langle L_n\right\rangle$')
         else:
-            ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(SR_link_proportional), max(SR_usage_proportional), max(country_usage_proportional), max(country_link_proportional), max(region_usage_proportional), max(region_link_proportional)]
         plt.axis([0, nNodes * 2 + .5, 0, 1.11 * max(maxes)])
 
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green[0], fc=green[0]), plt.Rectangle((0, 0), 0, 0, ec=blue[0], fc=blue[0])]
         LABS = ['M$^1$', 'M$^2$', 'M$^3$']
-        leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+        leg = plt.legend(artists[1:], LABS[1:], loc='upper left', ncol=2, columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
