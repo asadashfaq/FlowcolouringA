@@ -66,12 +66,10 @@ def simpleMerger(data, merge_dict):
     return merged_data
 
 
-def regionMerger(scheme, direction, lapse, md=None, node_ids=None):
+def regionMerger(N_countries, N_regions, scheme, direction, lapse, md=None, node_ids=None):
     """
     Merge regional usage to compare with country's usage
     """
-    N_countries = EU_Nodes_usage()
-    N_regions = EU_Nodes_regions()
 
     # The optional parameter is intended for sorting of merged regions. If the
     # parameter is not set the ordering will be the default ordering as at is in
@@ -495,7 +493,7 @@ def bars2(scheme, verbose=False):
 
         # Calculate node-, link- and usage proportional for regions. Variable
         # names are the same as above with the addition of '_merged' or '_regions'
-        region_usages, node_mean_load_merged, mergeDict = regionMerger(scheme, direction, lapse, md=mergeDict)
+        region_usages, node_mean_load_merged, mergeDict = regionMerger(N, N_regions, scheme, direction, lapse, md=mergeDict)
         Total_usage_merged = np.sum(region_usages, 1)
         EU_load_merged = np.sum(node_mean_load_merged)
         if length:
@@ -842,7 +840,7 @@ def bars4(scheme):
         country_link_proportional = np.reshape(country_link_proportional, (len(country_link_proportional), 1))
 
         # REGIONS
-        region_usages, region_mean_load, region_mergeDict = regionMerger(scheme, direction, lapse, md=region_mergeDict)
+        region_usages, region_mean_load, region_mergeDict = regionMerger(N, N_regions, scheme, direction, lapse, md=region_mergeDict)
         region_usages, region_mean_load, country_mergeDict = superRegionMerger(N_regions, region_usages, countryNames, region_mean_load, md=country_mergeDict)
 
         Total_region_usage = np.sum(region_usages, 1)
@@ -857,6 +855,8 @@ def bars4(scheme):
             region_link_proportional = linkProportional(N_regions, link_dic_regions, quantiles_regions, lengths='regions')
         else:
             region_link_proportional = linkProportional(N_regions, link_dic_regions, quantiles_regions)
+
+        region_link_proportional = simpleMerger(region_link_proportional, region_mergeDict)
         region_link_proportional = simpleMerger(region_link_proportional, country_mergeDict)
         region_link_proportional = [region_link_proportional[i] / region_mean_load[i] for i in range(nNodes)]
         region_normed_usage = Total_region_usage / region_mean_load
