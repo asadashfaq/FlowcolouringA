@@ -40,6 +40,11 @@ if 'length' in task:
 else:
     length = False
 
+if 'verbose' in task:
+    verbose = True
+else:
+    verbose = False
+
 # Node indices and names sorted after descending mean load
 loadOrder = [18, 4, 7, 22, 24, 20, 8, 5, 2, 6, 1, 15, 0, 10, 14,
              9, 11, 12, 16, 21, 17, 19, 3, 26, 13, 29, 27, 23, 28, 25]
@@ -586,17 +591,17 @@ def bars2(scheme, verbose=False):
         s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
         plt.text(6, .8 * max(maxes), s)
 
-        print 'Pearson'
-        print linkCorr
-        print usageCorr
-
-        print 'Spearman'
-        print sl1
-        print su1
-
-        print 'Distance'
-        print '%0.2f' % dr1
-        print '%0.2f' % dr2
+        if verbose:
+            print '30-53 ' + direction
+            print 'Pearson'
+            print linkCorr
+            print usageCorr
+            print 'Spearman'
+            print sl1
+            print su1
+            print 'Distance'
+            print '%0.2f' % dr1
+            print '%0.2f' % dr2
 
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '-length.png', bbox_inches='tight')
@@ -763,17 +768,17 @@ def bars3(scheme, verbose=False):
         s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
         plt.text(2, .8 * max(maxes), s)
 
-        print 'Pearson'
-        print linkCorr
-        print usageCorr
-
-        print 'Spearman'
-        print sl1
-        print su1
-
-        print 'Distance'
-        print '%0.2f' % dr1
-        print '%0.2f' % dr2
+        if verbose:
+            print '30-8 ' + direction
+            print 'Pearson'
+            print linkCorr
+            print usageCorr
+            print 'Spearman'
+            print sl1
+            print su1
+            print 'Distance'
+            print '%0.2f' % dr1
+            print '%0.2f' % dr2
 
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '-length.png', bbox_inches='tight')
@@ -783,7 +788,7 @@ def bars3(scheme, verbose=False):
             print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '.png')
 
 
-def bars4(scheme):
+def bars4(scheme, verbose=False):
     """
     Creates figures to compare usage proportional for networks with N = 53,
     N = 50 and N = 8 and places them in ./figures/sensitivity/scheme/
@@ -988,23 +993,23 @@ def bars4(scheme):
         su2 = '%0.2f' % spearmanr(usage1, usage3)[0]
         su3 = '%0.2f' % spearmanr(usage2, usage3)[0]
 
-        print 'Pearson'
-        print linkCorr1, linkCorr2, linkCorr3
-        print usageCorr1, usageCorr2, usageCorr3
-
-        print 'Spearman'
-        print sl1, sl2, sl3
-        print su1, su2, su3
-
-        print 'Distance'
-        print '%0.2f' % dr1, '%0.2f' % dr2, '%0.2f' % dr3
-        print '%0.2f' % dr4, '%0.2f' % dr5, '%0.2f' % dr6
+        if verbose:
+            print 'Pearson'
+            print linkCorr1, linkCorr2, linkCorr3
+            print usageCorr1, usageCorr2, usageCorr3
+            print 'Spearman'
+            print sl1, sl2, sl3
+            print su1, su2, su3
+            print 'Distance'
+            print '%0.2f' % dr1, '%0.2f' % dr2, '%0.2f' % dr3
+            print '%0.2f' % dr4, '%0.2f' % dr5, '%0.2f' % dr6
 
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '-length.png', bbox_inches='tight')
         else:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '.png', bbox_inches='tight')
-        print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '.png')
+        if verbose:
+            print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '.png')
 
 
 def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames, admat=None):
@@ -1236,8 +1241,8 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' not in task)):
     link_dic_superRegions = link_dict(N, nlinks)
 
     for scheme in schemes:
-        bars2(scheme)
-        bars3(scheme)
+        bars2(scheme, verbose)
+        bars3(scheme, verbose)
 
 if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
     if not length:
@@ -1257,7 +1262,7 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
         nlinks = np.zeros(12)
         link_dic_superRegions = link_dict(N, nlinks)
 
-        bars4(scheme)
+        bars4(scheme, verbose)
 
 if 'level' in task:
     levels = 5
