@@ -8,7 +8,7 @@ import networkx as nx
 import matplotlib as mpl
 from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import *
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 from functions import *
 
 """
@@ -576,11 +576,27 @@ def bars2(scheme, verbose=False):
         s = 'linkCorr = ' + linkCorr + ', usageCorr = ' + usageCorr
         plt.text(6, .9 * max(maxes), s)
 
+        # Calculate Spearman correlation
+        sl1 = '%0.2f' % spearmanr(link1, link2)[0]
+        su1 = '%0.2f' % spearmanr(usage1, usage2)[0]
+
         # Calculate distance correlations
         dc, dr1, dvx, dvy = dcov_all(link1, link2)
         dc, dr2, dvx, dvy = dcov_all(usage1, usage2)
         s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
         plt.text(6, .8 * max(maxes), s)
+
+        print 'Pearson'
+        print linkCorr
+        print usageCorr
+
+        print 'Spearman'
+        print sl1
+        print su1
+
+        print 'Distance'
+        print '%0.2f' % dr1
+        print '%0.2f' % dr2
 
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '-length.png', bbox_inches='tight')
@@ -737,11 +753,27 @@ def bars3(scheme, verbose=False):
         s = 'linkCorr = ' + linkCorr + ', usageCorr = ' + usageCorr
         plt.text(2, .9 * max(maxes), s)
 
+        # Calculate Spearman correlation
+        sl1 = '%0.2f' % spearmanr(link1, link2)[0]
+        su1 = '%0.2f' % spearmanr(usage1, usage2)[0]
+
         # Calculate distance correlations
         dc, dr1, dvx, dvy = dcov_all(link1, link2)
         dc, dr2, dvx, dvy = dcov_all(usage1, usage2)
         s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
         plt.text(2, .8 * max(maxes), s)
+
+        print 'Pearson'
+        print linkCorr
+        print usageCorr
+
+        print 'Spearman'
+        print sl1
+        print su1
+
+        print 'Distance'
+        print '%0.2f' % dr1
+        print '%0.2f' % dr2
 
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '-length.png', bbox_inches='tight')
@@ -948,6 +980,25 @@ def bars4(scheme):
         s4 = 'usage(8,30) = ' + '%0.2f' % dr4 + ', usage(8,53) = ' + '%0.2f' % dr5 + ', usage(30,53) = ' + '%0.2f' % dr6
         plt.text(.5 * bw, .70 * max(maxes), s3, fontsize=8)
         plt.text(.5 * bw, .62 * max(maxes), s4, fontsize=8)
+
+        sl1 = '%0.2f' % spearmanr(link1, link2)[0]
+        sl2 = '%0.2f' % spearmanr(link1, link3)[0]
+        sl3 = '%0.2f' % spearmanr(link2, link3)[0]
+        su1 = '%0.2f' % spearmanr(usage1, usage2)[0]
+        su2 = '%0.2f' % spearmanr(usage1, usage3)[0]
+        su3 = '%0.2f' % spearmanr(usage2, usage3)[0]
+
+        print 'Pearson'
+        print linkCorr1, linkCorr2, linkCorr3
+        print usageCorr1, usageCorr2, usageCorr3
+
+        print 'Spearman'
+        print sl1, sl2, sl3
+        print su1, su2, su3
+
+        print 'Distance'
+        print '%0.2f' % dr1, '%0.2f' % dr2, '%0.2f' % dr3
+        print '%0.2f' % dr4, '%0.2f' % dr5, '%0.2f' % dr6
 
         if length:
             plt.savefig('./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '-length.png', bbox_inches='tight')
