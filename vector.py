@@ -68,6 +68,40 @@ def usageCalc(F, quantiles, Usages, nodes, links, name):
     return
 
 
+def usageCalcDaily(iF, quantiles, iUsages, nodes, links, name):
+    """
+    Calculate usages for daytime and nighttime and save to file
+    """
+    days = lapse / 24
+    hours = np.append(range(6, days * 24), range(6))
+    splitHours = np.split(hours, days * 2)
+    dayTime = np.concatenate(splitHours[0::2])
+    nightTime = np.concatenate(splitHours[1::2])
+
+    for d in ['day', 'night']:
+        if d == 'day':
+            Usages = iUsages[:, :, dayTime]
+            F = iF[:, dayTime]
+        elif d == 'night':
+            Usages = iUsages[:, :, nightTime]
+            F = iF[:, nightTime]
+
+        Node_contributions = np.zeros((nodes, links))  # empty array for calculated usages
+        for node in range(nodes):
+            for link in range(links):
+                # Stacking and sorting data
+                F_vert = np.reshape(F[link, :lapse / 2], (len(F[link, :lapse / 2]), 1))
+                exp_vert = np.reshape(Usages[link, node, :lapse / 2], (len(Usages[link, node, :lapse / 2]), 1))
+                F_matrix = np.hstack([F_vert, exp_vert])
+                F_matrix[F_matrix[:, 0].argsort()]
+
+                H, bin_edges = binMaker(F_matrix, quantiles[link], lapse / 2)
+                Node_contributions[node, link] = node_contrib(H, bin_edges, linkID=link)
+
+        np.save(outPath + 'Node_contrib_' + mode + '_' + direction + '_' + d + '_' + str(name) + '.npy', Node_contributions)
+    return
+
+
 def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar'):
     """
     Make network figures of a node's usage of links for both import, export and
@@ -619,35 +653,44 @@ if 'trace' in task:
 
         for direction in directions:
             print(str(direction))
-            if direction == 'combined':
-                Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_import_all_alpha=same.npy')
-                Usages += np.load('./linkcolouring/old_' + mode + '_copper_link_mix_export_all_alpha=same.npy')
-                Usages /= 2
-            else:
-                Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_' + direction + '_all_alpha=same.npy')
+            if not os.path.exists(outPath + mode + '_' + direction + '_' + 'usageS.npy'):
+                if direction == 'combined':
+                    Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_import_all_alpha=same.npy')
+                    Usages += np.load('./linkcolouring/old_' + mode + '_copper_link_mix_export_all_alpha=same.npy')
+                    Usages /= 2
+                else:
+                    Usages = np.load('./linkcolouring/old_' + mode + '_copper_link_mix_' + direction + '_all_alpha=same.npy')
 
-            links, nodes, lapse = Usages.shape
-            usageS = np.zeros((links, nodes, lapse))
-            usageW = np.zeros((links, nodes, lapse))
-            for l in xrange(links):
-                usageS[l] = Usages[l] * normGenS
-                usageW[l] = Usages[l] * normGenW
-            np.save(outPath + mode + '_' + direction + '_' + 'usageS.npy', usageS)
-            np.save(outPath + mode + '_' + direction + '_' + 'usageW.npy', usageW)
-            if mode == 'square':
-                usageB = np.zeros((links, nodes, lapse))
-                for l in range(links):
-                    usageB[l] = Usages[l] * normGenB
-                np.save(outPath + mode + '_' + direction + '_' + 'usageB.npy', usageB)
-            Usages = None
+                links, nodes, lapse = Usages.shape
+                usageS = np.zeros((links, nodes, lapse))
+                usageW = np.zeros((links, nodes, lapse))
+                for l in xrange(links):
+                    usageS[l] = Usages[l] * normGenS
+                    usageW[l] = Usages[l] * normGenW
+                np.save(outPath + mode + '_' + direction + '_' + 'usageS.npy', usageS)
+                np.save(outPath + mode + '_' + direction + '_' + 'usageW.npy', usageW)
+                if mode == 'square':
+                    usageB = np.zeros((links, nodes, lapse))
+                    for l in range(links):
+                        usageB[l] = Usages[l] * normGenB
+                    np.save(outPath + mode + '_' + direction + '_' + 'usageB.npy', usageB)
+                Usages = None
+
+            else:
+                usageS = np.load(outPath + mode + '_' + direction + '_' + 'usageS.npy')
+                usageW = np.load(outPath + mode + '_' + direction + '_' + 'usageW.npy')
+                usageB = np.load(outPath + mode + '_' + direction + '_' + 'usageB.npy')
 
             print('Solar')
             usageCalc(F, quantiles, usageS, nodes, links, 'solar')
+            usageCalcDaily(F, quantiles, usageS, nodes, links, 'solar')
             print('Wind')
             usageCalc(F, quantiles, usageW, nodes, links, 'wind')
+            usageCalcDaily(F, quantiles, usageW, nodes, links, 'wind')
             if mode == 'square':
                 print('Backup')
                 usageCalc(F, quantiles, usageB, nodes, links, 'backup')
+                usageCalcDaily(F, quantiles, usageB, nodes, links, 'backup')
 
 
 if 'plot' in task:
