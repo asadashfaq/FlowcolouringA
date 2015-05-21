@@ -676,21 +676,34 @@ if 'trace' in task:
                     np.save(outPath + mode + '_' + direction + '_' + 'usageB.npy', usageB)
                 Usages = None
 
-            else:
-                usageS = np.load(outPath + mode + '_' + direction + '_' + 'usageS.npy')
-                usageW = np.load(outPath + mode + '_' + direction + '_' + 'usageW.npy')
-                usageB = np.load(outPath + mode + '_' + direction + '_' + 'usageB.npy')
+                print('Solar')
+                usageCalc(F, quantiles, usageS, nodes, links, 'solar')
+                usageCalcDaily(F, quantiles, usageS, nodes, links, 'solar')
+                print('Wind')
+                usageCalc(F, quantiles, usageW, nodes, links, 'wind')
+                usageCalcDaily(F, quantiles, usageW, nodes, links, 'wind')
+                if mode == 'square':
+                    print('Backup')
+                    usageCalc(F, quantiles, usageB, nodes, links, 'backup')
+                    usageCalcDaily(F, quantiles, usageB, nodes, links, 'backup')
 
-            print('Solar')
-            usageCalc(F, quantiles, usageS, nodes, links, 'solar')
-            usageCalcDaily(F, quantiles, usageS, nodes, links, 'solar')
-            print('Wind')
-            usageCalc(F, quantiles, usageW, nodes, links, 'wind')
-            usageCalcDaily(F, quantiles, usageW, nodes, links, 'wind')
-            if mode == 'square':
-                print('Backup')
-                usageCalc(F, quantiles, usageB, nodes, links, 'backup')
-                usageCalcDaily(F, quantiles, usageB, nodes, links, 'backup')
+            else:
+                print('Solar')
+                usage = np.load(outPath + mode + '_' + direction + '_' + 'usageS.npy')
+                links, nodes, lapse = usage.shape
+                usageCalc(F, quantiles, usage, nodes, links, 'solar')
+                usageCalcDaily(F, quantiles, usage, nodes, links, 'solar')
+                print('Wind')
+                usage = np.load(outPath + mode + '_' + direction + '_' + 'usageW.npy')
+                links, nodes, lapse = usage.shape
+                usageCalc(F, quantiles, usage, nodes, links, 'wind')
+                usageCalcDaily(F, quantiles, usage, nodes, links, 'wind')
+                if mode == 'square':
+                    print('Backup')
+                    usage = np.load(outPath + mode + '_' + direction + '_' + 'usageB.npy')
+                    links, nodes, lapse = usage.shape
+                    usageCalc(F, quantiles, usage, nodes, links, 'backup')
+                    usageCalcDaily(F, quantiles, usage, nodes, links, 'backup')
 
 
 if 'plot' in task:
