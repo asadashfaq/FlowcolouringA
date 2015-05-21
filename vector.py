@@ -513,6 +513,8 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         cmap = 'Greys'
     links, nodes, lapse = usages.shape
     usages = np.reshape(usages, (links, nodes, lapse / 24, 24))
+    totalHour = np.zeros((levels, 24))
+    totalNormed = np.zeros((levels, 24))
     for node in range(nodes):
         nl = neighbor_levels(node, levels, admat)
         hourSums = np.zeros((levels, 24))
@@ -522,6 +524,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
             meanSum = np.sum(np.mean(usages[ll, node], axis=1), axis=0)
             linkSum = sum(quantiles[ll])
             hourSums[lvl] = meanSum / linkSum
+        totalHour += hourSums
 
         plt.figure(figsize=(9, 3))
         ax = plt.subplot()
@@ -540,6 +543,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         plt.close()
 
         hourSums = hourSums / np.sum(hourSums, axis=1)[:, None]
+        totalNormed += hourSums
         plt.figure(figsize=(9, 3))
         ax = plt.subplot()
         plt.pcolormesh(hourSums, cmap=cmap)
@@ -552,9 +556,44 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
         plt.ylabel('Link level')
         plt.axis([0, 24, 0, 5])
-        plt.title(nnames[node] + ' ' + direction)
+        plt.title(nnames[node] + ' ' + direction + ' ' + color)
         plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + color + '_' + direction + '.png', bbox_inches='tight')
         plt.close()
+
+    # Plot average hourly usage
+    totalHour /= nodes
+    plt.figure(figsize=(9, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(totalHour, cmap=cmap)
+    plt.colorbar().set_label(label=r'$ \sum_l\, \left\langle H_{ln}(t) \right\rangle / \sum_l\, (\mathcal{K}^T_l)$', size=10)
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(.5, 23.5, 24))
+    ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.axis([0, 24, 0, 5])
+    plt.title('Average ' + direction + ' ' + color)
+    plt.savefig(figPath + '/hourly/' + str(scheme) + '/total_' + color + '_' + direction + '.png', bbox_inches='tight')
+    plt.close()
+
+    totalNormed /= nodes
+    plt.figure(figsize=(9, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(totalNormed, cmap=cmap)
+    plt.colorbar().set_label(label=r'$ \sum_l\, \left\langle H_{ln}(t) \right\rangle / \sum_l\, (\mathcal{K}^T_l)$', size=10)
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(.5, 23.5, 24))
+    ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.axis([0, 24, 0, 5])
+    plt.title('Average ' + direction + ' ' + color)
+    plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/total_' + color + '_' + direction + '.png', bbox_inches='tight')
+    plt.close()
 
 if 'trace' in task:
     print('tracing')
