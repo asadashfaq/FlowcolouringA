@@ -72,11 +72,11 @@ def calc_contribution(b, verbose=False):
             if verbose:
                 print('Direction: ' + direction)
             if direction == 'combined':
-                Usages = np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_import_b_' + str(b) + '.npy')
-                Usages += np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_export_b_' + str(b) + '.npy')
+                Usages = np.load('./constrained/linkcolouring/' + scheme + '_link_mix_import_b_' + str(b) + '.npy')
+                Usages += np.load('./constrained/linkcolouring/' + scheme + '_link_mix_export_b_' + str(b) + '.npy')
                 Usages /= 2
             else:
-                Usages = np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_' + str(direction) + '_b_' + str(b) + '.npy')
+                Usages = np.load('./constrained/linkcolouring/' + scheme + '_link_mix_' + str(direction) + '_b_' + str(b) + '.npy')
             print('Loaded ' + scheme + ' usages')
 
             # Calculate usages and save to file
@@ -280,8 +280,8 @@ Calculate powermixes and nodes' usages of links and save results to file.
 """
 if 'trace' in task:
     print('Mode selected: flow tracing')
-    b = np.linspace(0.05, 1.45, 15)
-    p = Pool(4)
+    b = np.linspace(0.05, 1.45, 30)
+    p = Pool(8)
     p.map(caller, b)
 
 """
