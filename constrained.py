@@ -45,7 +45,7 @@ def calc_usage(N, F, lapse, scheme, b):
     N2 is a new nodes object containing individual powermixes for import and
     export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
     """
-    N2, power_mixes_total = track_flows(N, F, lapse=lapse)
+    N2, power_mixes_total = track_flows(N, admat=N.pathadmat, F, lapse=lapse)
 
     """
     track_link_usage_total tracks each nodes usage of all links. The results
@@ -72,10 +72,9 @@ def calc_contribution(b, verbose=False):
             if verbose:
                 print('Direction: ' + direction)
             if direction == 'combined':
-                Usages1 = np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_import_b_' + str(b) + '.npy')
-                Usages2 = np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_export_b_' + str(b) + '.npy')
-                Usages = Usages1 + Usages2
-                Usages1, Usages2 = None, None
+                Usages = np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_import_b_' + str(b) + '.npy')
+                Usages += np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_export_b_' + str(b) + '.npy')
+                Usages /= 2
             else:
                 Usages = np.load('./constrained/linkcolouring/one_year/' + scheme + '_link_mix_' + str(direction) + '_b_' + str(b) + '.npy')
             print('Loaded ' + scheme + ' usages')
@@ -92,7 +91,7 @@ def calc_contribution(b, verbose=False):
                     F_matrix = np.hstack([F_vert, exp_vert])  # [flow, usage]
                     F_matrix[F_matrix[:, 0].argsort()]
 
-                    H, bin_edges = binMaker(F_matrix, quantiles[link], lapse, N_bins)
+                    H, bin_edges = binMaker(F_matrix, quantiles[link], lapse)
                     Node_contributions[node, link] = node_contrib(H, bin_edges)
 
             # save results to file
@@ -104,9 +103,8 @@ def calc_contribution(b, verbose=False):
 
 
 def caller(scheme):
-    N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz')
-#    for b in np.linspace(0.05, 1.5, 30):
     for b in np.linspace(0.05, 1.45, 15):
+        N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_DC_' + scheme + '.npz')
         F = np.load('./ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_DC_' + scheme + '_flows.npy')
         calc_usage(N, F, lapse, scheme, b)
 
@@ -273,7 +271,7 @@ def plotter():
         plt.savefig('./figures/constrained/link-usage-' + str(link) + '.pdf', bbox_inches='tight')
         plt.close()
 
-lapse = 8760  # 280512
+lapse = 8766  # 280512
 schemes = ['lin', 'sqr']
 directions = ['import', 'export', 'combined']
 
@@ -290,9 +288,7 @@ Calculate nodes' contributions and save results to file.
 """
 if 'usage' in task:
     print('Mode selected: usage calculation')
-    N = np.load('./ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz', mmap_mode='r + ')
-    nNodes = len(N['id'])
-    N_bins = 16
+    nNodes = 30
     b = np.linspace(0.05, 1.5, 30)
     p = Pool(8)
     p.map(calc_contribution, b)
@@ -303,10 +299,9 @@ Create various plots of usage and save figures to ./figures/
 if (('plot' in task) and ('total' not in task) and ('area' not in task)):
     print('Plotting node- and link usages')
     N = EU_Nodes()
-    F = abs(np.load('./ConstrainedFlowData/Europe_aHE_0.05q99_DC_lin_flows.npy'))
-    link_dic = link_dict(N, F)
     nodes = range(len(N))
-    links = range(len(F))
+    links = 50
+    link_dic = link_dict(N, F)
     names = np.array([str(N[i].label) for i in range(len(N))])
     link_names = link_namer(N, F)
     N = np.load('./ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz', mmap_mode='r + ')
