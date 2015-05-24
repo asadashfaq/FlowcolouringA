@@ -44,6 +44,8 @@ def link_namer(N=None, F=None):
             N = EU_Nodes_usage('linear.npz')
         if not F:
             F = np.load('./results/linear-flows.npy')
+        elif type(F) == int:
+            F = np.zeros(F)
         lnames = []
         for link in range(len(F)):
             lnames.append(link_label(link, N))
@@ -101,6 +103,8 @@ def link_dict(N=None, F=None):
         N = EU_Nodes_usage('linear.npz')
     if F == None:
         F = np.load('./results/linear-flows.npy')
+    elif type(F) == int:
+        F = np.zeros(F)
     ldict = {}
     for link in range(len(F)):
         label = link_direction(link, N)
