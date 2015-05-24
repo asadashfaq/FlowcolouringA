@@ -45,7 +45,7 @@ def calc_usage(N, F, lapse, scheme, b):
     N2 is a new nodes object containing individual powermixes for import and
     export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
     """
-    N2, power_mixes_total = track_flows(N, admat=N.pathadmat, F, lapse=lapse)
+    N2, power_mixes_total = track_flows(N, F, admat=N.pathadmat, lapse=lapse)
 
     """
     track_link_usage_total tracks each nodes usage of all links. The results
@@ -102,8 +102,8 @@ def calc_contribution(b, verbose=False):
                 print('Saved 99% quantiles to ./constrained/quantiles_' + scheme + '_b_' + str(b) + '.npy')
 
 
-def caller(scheme):
-    for b in np.linspace(0.05, 1.45, 15):
+def caller(b):
+    for scheme in schemes:
         N = europe_plus_Nodes(load_filename='../ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_DC_' + scheme + '.npz')
         F = np.load('./ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_DC_' + scheme + '_flows.npy')
         calc_usage(N, F, lapse, scheme, b)
@@ -280,8 +280,9 @@ Calculate powermixes and nodes' usages of links and save results to file.
 """
 if 'trace' in task:
     print('Mode selected: flow tracing')
-    p = Pool(2)
-    p.map(caller, schemes)
+    b = np.linspace(0.05, 1.45, 15)
+    p = Pool(4)
+    p.map(caller, b)
 
 """
 Calculate nodes' contributions and save results to file.
