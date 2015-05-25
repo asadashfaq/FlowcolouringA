@@ -280,7 +280,7 @@ Calculate powermixes and nodes' usages of links and save results to file.
 """
 if 'trace' in task:
     print('Mode selected: flow tracing')
-    b = np.linspace(0.05, 1.45, 30)
+    b = np.linspace(0.05, 1.5, 30)
     p = Pool(8)
     p.map(caller, b)
 
@@ -301,11 +301,11 @@ if (('plot' in task) and ('total' not in task) and ('area' not in task)):
     print('Plotting node- and link usages')
     N = EU_Nodes()
     nodes = range(len(N))
-    links = 50
-    link_dic = link_dict(N, F)
+    links = range(50)
+    link_dic = link_dict(N, links)
     names = np.array([str(N[i].label) for i in range(len(N))])
-    link_names = link_namer(N, F)
-    N = np.load('./ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz', mmap_mode='r + ')
+    link_names = link_namer(N, links)
+    N = np.load('./ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz', mmap_mode='r+')
     node_mean_load = N['mean']
     N = None
     plotter()
