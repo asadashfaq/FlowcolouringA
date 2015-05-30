@@ -699,7 +699,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         ax.set_xticks(np.linspace(.5, 23.5, 24))
         ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
         plt.ylabel('Link level')
-        plt.axis([0, 24, 0, 5])
+        plt.axis([0, 24, 0, levels])
         plt.title(nnames[node] + ' ' + direction + ' ' + color)
         plt.savefig(figPath + '/hourly/' + str(scheme) + '/' + str(node) + '_' + color + '_' + direction + '.png', bbox_inches='tight')
         plt.close()
@@ -717,7 +717,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         ax.set_xticks(np.linspace(.5, 23.5, 24))
         ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
         plt.ylabel('Link level')
-        plt.axis([0, 24, 0, 5])
+        plt.axis([0, 24, 0, levels])
         plt.title(nnames[node] + ' ' + direction + ' ' + color)
         plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + color + '_' + direction + '.png', bbox_inches='tight')
         plt.close()
@@ -735,7 +735,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticks(np.linspace(.5, 23.5, 24))
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.axis([0, 24, 0, 5])
+    plt.axis([0, 24, 0, levels])
     plt.title('Average ' + direction + ' ' + color)
     plt.savefig(figPath + '/hourly/' + str(scheme) + '/total_' + color + '_' + direction + '.png', bbox_inches='tight')
     plt.close()
@@ -752,7 +752,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticks(np.linspace(.5, 23.5, 24))
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.axis([0, 24, 0, 5])
+    plt.axis([0, 24, 0, levels])
     plt.title('Average ' + direction + ' ' + color)
     plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/total_' + color + '_' + direction + '.png', bbox_inches='tight')
     plt.close()
@@ -861,7 +861,7 @@ if 'plot' in task:
         p.map(usagePlotter, directions)
 
     if 'levels' in task:
-        levels = 5
+        levels = 4
         N = EU_Nodes_usage()
         colors = ['solar', 'wind']
         c = ['S', 'W']
@@ -894,7 +894,7 @@ if 'plot' in task:
 
     if 'hour' in task:
         print('Plotting hourly link levels')
-        levels = 5
+        levels = 4
         N = EU_Nodes_usage()
         colors = ['solar', 'wind']
         c = ['S', 'W']

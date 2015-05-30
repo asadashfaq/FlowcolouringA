@@ -1157,7 +1157,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
         ax.set_xticks(np.linspace(.5, 23.5, 24))
         ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
         plt.ylabel('Link level')
-        plt.axis([0, 24, 0, 5])
+        plt.axis([0, 24, 0, levels])
         plt.title(nnames[node] + ' ' + direction)
         plt.savefig('./figures/hourly/' + str(scheme) + '/' + str(node) + '_' + str(direction) + '.png', bbox_inches='tight')
         plt.close()
@@ -1175,7 +1175,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
         ax.set_xticks(np.linspace(.5, 23.5, 24))
         ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
         plt.ylabel('Link level')
-        plt.axis([0, 24, 0, 5])
+        plt.axis([0, 24, 0, levels])
         plt.title(nnames[node] + ' ' + direction)
         plt.savefig('./figures/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + str(direction) + '.png', bbox_inches='tight')
         plt.close()
@@ -1193,7 +1193,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticks(np.linspace(.5, 23.5, 24))
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.axis([0, 24, 0, 5])
+    plt.axis([0, 24, 0, levels])
     plt.savefig('./figures/hourly/' + str(scheme) + '/total_' + direction + '.png', bbox_inches='tight')
     plt.close()
 
@@ -1209,7 +1209,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticks(np.linspace(.5, 23.5, 24))
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.axis([0, 24, 0, 5])
+    plt.axis([0, 24, 0, levels])
     plt.savefig('./figures/hourly/' + str(scheme) + '/normed/total_' + direction + '.png', bbox_inches='tight')
     plt.close()
 
@@ -1301,7 +1301,7 @@ if (('sensitivity' in task) and ('compare' in task) and ('all' in task)):
         bars4(scheme, verbose)
 
 if 'level' in task:
-    levels = 5
+    levels = 4
     N = EU_Nodes_usage()
     lnames = np.array(link_namer(N))
     nnames = np.array(node_namer(N))
@@ -1330,7 +1330,7 @@ if 'level' in task:
 
 if 'hour' in task:
     print('Plotting hourly link levels')
-    levels = 5
+    levels = 4
     N = EU_Nodes_usage()
     lnames = np.array(link_namer(N))
     nnames = np.array(node_namer(N))
