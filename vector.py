@@ -736,7 +736,6 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
     plt.axis([0, 24, 0, levels])
-    plt.title('Average ' + direction + ' ' + color)
     plt.savefig(figPath + '/hourly/' + str(scheme) + '/total_' + color + '_' + direction + '.png', bbox_inches='tight')
     plt.close()
 
@@ -753,7 +752,6 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
     plt.axis([0, 24, 0, levels])
-    plt.title('Average ' + direction + ' ' + color)
     plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/total_' + color + '_' + direction + '.png', bbox_inches='tight')
     plt.close()
 
