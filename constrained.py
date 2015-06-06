@@ -117,7 +117,7 @@ def plotter():
     """
     # Country's usage of all links as function of b
     for node in nodes:
-        plt.figure(figsize=(7, 14))
+        plt.figure(figsize=(12, 6))
         usages = []
         totalUsagesLin = []
         scheme = 'lin'
@@ -129,11 +129,10 @@ def plotter():
             usages.append(.5 * N_usages[node] / quantiles)
             totalUsagesLin.append(np.sum(.5 * N_usages, 1) / node_mean_load)
         usages = np.array(usages).transpose()
-        ax1 = plt.subplot(211)
+        ax1 = plt.subplot(121)
         plt.pcolormesh(usages, cmap='Blues')
         plt.colorbar()
         plt.xlabel(r'$\beta$')
-        plt.title(names[node] + '\'s usage of links, localised')
         ax1.set_xticks(np.linspace(0, 30, 16))
         ax1.set_xticklabels(np.linspace(0, 1.5, 16))
         ax1.set_yticks(np.linspace(.5, 49.5, 50))
@@ -150,11 +149,10 @@ def plotter():
             usages.append(.5 * N_usages[node] / quantiles)
             totalUsagesSqr.append(np.sum(.5 * N_usages, 1) / node_mean_load)
         usages = np.array(usages).transpose()
-        ax2 = plt.subplot(212)
+        ax2 = plt.subplot(122)
         plt.pcolormesh(usages, cmap='Blues')
         plt.colorbar()
         plt.xlabel(r'$\beta$')
-        plt.title(names[node] + '\'s usage of links, synchronised')
         ax2.set_xticks(np.linspace(0, 30, 16))
         ax2.set_xticklabels(np.linspace(0, 1.5, 16))
         ax2.set_yticks(np.linspace(.5, 49.5, 50))
@@ -169,8 +167,8 @@ def plotter():
     totalUsagesSqr = totalUsagesSqr[node_mean_load.argsort()]
     names_sort = names[node_mean_load.argsort()]
     np.savez('./results/constrained_results', lin=totalUsagesLin, sqr=totalUsagesSqr, names=names_sort)
-    plt.figure(figsize=(7, 14))
-    ax3 = plt.subplot(211)
+    plt.figure(figsize=(12, 6))
+    ax3 = plt.subplot(121)
     ax3.set_xticks(np.linspace(0, 30, 16))
     ax3.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax3.set_yticks(np.linspace(.5, 29.5, 30))
@@ -178,8 +176,7 @@ def plotter():
     plt.pcolormesh(totalUsagesLin, cmap='Blues')
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, localised')
-    ax4 = plt.subplot(212)
+    ax4 = plt.subplot(122)
     ax4.set_xticks(np.linspace(0, 30, 16))
     ax4.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax4.set_yticks(np.linspace(.5, 29.5, 30))
@@ -187,14 +184,13 @@ def plotter():
     plt.pcolormesh(totalUsagesSqr, cmap='Blues')
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, synchronised')
     plt.savefig('./figures/constrained/total-network-usage.pdf', bbox_inches='tight')
     plt.close()
 
     # Figure plotting the same as just above, but viewed from a different angle
     betas = np.linspace(0.05, 1.5, 30)
-    plt.figure(figsize=(7, 14))
-    ax5 = plt.subplot(211)
+    plt.figure(figsize=(12, 6))
+    ax5 = plt.subplot(121)
     for n in range(len(names_sort)):
         if n in [0, 1, 2, 8, 13, 19, 21]:
             col = '#000099'
@@ -210,7 +206,7 @@ def plotter():
     ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesLin))])
     plt.title('Total network usage, localised')
-    ax6 = plt.subplot(212)
+    ax6 = plt.subplot(122)
     for n in range(len(names_sort)):
         if n in [0, 1, 2, 8, 13, 19, 21]:
             col = '#000099'
@@ -230,7 +226,7 @@ def plotter():
 
     # All countries usage of a single link as function of b
     for link in links:
-        plt.figure(figsize=(7, 14))
+        plt.figure(figsize=(12, 6))
         usages = []
         scheme = 'lin'
         for b in np.linspace(0.05, 1.5, 30):
@@ -240,7 +236,7 @@ def plotter():
             N_usages = np.load('./constrained/Node_contrib_' + scheme + '_combined_b_' + str(b) + '.npy')
             usages.append(.5 * N_usages[:, link] / quantiles[link])
         usages = np.array(usages).transpose()
-        ax7 = plt.subplot(211)
+        ax7 = plt.subplot(121)
         ax7.set_xticks(np.linspace(0, 30, 16))
         ax7.set_xticklabels(np.linspace(0, 1.5, 16))
         ax7.set_yticks(np.linspace(.5, 29.5, 30))
@@ -259,7 +255,7 @@ def plotter():
             N_usages = np.load('./constrained/Node_contrib_' + scheme + '_combined_b_' + str(b) + '.npy')
             usages.append(.5 * N_usages[:, link] / quantiles[link])
         usages = np.array(usages).transpose()
-        ax8 = plt.subplot(212)
+        ax8 = plt.subplot(122)
         ax8.set_xticks(np.linspace(0, 30, 16))
         ax8.set_xticklabels(np.linspace(0, 1.5, 16))
         ax8.set_yticks(np.linspace(.5, 29.5, 30))
@@ -321,8 +317,8 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     names = results['names']
 
     # Figure comparing nodes' total network usage as function of b
-    plt.figure(figsize=(7, 14))
-    ax3 = plt.subplot(211)
+    plt.figure(figsize=(12, 6))
+    ax3 = plt.subplot(121)
     ax3.set_xticks(np.linspace(0, 30, 16))
     ax3.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax3.set_yticks(np.linspace(.5, 29.5, 30))
@@ -330,8 +326,7 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     plt.pcolormesh(totalUsagesLin, cmap='Blues')
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, localised')
-    ax4 = plt.subplot(212)
+    ax4 = plt.subplot(122)
     ax4.set_xticks(np.linspace(0, 30, 16))
     ax4.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax4.set_yticks(np.linspace(.5, 29.5, 30))
@@ -339,13 +334,12 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     plt.pcolormesh(totalUsagesSqr, cmap='Blues')
     plt.colorbar()
     plt.xlabel(r'$\beta$')
-    plt.title('Total network usage, synchronised')
     plt.savefig('./figures/constrained/total-network-usage.pdf', bbox_inches='tight')
 
     # Figure plotting the same as just above, but viewed from a different angle
     betas = np.linspace(0.05, 1.5, 30)
-    plt.figure(figsize=(7, 14))
-    ax5 = plt.subplot(211)
+    plt.figure(figsize=(12, 6))
+    ax5 = plt.subplot(121)
     for n in range(len(names)):
         if n in [4, 7, 9, 14, 15]:
             col = '#000099'
@@ -361,7 +355,7 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
     plt.axis([0.05, 1.5, 0, np.ceil(np.max(totalUsagesLin))])
     plt.title('Total network usage, localised')
-    ax6 = plt.subplot(212)
+    ax6 = plt.subplot(122)
     for n in range(len(names)):
         if n in [4, 7, 9, 14, 15]:
             col = '#000099'
@@ -381,8 +375,8 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     # normalisation across betas
     normedUsagesLin = totalUsagesLin / np.sum(totalUsagesLin, 0)
     normedUsagesSqr = totalUsagesSqr / np.sum(totalUsagesSqr, 0)
-    plt.figure(figsize=(7, 14))
-    ax5 = plt.subplot(211)
+    plt.figure(figsize=(12, 6))
+    ax5 = plt.subplot(121)
     for n in range(len(names)):
         if n in [4, 7, 9, 14, 15]:
             col = '#000099'
@@ -398,7 +392,7 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     ax5.set_ylabel(r'Network usage [MW$_T$/MW$_L$], normalised across $\beta$')
     plt.axis([0.05, 1.5, 0, 1.1 * np.max(normedUsagesLin)])
     plt.title('Total network usage, localised')
-    ax6 = plt.subplot(212)
+    ax6 = plt.subplot(122)
     for n in range(len(names)):
         if n in [4, 7, 9, 14, 15]:
             col = '#000099'
@@ -441,7 +435,7 @@ if (('plot' in task) and ('area' in task)):
 
         # Country's usage of all links as function of b
         for node in nodes:
-            plt.figure(figsize=(7, 14))
+            plt.figure(figsize=(12, 5))
             usages = []
             scheme = 'lin'
             for b in np.linspace(0.05, 1.5, 30):
@@ -454,7 +448,7 @@ if (('plot' in task) and ('area' in task)):
                 else:
                     usages.append(.5 * N_usages[node])
             usages = np.array(usages).transpose()
-            ax1 = plt.subplot(211)
+            ax1 = plt.subplot(121)
 
             max_usages = np.max(usages, 1)
             sort_usages = usages[max_usages.argsort()]
@@ -477,7 +471,7 @@ if (('plot' in task) and ('area' in task)):
                     plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
                     ax1.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
                     if a >= len(links) - 10:
-                        plt.text(1.52, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
                                  sort_link_names[a], color=col, va='center', fontsize=9)
                     baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
 
@@ -489,7 +483,6 @@ if (('plot' in task) and ('area' in task)):
                 plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
             else:
                 plt.ylabel(r'$\mathcal{K}^T_{ln}$ [W]')
-            plt.title(names[node] + '\'s usage of links, localised')
 
             usages = []
             scheme = 'sqr'
@@ -503,7 +496,7 @@ if (('plot' in task) and ('area' in task)):
                 else:
                     usages.append(.5 * N_usages[node])
             usages = np.array(usages).transpose()
-            ax2 = plt.subplot(212)
+            ax2 = plt.subplot(122)
 
             max_usages = np.max(usages, 1)
             sort_usages = usages[max_usages.argsort()]
@@ -526,7 +519,7 @@ if (('plot' in task) and ('area' in task)):
                     plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
                     ax2.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
                     if a >= len(links) - 10:
-                        plt.text(1.52, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
                                  sort_link_names[a], color=col, va='center', fontsize=9)
                     baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
 
@@ -534,17 +527,12 @@ if (('plot' in task) and ('area' in task)):
             ax2.set_xticklabels(np.linspace(0, 1.5, 16))
             plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
             plt.xlabel(r'$\beta$')
-            if n == 'norm':
-                plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
-            else:
-                plt.ylabel(r'$\mathcal{K}^T_{ln}$ [W]')
-            plt.title(names[node] + '\'s usage of links, synchronised')
             plt.savefig('./figures/constrained/' + saveString + 'node-usage-area-' + str(node) + '.pdf', bbox_inches='tight')
             plt.close()
 
         # All countries usage of a single link as function of b
         for link in links:
-            plt.figure(figsize=(7, 14))
+            plt.figure(figsize=(12, 5))
             usages = []
             scheme = 'lin'
             for b in betas:
@@ -557,7 +545,7 @@ if (('plot' in task) and ('area' in task)):
                 else:
                     usages.append(.5 * N_usages[:, link])
             usages = np.array(usages).transpose()
-            ax3 = plt.subplot(211)
+            ax3 = plt.subplot(121)
 
             max_usages = np.max(usages, 1)
             sort_usages = usages[max_usages.argsort()]
@@ -580,7 +568,7 @@ if (('plot' in task) and ('area' in task)):
                     plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
                     ax3.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
                     if a >= len(nodes) - 10:
-                        plt.text(1.52, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2, sort_names[a], color=col, va='center', fontsize=9)
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2, sort_names[a], color=col, va='center', fontsize=9)
                     baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
 
             ax3.set_xticks(np.linspace(0, 1.5, 16))
@@ -591,7 +579,6 @@ if (('plot' in task) and ('area' in task)):
                 plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
             else:
                 plt.ylabel(r'$\mathcal{K}^T_{ln}$ [W]')
-            plt.title('Usage of link ' + link_names[link] + ', localised')
 
             usages = []
             scheme = 'sqr'
@@ -605,7 +592,7 @@ if (('plot' in task) and ('area' in task)):
                 else:
                     usages.append(.5 * N_usages[:, link])
             usages = np.array(usages).transpose()
-            ax4 = plt.subplot(212)
+            ax4 = plt.subplot(122)
 
             max_usages = np.max(usages, 1)
             sort_usages = usages[max_usages.argsort()]
@@ -628,7 +615,7 @@ if (('plot' in task) and ('area' in task)):
                     plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
                     ax4.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
                     if a >= len(nodes) - 10:
-                        plt.text(1.52, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
                                  sort_names[a], color=col, va='center', fontsize=9)
                     baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
 
@@ -636,10 +623,5 @@ if (('plot' in task) and ('area' in task)):
             ax4.set_xticklabels(np.linspace(0, 1.5, 16))
             plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
             plt.xlabel(r'$\beta$')
-            if n == 'norm':
-                plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
-            else:
-                plt.ylabel(r'$\mathcal{K}^T_{ln}$ [W]')
-            plt.title('Usage of link ' + link_names[link] + ', synchronised')
             plt.savefig('./figures/constrained/' + saveString + 'link-usage-area-' + str(link) + '.pdf', bbox_inches='tight')
             plt.close()
