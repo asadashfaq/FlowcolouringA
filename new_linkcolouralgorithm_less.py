@@ -289,8 +289,8 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 				np.save('./results/logistic/linkcolouring/'+str(mode)+'-g-'+str(gamma)+'_link_mix_import',link_mix_import_all)
 				np.save('./results/logistic/linkcolouring/'+str(mode)+'-g-'+str(gamma)+'_link_mix_export',link_mix_export_all)
 			elif heterogen:
-				np.save('./results/heterogen/linkcoloring/'+str(mode)+'-b-'+str(heterogen)+'_link_mix_import',link_mix_import_all)
-				np.save('./results/heterogen/linkcoloring/'+str(mode)+'-b-'+str(heterogen)+'_link_mix_export',link_mix_export_all)
+				np.save('./linkcolouring/heterogen/'+str(mode)+'-b-'+str(heterogen)+'_link_mix_import',link_mix_import_all)
+				np.save('./linkcolouring/heterogen/'+str(mode)+'-b-'+str(heterogen)+'_link_mix_export',link_mix_export_all)
 			else:
 				np.save('linkcolouring/old_'+str(mode)+'_copper_boxplot_alpha='+str(alph),boxplot) 
 				np.save('linkcolouring/old_'+str(mode)+'_copper_boksplotlabel_alpha='+str(alph),boksplotlabel)
