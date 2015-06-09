@@ -57,25 +57,26 @@ def solveFlows(d):
     np.save(resPath + scheme + '_b_' + str(b) + '_flows', F)
 
 
-def traceFlow(scheme):
+def traceFlow(d):
     """
     Calculate powermixes and nodes' usages of links and save results to file.
     """
-    for b in [0]:  # B:
-        N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
-        F = np.load(resPath + scheme + '_b_' + str(b) + '_flows.npy')
+    scheme = d[0]
+    b = d[1]
+    N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
+    F = np.load(resPath + scheme + '_b_' + str(b) + '_flows.npy')
 
-        """
-        N2 is a new nodes object containing individual powermixes for import and
-        export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
-        """
-        N2, power_mixes_total = track_flows(N, F, lapse=lapse)
+    """
+    N2 is a new nodes object containing individual powermixes for import and
+    export in the variables N2[n].power_mix and N2[n].power_mix_ex respectively.
+    """
+    N2, power_mixes_total = track_flows(N, F, lapse=lapse)
 
-        """
-        track_link_usage_total tracks each nodes usage of all links. The results
-        are saved to files '..._links_ex_...' and '..._links_im_...'.
-        """
-        boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=scheme, lapse=lapse, heterogen=b)
+    """
+    track_link_usage_total tracks each nodes usage of all links. The results
+    are saved to files '..._links_ex_...' and '..._links_im_...'.
+    """
+    boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=scheme, lapse=lapse, heterogen=b)
 
 
 def calcCont(d):
@@ -211,27 +212,22 @@ def vectorTrace(d):
                 vCalcCont(F, quantiles, usage, nodes, links, 'backup', b)
 
 
+d = []
+for i in range(2 * len(B)):
+    d.append([schemes[i // len(B)], B[i % len(B)]])
+
 if 'solve' in task:
-    d = []
-    for i in range(2 * len(B)):
-        d.append([schemes[i // len(B)], B[i % len(B)]])
     p = Pool(4)
     p.map(solveFlows, d)
 
 if 'trace' in task:
-    p = Pool(2)
-    p.map(traceFlow, schemes)
+    p = Pool(4)
+    p.map(traceFlow, d)
 
 if 'cont' in task:
-    d = []
-    for i in range(2 * len(B)):
-        d.append([schemes[i // len(B)], B[i % len(B)]])
     p = Pool(4)
     p.map(calcCont, d)
 
 if 'vector' in task:
-    d = []
-    for i in range(2 * len(B)):
-        d.append([schemes[i // len(B)], B[i % len(B)]])
     p = Pool(4)
     p.map(vectorTrace, d)
