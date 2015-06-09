@@ -288,7 +288,7 @@ def track_link_usage_total(N,F,new=False,lapse=None,alph=None,mode="linear",copp
 			elif gamma:
 				np.save('./results/logistic/linkcolouring/'+str(mode)+'-g-'+str(gamma)+'_link_mix_import',link_mix_import_all)
 				np.save('./results/logistic/linkcolouring/'+str(mode)+'-g-'+str(gamma)+'_link_mix_export',link_mix_export_all)
-			elif heterogen | heterogen == 0:
+			elif heterogen != False:
 				np.save('./linkcolouring/heterogen/'+str(mode)+'-b-'+str(heterogen)+'_link_mix_import',link_mix_import_all)
 				np.save('./linkcolouring/heterogen/'+str(mode)+'-b-'+str(heterogen)+'_link_mix_export',link_mix_export_all)
 			else:
