@@ -28,20 +28,28 @@ meanEU = 345327.47685659607
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
 
+# Capacity factors
+cfW = {'BE': 2.7778, 'FR': 3.125, 'BG': 6.6667, 'DK': 2.4390, 'HR': 5.5556, 'DE': 2.7778,
+       'HU': 5.2632, 'FI': 3.7037, 'BA': 6.25, 'NL': 2.5, 'PT': 4.5455, 'NO': 3.125,
+       'LV': 3.4483, 'LT': 3.333, 'LU': 4.0, 'RO': 6.6667, 'PL': 3.125, 'CH': 7.1429,
+       'GR': 7.1429, 'EE': 3.5714, 'IT': 5.0, 'CZ': 4.7619, 'GB': 2.381, 'IE': 2.1739,
+       'ES': 5.2632, 'RS': 6.6667, 'SK': 5.8824, 'SI': 6.6667, 'SE': 3.0303, 'AT': 5.2632}
+cfS = {'AT': 5.8824, 'BA': 4.7619, 'BE': 7.1429, 'BG': 4.5455, 'CH': 5.8824, 'CZ': 6.25,
+       'DE': 6.6667, 'DK': 6.6667, 'EE': 7.6923, 'ES': 4.0, 'FI': 7.6923, 'FR': 5.0,
+       'GB': 6.6667, 'GR': 4.1667, 'HR': 5.0, 'HU': 5.5556, 'IE': 7.6923, 'IT': 4.3478,
+       'LT': 7.1429, 'LU': 7.1429, 'LV': 7.6923, 'NL': 6.6667, 'NO': 7.6923, 'PL': 6.6667,
+       'PT': 4.3478, 'RO': 5.0, 'RS': 5.2632, 'SE': 7.1429, 'SI': 5.5556, 'SK': 5.8824}
 
-def calcGamma(N, b, cfS=None, cfW=None, alpha=0.7):
+
+def calcGamma(N, b, alpha=0.7):
     """
     Calculate gamma from beta factor
     """
-    if not cfS:
-        cfS = np.load('./settings/cf_solar.npy')
-    if not cfW:
-        cfW = np.load('./settings/cf_wind.npy')
     gammas = np.zeros(len(N))
     i = 0
     for n in N:
-        gs = cfS[i] ** b * meanEU / sum([cfS[j] ** b * m.mean for j, m in enumerate(N)])
-        gw = cfW[i] ** b * meanEU / sum([cfW[j] ** b * m.mean for j, m in enumerate(N)])
+        gs = (1 / cfS[str(n.label)]) ** b * meanEU / sum([(1 / cfS[str(m.label)]) ** b * m.mean for j, m in enumerate(N)])
+        gw = (1 / cfW[str(n.label)]) ** b * meanEU / sum([(1 / cfW[str(m.label)]) ** b * m.mean for j, m in enumerate(N)])
         n.gamma = alpha * gw + (1 - alpha) * gs
         i += 1
     return N
@@ -76,7 +84,7 @@ def traceFlow(d):
     track_link_usage_total tracks each nodes usage of all links. The results
     are saved to files '..._links_ex_...' and '..._links_im_...'.
     """
-    boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=scheme, lapse=lapse, heterogen=b)
+    boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=scheme, alph=same, lapse=lapse, heterogen=b)
 
 
 def calcCont(d):
@@ -221,7 +229,7 @@ if 'solve' in task:
     p.map(solveFlows, d)
 
 if 'trace' in task:
-    p = Pool(4)
+    p = Pool(3)
     p.map(traceFlow, d)
 
 if 'cont' in task:
