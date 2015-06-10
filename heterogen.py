@@ -2,6 +2,13 @@
 from __future__ import division
 import sys
 from multiprocessing import Pool
+import matplotlib.pyplot as plt
+import shapefile
+from mpl_toolkits.basemap import Basemap
+from matplotlib.collections import LineCollection
+from matplotlib import cm
+from matplotlib.colors import LinearSegmentedColormap
+import matplotlib
 import aurespf.solvers as au
 from aurespf.tools import get_q
 from EUgrid import *
@@ -27,6 +34,7 @@ meanEU = 345327.47685659607
 
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
+figPath = './figures/heterogen/'
 
 # Capacity factors
 cfW = {'BE': 2.7778, 'FR': 3.125, 'BG': 6.6667, 'DK': 2.4390, 'HR': 5.5556, 'DE': 2.7778,
@@ -39,6 +47,17 @@ cfS = {'AT': 5.8824, 'BA': 4.7619, 'BE': 7.1429, 'BG': 4.5455, 'CH': 5.8824, 'CZ
        'GB': 6.6667, 'GR': 4.1667, 'HR': 5.0, 'HU': 5.5556, 'IE': 7.6923, 'IT': 4.3478,
        'LT': 7.1429, 'LU': 7.1429, 'LV': 7.6923, 'NL': 6.6667, 'NO': 7.6923, 'PL': 6.6667,
        'PT': 4.3478, 'RO': 5.0, 'RS': 5.2632, 'SE': 7.1429, 'SI': 5.5556, 'SK': 5.8824}
+
+all_countries = ['AUT', 'FIN', 'NLD', 'BIH', 'FRA', 'NOR', 'BEL', 'GBR', 'POL', 'BGR',
+                 'GRC', 'PRT', 'CHE', 'HRV', 'ROU', 'CZE', 'HUN', 'SRB', 'DEU', 'IRL',
+                 'SWE', 'DNK', 'ITA', 'SVN', 'ESP', 'LUX', 'SVK', 'EST', 'LVA', 'LTU']
+
+# Dictionary with index of the countries in the shapefiles
+shapefile_index = {'AUT': 16, 'BEL': 19, 'BGR': 23, 'BIH': 26, 'CHE': 40, 'CZE': 60,
+                   'DEU': 61, 'DNK': 64, 'ESP': 71, 'EST': 72, 'FIN': 74, 'FRA': 77,
+                   'GBR': 81, 'GRC': 90, 'HRV': 99, 'HUN': 101, 'IRL': 107, 'ITA': 112,
+                   'LTU': 136, 'LUX': 137, 'LVA': 138, 'NLD': 168, 'NOR': 169, 'POL': 182,
+                   'PRT': 185, 'ROU': 190, 'SRB': 210, 'SVK': 213, 'SVN': 214, 'SWE': 215}
 
 
 def calcGamma(N, b, alpha=0.7):
@@ -84,7 +103,7 @@ def traceFlow(d):
     track_link_usage_total tracks each nodes usage of all links. The results
     are saved to files '..._links_ex_...' and '..._links_im_...'.
     """
-    boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=scheme, alph=same, lapse=lapse, heterogen=b)
+    boxplot, boxplotlabel = track_link_usage_total(N2, F, mode=scheme, alph='same', lapse=lapse, heterogen=b)
 
 
 def calcCont(d):
@@ -93,13 +112,11 @@ def calcCont(d):
     """
     scheme = d[0]
     b = d[1]
-    # pick one of three transmission paradigms
     N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
     F = abs(np.load(resPath + scheme + '_b_' + str(b) + '_flows.npy'))
     # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link, :lapse]), .99) for link in range(len(F))]
 
-    # Do everything below for both import and export usages unless we want the combined case
     for direction in directions:
         if direction == 'combined':
             Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_import.npy')
@@ -108,7 +125,6 @@ def calcCont(d):
         else:
             Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_' + direction + '.npy')
 
-        # Calculate usages and save to file
         Node_contributions = np.zeros((len(N), len(F)))  # empty array for calculated usages
         for node in range(len(N)):
             for link in range(len(F)):
@@ -121,7 +137,6 @@ def calcCont(d):
                 H, bin_edges = binMaker(F_matrix, quantiles[link], lapse, N_bins)
                 Node_contributions[node, link] = node_contrib(H, bin_edges, linkID=link)
 
-        # save results to file
         np.save(resPath + 'N_cont_' + scheme + '_' + direction + '_b_' + str(b) + '.npy', Node_contributions)
         if direction == 'import':
             np.save(resPath + 'quant_' + scheme + '_b_' + str(b) + '.npy', quantiles)
@@ -220,6 +235,50 @@ def vectorTrace(d):
                 vCalcCont(F, quantiles, usage, nodes, links, 'backup', b)
 
 
+def plot_europe_map(country_weights, b=None, ax=None):
+    """
+    Plot a map from shapefiles with coutnries colored by gamma
+    """
+    if ax == None:
+        ax = plt.subplot(111)
+    m = Basemap(llcrnrlon=-10., llcrnrlat=30., urcrnrlon=50., urcrnrlat=72.,
+                projection='lcc', lat_1=40., lat_2=60., lon_0=20.,
+                resolution='l', area_thresh=1000.,
+                rsphere=(6378137.00, 6356752.3142))
+    m.drawcoastlines(linewidth=0)
+    r = shapefile.Reader(r'settings/ne_10m_admin_0_countries/ne_10m_admin_0_countries')
+    all_shapes = r.shapes()
+    all_records = r.records()
+    shapes = []
+    records = []
+    for country in all_countries:
+        shapes.append(all_shapes[shapefile_index[country]])
+        records.append(all_records[shapefile_index[country]])
+
+    country_count = 0
+    for record, shape in zip(records, shapes):
+        lons, lats = zip(*shape.points)
+        data = np.array(m(lons, lats)).T
+        if len(shape.parts) == 1:
+            segs = [data, ]
+        else:
+            segs = []
+            for i in range(1, len(shape.parts)):
+                index = shape.parts[i - 1]
+                index2 = shape.parts[i]
+                segs.append(data[index:index2])
+            segs.append(data[index2:])
+        lines = LineCollection(segs, antialiaseds=(1,))
+        lines.set_facecolor(cmap(country_weights[country_count]))
+        lines.set_edgecolors('k')
+        lines.set_linewidth(0.3)
+        ax.add_collection(lines)
+        country_count += 1
+
+    if b: plt.text(2e5, 4e6, r'$\beta = ' + str(b) + r'$', fontsize=12)
+
+
+# Parameters for parallel calling of functions
 d = []
 for i in range(2 * len(B)):
     d.append([schemes[i // len(B)], B[i % len(B)]])
@@ -239,3 +298,33 @@ if 'cont' in task:
 if 'vector' in task:
     p = Pool(4)
     p.map(vectorTrace, d)
+
+if 'map' in task:
+    scheme = 'square'
+    B = [2, 4, 6, 8]
+    myfig = plt.figure(figsize=(15, 6))
+    maxG = np.zeros(len(B))
+    gammas = np.zeros((len(B), 30))
+    for i, b in enumerate(B):
+        N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
+        gammas[i] = [n.gamma for n in N]
+        maxG[i] = max(gammas[i])
+
+    maxG = max(maxG)
+    point = 1 / maxG
+    redgreendict = {'red': [(0.0, 0.8, 0.8), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
+                    'green': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.7, 0.7)],
+                    'blue': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.0, 0.0)]}
+
+    cmap = LinearSegmentedColormap('redgreen', redgreendict, 1000)
+    gammas /= maxG
+    for j, b in enumerate(B):
+            plot_europe_map(gammas[j], b, ax=plt.subplot(1, len(B), j + 1))
+    cbar_ax = myfig.add_axes([0.2, 0.05, 0.6, 0.1])
+    cb1 = matplotlib.colorbar.ColorbarBase(cbar_ax, cmap, orientation='horizontal')
+    cb1.set_ticks([0, point, 1])
+    cb1.set_ticklabels(['0', '1', str(round(maxG, 1))])
+    cbar_ax.set_xlabel(r'Renewable penetration [$\gamma_n$]', fontsize=18)
+    cbar_ax.xaxis.set_label_position('top')
+    cbar_ax.set_xticks('none')
+    plt.savefig(figPath + 'gamma_map.pdf', bbox_inches='tight')
