@@ -312,8 +312,8 @@ if 'map' in task:
 
     maxG = max(maxG)
     point = 1 / maxG
-    redgreendict = {'red': [(0.0, 0.8, 0.8), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
-                    'green': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.7, 0.7)],
+    redgreendict = {'red': [(0.0, 0.9, 0.9), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
+                    'green': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.8, 0.8)],
                     'blue': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.0, 0.0)]}
 
     cmap = LinearSegmentedColormap('redgreen', redgreendict, 1000)
@@ -322,6 +322,7 @@ if 'map' in task:
             plot_europe_map(gammas[j], b, ax=plt.subplot(1, len(B), j + 1))
     cbar_ax = myfig.add_axes([0.2, 0.05, 0.6, 0.1])
     cb1 = matplotlib.colorbar.ColorbarBase(cbar_ax, cmap, orientation='horizontal')
+    cb1.solids.set_edgecolor('face')
     cb1.set_ticks([0, point, 1])
     cb1.set_ticklabels(['0', '1', str(round(maxG, 1))])
     cbar_ax.set_xlabel(r'Renewable penetration [$\gamma_n$]', fontsize=18)
