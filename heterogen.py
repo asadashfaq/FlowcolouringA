@@ -44,11 +44,11 @@ else:
     task = str(sys.argv[1:])
 
 schemes = ['linear', 'square']
-directions = ['combined']  # ['import', 'export', 'combined']
+directions = ['import', 'export', 'combined']
 lapse = 70128
 N_bins = 90
 nNodes = 30
-B = range(5, 11)  # range(11)
+B = range(11)
 meanEU = 345327.47685659607
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
