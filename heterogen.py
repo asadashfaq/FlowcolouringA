@@ -1,5 +1,6 @@
 #! /usr/bin/env/python
 from __future__ import division
+import os
 import sys
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
@@ -142,22 +143,19 @@ def calcCont(d):
             np.save(resPath + 'quant_' + scheme + '_b_' + str(b) + '.npy', quantiles)
 
 
-def vCalcCont(F, quantiles, Usages, nodes, links, name, b):
+def vCalcCont(F, quantiles, Usages, nodes, links, name, b, scheme, direction):
     """
     Calculate usages and save to file
     """
     Node_contributions = np.zeros((nodes, links))
     for node in range(nodes):
         for link in range(links):
-            # Stacking and sorting data
             F_vert = np.reshape(F[link, :lapse], (len(F[link, :lapse]), 1))
             exp_vert = np.reshape(Usages[link, node, :lapse], (len(Usages[link, node, :lapse]), 1))
             F_matrix = np.hstack([F_vert, exp_vert])
             F_matrix[F_matrix[:, 0].argsort()]
-
             H, bin_edges = binMaker(F_matrix, quantiles[link], lapse)
             Node_contributions[node, link] = node_contrib(H, bin_edges, linkID=link)
-
     np.save(resPath + 'N_cont_' + scheme + '_' + direction + '_b_' + str(b) + '_' + str(name) + '.npy', Node_contributions)
     return
 
@@ -168,7 +166,7 @@ def vectorTrace(d):
     """
     scheme = d[0]
     b = d[1]
-    N = np.load(resPath + 'b_' + str(b) + '_' + scheme, mmap_mode='r')
+    N = np.load(resPath + 'b_' + str(b) + '_' + scheme + '.npz', mmap_mode='r')
     F = abs(np.load(resPath + scheme + '_b_' + str(b) + '_flows.npy'))
     quantiles = [get_q(abs(F[link]), .99) for link in range(len(F))]
     nodes = 30
@@ -188,7 +186,7 @@ def vectorTrace(d):
 
     for direction in directions:
         print(str(direction))
-        if not os.path.exists(resPath + scheme + '_' + direction + '_' + 'usageS.npy'):
+        if not os.path.exists(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy'):
             if direction == 'combined':
                 Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_import.npy')
                 Usages += np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_export.npy')
@@ -202,37 +200,37 @@ def vectorTrace(d):
             for l in xrange(links):
                 usageS[l] = Usages[l] * normGenS
                 usageW[l] = Usages[l] * normGenW
-            np.save(resPath + scheme + '_' + direction + '_' + 'usageS.npy', usageS)
-            np.save(resPath + scheme + '_' + direction + '_' + 'usageW.npy', usageW)
+            np.save(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy', usageS)
+            np.save(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageW.npy', usageW)
             if scheme == 'square':
                 usageB = np.zeros((links, nodes, lapse))
                 for l in range(links):
                     usageB[l] = Usages[l] * normGenB
-                np.save(resPath + scheme + '_' + direction + '_' + 'usageB.npy', usageB)
+                np.save(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageB.npy', usageB)
             Usages = None
 
             print('Solar')
-            vCalcCont(F, quantiles, usageS, nodes, links, 'solar', b)
+            vCalcCont(F, quantiles, usageS, nodes, links, 'solar', b, scheme, direction)
             print('Wind')
-            vCalcCont(F, quantiles, usageW, nodes, links, 'wind', b)
+            vCalcCont(F, quantiles, usageW, nodes, links, 'wind', b, scheme, direction)
             if scheme == 'square':
                 print('Backup')
-                vCalcCont(F, quantiles, usageB, nodes, links, 'backup', b)
+                vCalcCont(F, quantiles, usageB, nodes, links, 'backup', b, scheme, direction)
 
         else:
             print('Solar')
-            usage = np.load(resPath + scheme + '_' + direction + '_' + 'usageS.npy')
+            usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy')
             links, nodes, lapse = usage.shape
-            vCalcCont(F, quantiles, usage, nodes, links, 'solar', b)
+            vCalcCont(F, quantiles, usage, nodes, links, 'solar', b, scheme, direction)
             print('Wind')
-            usage = np.load(resPath + scheme + '_' + direction + '_' + 'usageW.npy')
+            usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageW.npy')
             links, nodes, lapse = usage.shape
-            vCalcCont(F, quantiles, usage, nodes, links, 'wind', b)
+            vCalcCont(F, quantiles, usage, nodes, links, 'wind', b, scheme, direction)
             if scheme == 'square':
                 print('Backup')
-                usage = np.load(resPath + scheme + '_' + direction + '_' + 'usageB.npy')
+                usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageB.npy')
                 links, nodes, lapse = usage.shape
-                vCalcCont(F, quantiles, usage, nodes, links, 'backup', b)
+                vCalcCont(F, quantiles, usage, nodes, links, 'backup', b, scheme, direction)
 
 
 def plot_europe_map(country_weights, b=None, ax=None):
@@ -301,7 +299,7 @@ if 'vector' in task:
 
 if 'map' in task:
     scheme = 'square'
-    B = [2, 4, 6, 8]
+    B = [1, 2, 3, 4]
     myfig = plt.figure(figsize=(15, 6))
     maxG = np.zeros(len(B))
     gammas = np.zeros((len(B), 30))
