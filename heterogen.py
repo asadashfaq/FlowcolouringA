@@ -3,22 +3,37 @@ from __future__ import division
 import os
 import sys
 from multiprocessing import Pool
+import networkx as nx
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import shapefile
 from mpl_toolkits.basemap import Basemap
 from matplotlib.collections import LineCollection
 from matplotlib import cm
 from matplotlib.colors import LinearSegmentedColormap
-import matplotlib
 import aurespf.solvers as au
-from aurespf.tools import get_q
+from aurespf.tools import get_q, AtoKh_old
 from EUgrid import *
+from figutils import *
 from link_colour_less import track_flows, get_link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
 from functions import binMaker, bin_prob, bin_CDF, node_contrib
 
 """
 Flow tracing on heterogeneous networks
+
+The script can be called using the following command line arguments:
+- solve:    Solve power flows
+- trace:    Run scalar vector flow tracing
+- cont:     Calculate link usages
+- vector:   Run vector flow tracing and calculate link usages
+- plot:     plot various figures. See below.
+
+Plotting:
+- plot map:             plot maps of beta layouts
+- plot network:         plot network usage for every color, scheme, node, beta
+- plot network total:   plot total network usage for every scheme, node, beta
+- plot network day:     plot daily network usage for every color, scheme, node, beta
 """
 
 if len(sys.argv) < 2:
@@ -27,13 +42,12 @@ else:
     task = str(sys.argv[1:])
 
 schemes = ['linear', 'square']
-directions = ['import', 'export']
+directions = ['combined']  # ['import', 'export', 'combined']
 lapse = 70128
 N_bins = 90
 nNodes = 30
-B = range(11)
+B = [3, 4]  # range(11)
 meanEU = 345327.47685659607
-
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
 figPath = './figures/heterogen/'
@@ -60,6 +74,14 @@ shapefile_index = {'AUT': 16, 'BEL': 19, 'BGR': 23, 'BIH': 26, 'CHE': 40, 'CZE':
                    'GBR': 81, 'GRC': 90, 'HRV': 99, 'HUN': 101, 'IRL': 107, 'ITA': 112,
                    'LTU': 136, 'LUX': 137, 'LVA': 138, 'NLD': 168, 'NOR': 169, 'POL': 182,
                    'PRT': 185, 'ROU': 190, 'SRB': 210, 'SVK': 213, 'SVN': 214, 'SWE': 215}
+
+
+def pathCheck(path):
+    """
+    check if path exists. If not create path
+    """
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def calcGamma(N, b, alpha=0.7):
@@ -234,7 +256,7 @@ def vectorTrace(d):
 
 def plot_europe_map(country_weights, b=None, ax=None):
     """
-    Plot a map from shapefiles with coutnries colored by gamma
+    Plot a map from shapefiles with coutnries colored by gamma. Inspired by Magnus.
     """
     if ax == None:
         ax = plt.subplot(111)
@@ -271,8 +293,187 @@ def plot_europe_map(country_weights, b=None, ax=None):
         lines.set_linewidth(0.3)
         ax.add_collection(lines)
         country_count += 1
-
     if b: plt.text(2e5, 4e6, r'$\beta = ' + str(b) + r'$', fontsize=12)
+
+
+def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', b=1):
+    """
+    Make network figures of a node's usage of links for both import, export and
+    combined. A figure for each color is created.
+    """
+    colwidth = (3.425)
+    dcolwidth = (2 * 3.425 + 0.236)
+
+    if not N:
+        N = EU_Nodes_usage()
+    G = nx.Graph()
+    nodelist = []
+
+    # Add nodes and labels to networkx object for plotting
+    for n in N:
+        G.add_node(str(n.label))
+        nodelist.append(str(n.label))
+
+    # LF is a list of links
+    K, h, LF = AtoKh_old(N)
+
+    for l in LF:
+        G.add_edge(l[0], l[1], id=l[2])
+
+    if color == 'wind':
+        cmap = LinearSegmentedColormap('blue', blueDict, 1000)
+    elif color == 'solar':
+        cmap = LinearSegmentedColormap('orange', orangeDict, 1000)
+    elif color == 'backup':
+        cmap = LinearSegmentedColormap('brown', brownDict, 1000)
+    elif color == '':
+        cmap = LinearSegmentedColormap('blue', blueDict2, 1000)
+
+    # Load usages for given scheme and direction
+    if color != '':
+        colStr = '_' + color
+    else:
+        colStr = color
+    N_usages = np.load(resPath + '/N_cont_' + scheme + '_' + direction + '_b_' + str(b) + colStr + '.npy')
+    quantiles = np.load(resPath + 'quant_' + str(scheme) + '_b_' + str(b) + '.npy')
+
+    # Pick a particular node
+    for n in N:
+        # Calculate colors of links
+        N_usages[n.id] = N_usages[n.id] / quantiles
+        col = [(cmap(l)) for l in N_usages[n.id]]
+
+        # Create a new figure and plot network below
+        fig = plt.figure(dpi=400, figsize=(0.85 * dcolwidth, 0.85 * 0.8 * dcolwidth))
+
+        # color bar in bottom of figure
+        ax1 = fig.add_axes([0.05, 0.08, 0.9, .08])
+        cbl = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
+
+        # Label just above color bar
+        if scheme == 'linear':
+            xlabel = 'Localised'
+        elif scheme == 'square':
+            xlabel = 'Synchronised'
+
+        ax1.set_xlabel(r'$\mathcal{K}_{ln}/\mathcal{K}^T_l$')
+        ax1.xaxis.set_label_position('top')
+        ax2 = fig.add_axes([-0.05, 0.15, 1.1, 0.95])
+
+        # Set color of nodes, highlight one and draw all
+        node_c = ["#000000" for node in N]
+        node_c[n.id] = "#B30000"
+        nx.draw_networkx_nodes(G, pos, node_size=500, nodelist=nodelist, node_color=node_c, facecolor=(1, 1, 1))
+
+        # Draw links colored by usage of node n
+        edges = [(u, v) for (u, v, d) in G.edges(data=True)]
+        edge_id = [d['id'] for (u, v, d) in G.edges(data=True)]
+
+        color_sort = []
+        for i in range(len(col)):
+            color_sort.append(col[edge_id[i]])
+        nx.draw_networkx_edges(G, pos, edgelist=edges, width=3.5, edge_color=color_sort, alpha=1)
+
+        # Draw country names
+        nx.draw_networkx_labels(G, pos, font_size=12, font_color='w', font_family='sans-serif')
+        ax2.axis('off')
+
+        # Save figure
+        thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
+        pathCheck(thisPath)
+        if total:
+            plt.savefig(thisPath + str(n.id) + 'total' + colStr + '_' + direction + '.png')
+        else:
+            plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '.png')
+        plt.close()
+
+
+def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', b=1):
+    """
+    Make network figures for each color of the total network usage.
+    """
+    colwidth = (3.425)
+    dcolwidth = (2 * 3.425 + 0.236)
+
+    if not N:
+        N = EU_Nodes_usage()
+    G = nx.Graph()
+    nodelist = []
+
+    # Add nodes and labels to networkx object for plotting
+    for n in N:
+        G.add_node(str(n.label))
+        nodelist.append(str(n.label))
+
+    # LF is a list of links
+    K, h, LF = AtoKh_old(N)
+
+    for l in LF:
+        G.add_edge(l[0], l[1], id=l[2])
+
+    if color == 'wind':
+        cmap = LinearSegmentedColormap('blue', blueDict, 1000)
+    elif color == 'solar':
+        cmap = LinearSegmentedColormap('orange', orangeDict, 1000)
+    elif color == 'backup':
+        cmap = LinearSegmentedColormap('brown', brownDict, 1000)
+    elif color == '':
+        cmap = LinearSegmentedColormap('blue', blueDict2, 1000)
+
+    # Load usages for given scheme and direction
+    if color != '':
+        colStr = '_' + color
+    else:
+        colStr = color
+    N_usages = np.load(resPath + '/N_cont_' + scheme + '_' + direction + '_b_' + str(b) + colStr + '.npy')
+    quantiles = np.load(resPath + 'quant_' + str(scheme) + '_b_' + str(b) + '.npy')
+
+    # Calculate colors of links
+    linkUsages = np.sum(N_usages, 0) / quantiles
+    col = [(cmap(l)) for l in linkUsages]
+
+    # Create a new figure and plot network below
+    fig = plt.figure(dpi=400, figsize=(0.85 * dcolwidth, 0.85 * 0.8 * dcolwidth))
+
+    # color bar in bottom of figure
+    ax1 = fig.add_axes([0.05, 0.08, 0.9, .08])
+    cbl = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
+
+    # Label just above color bar
+    if scheme == 'linear':
+        xlabel = 'Most localised'
+    elif scheme == 'square':
+        xlabel = 'Synchronised'
+    else:
+        xlabel = 'Market'
+    # ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
+    ax1.set_xlabel(r'$\mathcal{K}_{l}/\mathcal{K}^T_l$')
+    ax1.xaxis.set_label_position('top')
+
+    ax2 = fig.add_axes([-0.05, 0.15, 1.1, 0.95])
+
+    # Set color of nodes and draw all
+    node_c = ["#000000" for node in N]
+    nx.draw_networkx_nodes(G, pos, node_size=500, nodelist=nodelist, node_color=node_c, facecolor=(1, 1, 1))
+
+    # Draw links colored by usage of node n
+    edges = [(u, v) for (u, v, d) in G.edges(data=True)]
+    edge_id = [d['id'] for (u, v, d) in G.edges(data=True)]
+
+    color_sort = []
+    for i in range(len(col)):
+        color_sort.append(col[edge_id[i]])
+    nx.draw_networkx_edges(G, pos, edgelist=edges, width=3.5, edge_color=color_sort, alpha=1)
+
+    # Draw country names
+    nx.draw_networkx_labels(G, pos, font_size=12, font_color='w', font_family='sans-serif')
+    ax2.axis('off')
+
+    # Save figure
+    thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
+    pathCheck(thisPath)
+    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png')
+    plt.close()
 
 
 # Parameters for parallel calling of functions
@@ -281,48 +482,75 @@ for i in range(2 * len(B)):
     d.append([schemes[i // len(B)], B[i % len(B)]])
 
 if 'solve' in task:
+    print 'Solving power flows'
     p = Pool(4)
     p.map(solveFlows, d)
 
 if 'trace' in task:
+    print 'Flow tracing'
     p = Pool(3)
     p.map(traceFlow, d)
 
 if 'cont' in task:
+    print 'Calculating link usages'
     p = Pool(4)
     p.map(calcCont, d)
 
 if 'vector' in task:
+    print 'Vector flow tracing'
     p = Pool(4)
     p.map(vectorTrace, d)
 
-if 'map' in task:
-    scheme = 'square'
-    B = [1, 2, 3, 4]
-    myfig = plt.figure(figsize=(15, 6))
-    maxG = np.zeros(len(B))
-    gammas = np.zeros((len(B), 30))
-    for i, b in enumerate(B):
-        N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
-        gammas[i] = [n.gamma for n in N]
-        maxG[i] = max(gammas[i])
+if 'plot' in task:
+    if 'map' in task:
+        print 'Plotting maps of beta layouts'
+        scheme = 'square'
+        B = [1, 2, 3, 4]
+        myfig = plt.figure(figsize=(15, 6))
+        maxG = np.zeros(len(B))
+        gammas = np.zeros((len(B), 30))
+        for i, b in enumerate(B):
+            N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
+            gammas[i] = [n.gamma for n in N]
+            maxG[i] = max(gammas[i])
+        maxG = max(maxG)
+        point = 1 / maxG
+        gammas /= maxG
 
-    maxG = max(maxG)
-    point = 1 / maxG
-    redgreendict = {'red': [(0.0, 0.9, 0.9), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
-                    'green': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.8, 0.8)],
-                    'blue': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.0, 0.0)]}
+        redgreendict = {'red': [(0.0, 0.8, 0.8), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
+                        'green': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.7, 0.7)],
+                        'blue': [(0.0, 0.0, 0.0), (point, 1.0, 1.0), (1.0, 0.0, 0.0)]}
+        cmap = LinearSegmentedColormap('redgreen', redgreendict, 1000)
 
-    cmap = LinearSegmentedColormap('redgreen', redgreendict, 1000)
-    gammas /= maxG
-    for j, b in enumerate(B):
-            plot_europe_map(gammas[j], b, ax=plt.subplot(1, len(B), j + 1))
-    cbar_ax = myfig.add_axes([0.2, 0.05, 0.6, 0.1])
-    cb1 = matplotlib.colorbar.ColorbarBase(cbar_ax, cmap, orientation='horizontal')
-    cb1.solids.set_edgecolor('face')
-    cb1.set_ticks([0, point, 1])
-    cb1.set_ticklabels(['0', '1', str(round(maxG, 1))])
-    cbar_ax.set_xlabel(r'Renewable penetration [$\gamma_n$]', fontsize=18)
-    cbar_ax.xaxis.set_label_position('top')
-    cbar_ax.set_xticks('none')
-    plt.savefig(figPath + 'gamma_map.pdf', bbox_inches='tight')
+        for j, b in enumerate(B):
+                plot_europe_map(gammas[j], b, ax=plt.subplot(1, len(B), j + 1))
+        cbar_ax = myfig.add_axes([0.2, 0.05, 0.6, 0.1])
+        cb1 = mpl.colorbar.ColorbarBase(cbar_ax, cmap, orientation='horizontal')
+        cb1.solids.set_edgecolor('face')
+        cb1.set_ticks([0, point, 1])
+        cb1.set_ticklabels(['0', '1', str(round(maxG, 1))])
+        cbar_ax.set_xlabel(r'Renewable penetration [$\gamma_n$]', fontsize=18)
+        cbar_ax.xaxis.set_label_position('top')
+        cbar_ax.set_xticks('none')
+        plt.savefig(figPath + 'gamma_map.pdf', bbox_inches='tight')
+
+    if 'network' in task:
+        print 'Plotting network figures'
+        N = EU_Nodes_usage()
+        colors = ['', 'solar', 'wind']
+        for scheme in schemes:
+            if scheme == 'square':
+                colors.append('backup')
+            for b in B:
+                for direction in directions:
+                    print('Direction: ' + direction)
+                    for color in colors:
+                        if 'total' in task:
+                            print('Plotting total network figures')
+                            drawnet_total(N, scheme, direction, color, b)
+                        elif 'day' in task:
+                            print('Plotting day/night network figures')
+                            drawnet_day(N, scheme, direction, color, b)
+                        else:
+                            print('Plotting network figures')
+                            drawnet_usage(N, scheme, direction, color, b)
