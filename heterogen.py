@@ -30,6 +30,7 @@ schemes = ['linear', 'square']
 directions = ['import', 'export']
 lapse = 70128
 N_bins = 90
+nNodes = 30
 B = range(11)
 meanEU = 345327.47685659607
 
@@ -113,9 +114,7 @@ def calcCont(d):
     """
     scheme = d[0]
     b = d[1]
-    N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
     F = abs(np.load(resPath + scheme + '_b_' + str(b) + '_flows.npy'))
-    # Get 99% quantile of link flow
     quantiles = [get_q(abs(F[link, :lapse]), .99) for link in range(len(F))]
 
     for direction in directions:
@@ -126,8 +125,8 @@ def calcCont(d):
         else:
             Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_' + direction + '.npy')
 
-        Node_contributions = np.zeros((len(N), len(F)))  # empty array for calculated usages
-        for node in range(len(N)):
+        Node_contributions = np.zeros((nNodes, len(F)))  # empty array for calculated usages
+        for node in range(nNodes):
             for link in range(len(F)):
                 # Stacking and sorting data
                 F_vert = np.reshape(F[link, :lapse], (len(F[link, :lapse]), 1))
