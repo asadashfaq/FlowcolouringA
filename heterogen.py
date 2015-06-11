@@ -15,6 +15,7 @@ import aurespf.solvers as au
 from aurespf.tools import get_q, AtoKh_old
 from EUgrid import *
 from figutils import *
+from link_namer import *
 from link_colour_less import track_flows, get_link_direction
 from new_linkcolouralgorithm_less import track_link_usage_total
 from functions import binMaker, bin_prob, bin_CDF, node_contrib
@@ -34,6 +35,7 @@ Plotting:
 - plot network:         plot network usage for every color, scheme, node, beta
 - plot network total:   plot total network usage for every scheme, node, beta
 - plot network day:     plot daily network usage for every color, scheme, node, beta
+- plot levels:          plot usage of links at different levels
 """
 
 if len(sys.argv) < 2:
@@ -46,7 +48,7 @@ directions = ['combined']  # ['import', 'export', 'combined']
 lapse = 70128
 N_bins = 90
 nNodes = 30
-B = [3, 4]  # range(11)
+B = range(5, 11)  # range(11)
 meanEU = 345327.47685659607
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
@@ -64,16 +66,17 @@ cfS = {'AT': 5.8824, 'BA': 4.7619, 'BE': 7.1429, 'BG': 4.5455, 'CH': 5.8824, 'CZ
        'LT': 7.1429, 'LU': 7.1429, 'LV': 7.6923, 'NL': 6.6667, 'NO': 7.6923, 'PL': 6.6667,
        'PT': 4.3478, 'RO': 5.0, 'RS': 5.2632, 'SE': 7.1429, 'SI': 5.5556, 'SK': 5.8824}
 
-all_countries = ['AUT', 'FIN', 'NLD', 'BIH', 'FRA', 'NOR', 'BEL', 'GBR', 'POL', 'BGR',
-                 'GRC', 'PRT', 'CHE', 'HRV', 'ROU', 'CZE', 'HUN', 'SRB', 'DEU', 'IRL',
-                 'SWE', 'DNK', 'ITA', 'SVN', 'ESP', 'LUX', 'SVK', 'EST', 'LVA', 'LTU']
 
-# Dictionary with index of the countries in the shapefiles
-shapefile_index = {'AUT': 16, 'BEL': 19, 'BGR': 23, 'BIH': 26, 'CHE': 40, 'CZE': 60,
-                   'DEU': 61, 'DNK': 64, 'ESP': 71, 'EST': 72, 'FIN': 74, 'FRA': 77,
-                   'GBR': 81, 'GRC': 90, 'HRV': 99, 'HUN': 101, 'IRL': 107, 'ITA': 112,
-                   'LTU': 136, 'LUX': 137, 'LVA': 138, 'NLD': 168, 'NOR': 169, 'POL': 182,
-                   'PRT': 185, 'ROU': 190, 'SRB': 210, 'SVK': 213, 'SVN': 214, 'SWE': 215}
+def tablePrint():
+    """
+    Print capacity facors for LaTeX tablePrint
+    """
+    def printer(id):
+        return fullNames[id] + ' & ' \
+            + str(np.round(1 / cfW[loadNames[id]], 2)) + ' & ' \
+            + str(np.round(1 / cfS[loadNames[id]], 2))
+    for i in range(10):
+        print printer(i) + ' & ' + printer(i + 10) + ' & ' + printer(i + 20) + ' \\\\'
 
 
 def pathCheck(path):
@@ -381,10 +384,7 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', 
         # Save figure
         thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
         pathCheck(thisPath)
-        if total:
-            plt.savefig(thisPath + str(n.id) + 'total' + colStr + '_' + direction + '.png')
-        else:
-            plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '.png')
+        plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '.png', bbox_inches='tight')
         plt.close()
 
 
@@ -472,7 +472,55 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
     # Save figure
     thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
     pathCheck(thisPath)
-    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png')
+    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png', bbox_inches='tight')
+    plt.close()
+
+
+def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames, lnames, admat=None, b=1):
+    """
+    Bar plots of nodes' link usage of links at different levels.
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    if color == 'solar':
+        cmap = 'Oranges'
+    elif color == 'wind':
+        cmap = 'Blues'
+    elif color == 'backup':
+        cmap = 'Greys'
+    else:
+        cmap = 'OrRd'
+    if color != '':
+        colStr = '_' + color
+    else:
+        colStr = color
+
+    thisPath = figPath + 'B_' + str(b) + '/levels/' + scheme + '/'
+    pathCheck(thisPath)
+
+    nodes, links = usages.shape
+    usageLevels = np.zeros((nodes, levels))
+    for node in range(nodes):
+        nl = neighbor_levels(node, levels, admat)
+        for lvl in range(levels):
+            ll = link_level(nl, lvl, nnames, lnames)
+            ll = np.array(ll, dtype='int')
+            usageSum = sum(usages[node, ll])
+            linkSum = sum(quantiles[ll])
+            usageLevels[node, lvl] = usageSum / linkSum
+    usages = usageLevels.transpose()
+    plt.figure(figsize=(11, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(usages[:, loadOrder], cmap=cmap)
+    plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(1, nodes, nodes))
+    ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png', bbox_inches='tight')
     plt.close()
 
 
@@ -554,3 +602,26 @@ if 'plot' in task:
                         else:
                             print('Plotting network figures')
                             drawnet_usage(N, scheme, direction, color, b)
+
+    if 'levels' in task:
+        levels = 4
+        N = EU_Nodes_usage()
+        lnames = np.array(link_namer(N))
+        nnames = np.array(node_namer(N))
+        schemeNames = ['localised', 'synchronised']
+        print('Plotting link levels')
+        for b in B:
+            colors = ['', 'solar', 'wind']
+            for i, scheme in enumerate(schemes):
+                if scheme == 'square':
+                    colors.append('backup')
+                name = schemeNames[i]
+                quantiles = np.load(resPath + 'quant_' + str(scheme) + '_b_' + str(b) + '.npy')
+                for direction in directions:
+                    for color in colors:
+                        if color != '':
+                            colStr = '_' + color
+                        else:
+                            colStr = color
+                        N_usages = np.load(resPath + '/N_cont_' + scheme + '_' + direction + '_b_' + str(b) + colStr + '.npy')
+                        link_level_bars(levels, N_usages, quantiles, name, direction, color, nnames, lnames, b=b)
