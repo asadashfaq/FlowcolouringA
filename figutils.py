@@ -13,6 +13,22 @@ loadNames = np.array(['DE', 'FR', 'GB', 'IT', 'ES', 'SE', 'PL', 'NO', 'NL',
                       'HU', 'DK', 'RS', 'IE', 'BA', 'SK', 'HR', 'LT', 'EE',
                       'SI', 'LV', 'LU'], dtype='|S2')
 
+fullNames = ['Germany', 'France', 'Great Britain', 'Italy', 'Spain', 'Sweden', 'Poland',
+             'Norway', 'Netherlands', 'Belgium', 'Finland', 'Czech Republic', 'Austria',
+             'Greece', 'Romania', 'Bulgaria', 'Portugal', 'Switzerland', 'Hungary',
+             'Denmark', 'Serbia', 'Ireland', 'Bosnia & Herz.', 'Slovakia', 'Croatia',
+             'Lithuania', 'Estonia', 'Slovenia', 'Latvia', 'Luxembourg']
+
+all_countries = ['AUT', 'FIN', 'NLD', 'BIH', 'FRA', 'NOR', 'BEL', 'GBR', 'POL', 'BGR',
+                 'GRC', 'PRT', 'CHE', 'HRV', 'ROU', 'CZE', 'HUN', 'SRB', 'DEU', 'IRL',
+                 'SWE', 'DNK', 'ITA', 'SVN', 'ESP', 'LUX', 'SVK', 'EST', 'LVA', 'LTU']
+
+# Dictionary with index of the countries in the shapefiles
+shapefile_index = {'AUT': 16, 'BEL': 19, 'BGR': 23, 'BIH': 26, 'CHE': 40, 'CZE': 60,
+                   'DEU': 61, 'DNK': 64, 'ESP': 71, 'EST': 72, 'FIN': 74, 'FRA': 77,
+                   'GBR': 81, 'GRC': 90, 'HRV': 99, 'HUN': 101, 'IRL': 107, 'ITA': 112,
+                   'LTU': 136, 'LUX': 137, 'LVA': 138, 'NLD': 168, 'NOR': 169, 'POL': 182,
+                   'PRT': 185, 'ROU': 190, 'SRB': 210, 'SVK': 213, 'SVN': 214, 'SWE': 215}
 
 # Define position of nodes for network figures
 pos = {}
