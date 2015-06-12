@@ -524,6 +524,59 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     plt.close()
 
 
+def plotTotal(scheme, color):
+    """
+    Plot total network usage for every color, scheme and beta
+    """
+    totUsageIm = np.zeros((nNodes, len(B)))
+    totUsageEx = np.zeros((nNodes, len(B)))
+    if color == 'solar':
+        cmap = 'Oranges'
+    elif color == 'wind':
+        cmap = 'Blues'
+    elif color == 'backup':
+        cmap = 'Greys'
+    if color != '':
+        colStr = '_' + color
+    else:
+        colStr = color
+        cmap = 'OrRd'
+    for i, b in enumerate(B):
+        usagesIm = np.load(resPath + '/N_cont_' + scheme + '_import_b_' + str(b) + colStr + '.npy')
+        totUsageIm[:, i] = np.sum(usagesIm, 1) / node_mean_load
+        usagesEx = np.load(resPath + '/N_cont_' + scheme + '_export_b_' + str(b) + colStr + '.npy')
+        totUsageEx[:, i] = np.sum(usagesEx, 1) / node_mean_load
+
+    plt.figure(figsize=(12, 5))
+    ax1 = plt.subplot(121)
+    ax1.set_xticks(np.linspace(0.5, 10.5, 11))
+    ax1.set_xticklabels(range(11), fontsize=8)
+    ax1.set_yticks(np.linspace(.5, 29.5, 30))
+    ax1.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
+    ax1.xaxis.set_tick_params(width=0)
+    ax1.yaxis.set_tick_params(width=0)
+    plt.pcolormesh(totUsageIm[loadOrder], cmap=cmap)
+    cb1 = plt.colorbar()
+    cb1.solids.set_edgecolor('face')
+    cb1.set_label(label='Network usage', size=11)
+    plt.xlabel(r'$\beta$')
+
+    ax2 = plt.subplot(122)
+    ax2.set_xticks(np.linspace(0.5, 10.5, 11))
+    ax2.set_xticklabels(range(11), fontsize=8)
+    ax2.set_yticks(np.linspace(.5, 29.5, 30))
+    ax2.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
+    ax2.xaxis.set_tick_params(width=0)
+    ax2.yaxis.set_tick_params(width=0)
+    plt.pcolormesh(totUsageEx[loadOrder], cmap=cmap)
+    cb2 = plt.colorbar()
+    cb2.solids.set_edgecolor('face')
+    cb2.set_label(label='Network usage', size=11)
+    plt.xlabel(r'$\beta$')
+    plt.savefig(figPath + '/total/' + 'netUsage' + '_' + scheme + colStr + '.pdf', bbox_inches='tight')
+    plt.close()
+
+
 # Parameters for parallel calling of functions
 d = []
 for i in range(2 * len(B)):
@@ -625,3 +678,14 @@ if 'plot' in task:
                             colStr = color
                         N_usages = np.load(resPath + '/N_cont_' + scheme + '_' + direction + '_b_' + str(b) + colStr + '.npy')
                         link_level_bars(levels, N_usages, quantiles, name, direction, color, nnames, lnames, b=b)
+
+    if 'total' in task:
+        print('Plotting total network usage')
+        N = np.load('./results/heterogen/b_0_linear.npz', mmap_mode='r')
+        node_mean_load = N['mean']
+        colors = ['', 'solar', 'wind']
+        for scheme in schemes:
+            if scheme == 'square':
+                colors.append('backup')
+            for color in colors:
+                plotTotal(scheme, color)
