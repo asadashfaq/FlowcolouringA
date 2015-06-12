@@ -88,25 +88,15 @@ def pathCheck(path):
         os.makedirs(path)
 
 
-def calcGamma(N, b, alpha=0.7):
+def calcAG(N, b, alpha=0.7):
     """
-    Calculate individual gamma from beta factor
+    Calculate individual alpha and gamma from beta factor
     """
-    i = 0
     for n in N:
         gs = (1 / cfS[str(n.label)]) ** b * meanEU / sum([(1 / cfS[str(m.label)]) ** b * m.mean for j, m in enumerate(N)])
         gw = (1 / cfW[str(n.label)]) ** b * meanEU / sum([(1 / cfW[str(m.label)]) ** b * m.mean for j, m in enumerate(N)])
-        n.gamma = alpha * gw + (1 - alpha) * gs
-        i += 1
-    return N
-
-
-def calcAlpha(N, alpha=0.7):
-    """
-    Calculate individual alpha from beta factor
-    """
-    for n in N:
-        n.alpha = alpha * cfW[str(n.label)] / (alpha * cfW[str(n.label)] + (1 - alpha) * cfS[str(n.label)])
+        n.set_gamma(alpha * gw + (1 - alpha) * gs)
+        n.set_alpha(alpha * gw / (alpha * gw + (1 - alpha) * gs))
     return N
 
 
@@ -114,8 +104,7 @@ def solveFlows(d):
     scheme = d[0]
     b = d[1]
     N = EU_Nodes_usage()
-    N = calcGamma(N, b)
-    N = calcAlpha(N)
+    N = calcAG(N, b)
     N, F = au.solve(N, mode=scheme + ' copper', lapse=lapse)
     N.save_nodes(scheme, path=resPath + 'b_' + str(b) + '_')
     np.save(resPath + scheme + '_b_' + str(b) + '_flows', F)
