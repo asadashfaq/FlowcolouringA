@@ -26,7 +26,7 @@ Flow tracing on heterogeneous networks
 The script can be called using the following command line arguments:
 - solve:    Solve power flows
 - trace:    Run scalar vector flow tracing
-- cont:     Calculate link usages
+- usage:    Calculate link usages
 - vector:   Run vector flow tracing and calculate link usages
 - plot:     plot various figures. See below.
 
@@ -36,6 +36,7 @@ Plotting:
 - plot network total:   plot total network usage for every scheme, node, beta
 - plot network day:     plot daily network usage for every color, scheme, node, beta
 - plot levels:          plot usage of links at different levels
+- plot hour:            plot hourly usage of links at different levels
 """
 
 if len(sys.argv) < 2:
@@ -184,6 +185,38 @@ def vCalcCont(F, quantiles, Usages, nodes, links, name, b, scheme, direction):
     return
 
 
+def vCalcContDaily(iF, quantiles, iUsages, nodes, links, name, b, scheme, direction):
+    """
+    Calculate usages for daytime and nighttime and save to file
+    """
+    days = int(lapse / 24)
+    hours = np.append(range(6, days * 24), range(6))
+    splitHours = np.split(hours, days * 2)
+    dayTime = np.concatenate(splitHours[0::2])
+    nightTime = np.concatenate(splitHours[1::2])
+
+    for d in ['day', 'night']:
+        if d == 'day':
+            Usages = iUsages[:, :, dayTime]
+            F = iF[:, dayTime]
+        elif d == 'night':
+            Usages = iUsages[:, :, nightTime]
+            F = iF[:, nightTime]
+
+        Node_contributions = np.zeros((nodes, links))  # empty array for calculated usages
+        for node in range(nodes):
+            for link in range(links):
+                # Stacking and sorting data
+                F_vert = np.reshape(F[link, :lapse / 2], (len(F[link, :lapse / 2]), 1))
+                exp_vert = np.reshape(Usages[link, node, :lapse / 2], (len(Usages[link, node, :lapse / 2]), 1))
+                F_matrix = np.hstack([F_vert, exp_vert])
+                F_matrix[F_matrix[:, 0].argsort()]
+                H, bin_edges = binMaker(F_matrix, quantiles[link], lapse / 2)
+                Node_contributions[node, link] = node_contrib(H, bin_edges, linkID=link)
+        np.save(resPath + 'N_cont_' + scheme + '_' + direction + '_b_' + str(b) + '_' + d + '_' + str(name) + '.npy', Node_contributions)
+    return
+
+
 def vectorTrace(d):
     """
     Vector flow tracing
@@ -235,26 +268,32 @@ def vectorTrace(d):
 
             print('Solar')
             vCalcCont(F, quantiles, usageS, nodes, links, 'solar', b, scheme, direction)
+            vCalcContDaily(F, quantiles, usageS, nodes, links, 'solar', b, scheme, direction)
             print('Wind')
             vCalcCont(F, quantiles, usageW, nodes, links, 'wind', b, scheme, direction)
+            vCalcContDaily(F, quantiles, usageW, nodes, links, 'wind', b, scheme, direction)
             if scheme == 'square':
                 print('Backup')
                 vCalcCont(F, quantiles, usageB, nodes, links, 'backup', b, scheme, direction)
+                vCalcContDaily(F, quantiles, usageB, nodes, links, 'backup', b, scheme, direction)
 
         else:
             print('Solar')
             usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy')
             links, nodes, lapse = usage.shape
             vCalcCont(F, quantiles, usage, nodes, links, 'solar', b, scheme, direction)
+            vCalcContDaily(F, quantiles, usage, nodes, links, 'solar', b, scheme, direction)
             print('Wind')
             usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageW.npy')
             links, nodes, lapse = usage.shape
             vCalcCont(F, quantiles, usage, nodes, links, 'wind', b, scheme, direction)
+            vCalcContDaily(F, quantiles, usage, nodes, links, 'wind', b, scheme, direction)
             if scheme == 'square':
                 print('Backup')
                 usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageB.npy')
                 links, nodes, lapse = usage.shape
                 vCalcCont(F, quantiles, usage, nodes, links, 'backup', b, scheme, direction)
+                vCalcContDaily(F, quantiles, usage, nodes, links, 'backup', b, scheme, direction)
 
 
 def plot_europe_map(country_weights, b=None, ax=None):
@@ -355,9 +394,9 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', 
 
         # Label just above color bar
         if scheme == 'linear':
-            xlabel = 'Localised'
+            xlabel = 'Localized'
         elif scheme == 'square':
-            xlabel = 'Synchronised'
+            xlabel = 'Synchronized'
 
         ax1.set_xlabel(r'$\mathcal{K}_{ln}/\mathcal{K}^T_l$')
         ax1.xaxis.set_label_position('top')
@@ -441,12 +480,9 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
 
     # Label just above color bar
     if scheme == 'linear':
-        xlabel = 'Most localised'
+        xlabel = 'Localized'
     elif scheme == 'square':
-        xlabel = 'Synchronised'
-    else:
-        xlabel = 'Market'
-    # ax1.set_xlabel(xlabel+' '+direction+r" usage $C_n/C^{\,99\%}$")
+        xlabel = 'Synchronized'
     ax1.set_xlabel(r'$\mathcal{K}_{l}/\mathcal{K}^T_l$')
     ax1.xaxis.set_label_position('top')
 
@@ -474,6 +510,85 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
     pathCheck(thisPath)
     plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png', bbox_inches='tight')
     plt.close()
+
+
+def drawnet_day(N=None, scheme='linear', direction='combined', color='solar', b=1):
+    """
+    Make network figures for each color of the total network usage during the day and night.
+    """
+    colwidth = (3.425)
+    dcolwidth = (2 * 3.425 + 0.236)
+
+    if not N:
+        N = EU_Nodes_usage()
+    G = nx.Graph()
+    nodelist = []
+
+    # Add nodes and labels to networkx object for plotting
+    for n in N:
+        G.add_node(str(n.label))
+        nodelist.append(str(n.label))
+
+    # LF is a list of links
+    K, h, LF = AtoKh_old(N)
+
+    for l in LF:
+        G.add_edge(l[0], l[1], id=l[2])
+
+    if color == 'wind':
+        cmap = LinearSegmentedColormap('blue', blueDict, 1000)
+    elif color == 'solar':
+        cmap = LinearSegmentedColormap('orange', orangeDict, 1000)
+    else:
+        cmap = LinearSegmentedColormap('brown', brownDict, 1000)
+
+    quantiles = np.load(resPath + 'quant_' + str(scheme) + '_b_' + str(b) + '.npy')
+    for time in ['day', 'night']:
+        # Load usages for given scheme and direction
+        N_usages = np.load(resPath + 'N_cont_' + scheme + '_' + direction + '_b_' + str(b) + '_' + time + '_' + color + '.npy')
+
+        # Calculate colors of links
+        linkUsages = np.sum(N_usages, 0) / quantiles
+        col = [(cmap(l)) for l in linkUsages]
+
+        # Create a new figure and plot network below
+        fig = plt.figure(dpi=400, figsize=(0.85 * dcolwidth, 0.85 * 0.8 * dcolwidth))
+
+        # color bar in bottom of figure
+        ax1 = fig.add_axes([0.05, 0.08, 0.9, .08])
+        cbl = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
+
+        # Label just above color bar
+        if scheme == 'linear':
+            xlabel = 'Localized'
+        elif scheme == 'square':
+            xlabel = 'Synchronized'
+        ax1.set_xlabel(r'$\mathcal{K}_{l}/\mathcal{K}^T_l$')
+        ax1.xaxis.set_label_position('top')
+        ax2 = fig.add_axes([-0.05, 0.15, 1.1, 0.95])
+
+        # Set color of nodes and draw all
+        node_c = ["#000000" for node in N]
+        nx.draw_networkx_nodes(G, pos, node_size=500, nodelist=nodelist, node_color=node_c, facecolor=(1, 1, 1))
+
+        # Draw links colored by usage of node n
+        edges = [(u, v) for (u, v, d) in G.edges(data=True)]
+        edge_id = [d['id'] for (u, v, d) in G.edges(data=True)]
+
+        color_sort = []
+        for i in range(len(col)):
+            color_sort.append(col[edge_id[i]])
+        nx.draw_networkx_edges(G, pos, edgelist=edges, width=3.5, edge_color=color_sort, alpha=1)
+
+        # Draw country names
+        nx.draw_networkx_labels(G, pos, font_size=12, font_color='w', font_family='sans-serif')
+        ax2.axis('off')
+
+        # Save figure
+        thisPath = figPath + 'B_' + str(b) + '/day/' + scheme + '/'
+        pathCheck(thisPath)
+        plt.savefig(thisPath + color + '_' + direction + '_' + time + '.png')
+        plt.close()
 
 
 def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames, lnames, admat=None, b=1):
@@ -661,7 +776,7 @@ if 'trace' in task:
     p = Pool(3)
     p.map(traceFlow, d)
 
-if 'cont' in task:
+if 'usage' in task:
     print 'Calculating link usages'
     p = Pool(4)
     p.map(calcCont, d)
@@ -707,7 +822,10 @@ if 'plot' in task:
     if 'network' in task:
         print 'Plotting network figures'
         N = EU_Nodes_usage()
-        colors = ['', 'solar', 'wind']
+        if 'day' in task:
+            colors = ['solar', 'wind']
+        else:
+            colors = ['', 'solar', 'wind']
         for scheme in schemes:
             if scheme == 'square':
                 colors.append('backup')
