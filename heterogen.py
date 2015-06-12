@@ -90,9 +90,8 @@ def pathCheck(path):
 
 def calcGamma(N, b, alpha=0.7):
     """
-    Calculate gamma from beta factor
+    Calculate individual gamma from beta factor
     """
-    gammas = np.zeros(len(N))
     i = 0
     for n in N:
         gs = (1 / cfS[str(n.label)]) ** b * meanEU / sum([(1 / cfS[str(m.label)]) ** b * m.mean for j, m in enumerate(N)])
@@ -102,11 +101,21 @@ def calcGamma(N, b, alpha=0.7):
     return N
 
 
+def calcAlpha(N, alpha=0.7):
+    """
+    Calculate individual alpha from beta factor
+    """
+    for n in N:
+        n.alpha = alpha * cfW[str(n.label)] / (alpha * cfW[str(n.label)] + (1 - alpha) * cfS[str(n.label)])
+    return N
+
+
 def solveFlows(d):
     scheme = d[0]
     b = d[1]
     N = EU_Nodes_usage()
     N = calcGamma(N, b)
+    N = calcAlpha(N)
     N, F = au.solve(N, mode=scheme + ' copper', lapse=lapse)
     N.save_nodes(scheme, path=resPath + 'b_' + str(b) + '_')
     np.save(resPath + scheme + '_b_' + str(b) + '_flows', F)
