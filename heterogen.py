@@ -577,6 +577,75 @@ def plotTotal(scheme, color):
     plt.close()
 
 
+def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames, lnames, admat=None, b=1):
+    """
+    Make a color mesh of a node's average hourly usage of links at different
+    levels.
+    """
+    if not admat:
+        admat = np.genfromtxt('./settings/eadmat.txt')
+    if color == 'solar':
+        cmap = 'Oranges'
+    elif color == 'wind':
+        cmap = 'Blues'
+    elif color == 'backup':
+        cmap = 'Greys'
+    if color != '':
+        colStr = '_' + color
+    else:
+        colStr = color
+        cmap = 'OrRd'
+    links, nodes, lapse = usages.shape
+    usages = np.reshape(usages, (links, nodes, lapse / 24, 24))
+    totalHour = np.zeros((levels, 24))
+    for node in range(nodes):
+        nl = neighbor_levels(node, levels, admat)
+        hourSums = np.zeros((levels, 24))
+        for lvl in range(levels):
+            ll = link_level(nl, lvl, nnames, lnames)
+            ll = np.array(ll, dtype='int')
+            meanSum = np.sum(np.mean(usages[ll, node], axis=1), axis=0)
+            linkSum = sum(quantiles[ll])
+            hourSums[lvl] = meanSum / linkSum
+        totalHour += hourSums
+
+        plt.figure(figsize=(9, 3))
+        ax = plt.subplot()
+        plt.pcolormesh(hourSums, cmap=cmap)
+        plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
+        ax.set_yticks(np.linspace(.5, levels - .5, levels))
+        ax.set_yticklabels(range(1, levels + 1))
+        ax.yaxis.set_tick_params(width=0)
+        ax.xaxis.set_tick_params(width=0)
+        ax.set_xticks(np.linspace(.5, 23.5, 24))
+        ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
+        plt.ylabel('Link level')
+        plt.axis([0, 24, 0, levels])
+        plt.title(nnames[node] + ' ' + direction + ' ' + color)
+
+        thisPath = figPath + 'B_' + str(b) + '/hourly/' + scheme + '/'
+        pathCheck(thisPath)
+        plt.savefig(thisPath + str(node) + colStr + '_' + direction + '.png', bbox_inches='tight')
+        plt.close()
+
+    # Plot average hourly usage
+    totalHour /= nodes
+    plt.figure(figsize=(9, 3))
+    ax = plt.subplot()
+    plt.pcolormesh(totalHour, cmap=cmap)
+    plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
+    ax.set_yticks(np.linspace(.5, levels - .5, levels))
+    ax.set_yticklabels(range(1, levels + 1))
+    ax.yaxis.set_tick_params(width=0)
+    ax.xaxis.set_tick_params(width=0)
+    ax.set_xticks(np.linspace(.5, 23.5, 24))
+    ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
+    plt.ylabel('Link level')
+    plt.axis([0, 24, 0, levels])
+    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png', bbox_inches='tight')
+    plt.close()
+
+
 # Parameters for parallel calling of functions
 d = []
 for i in range(2 * len(B)):
@@ -689,3 +758,27 @@ if 'plot' in task:
                 colors.append('backup')
             for color in colors:
                 plotTotal(scheme, color)
+
+    if 'hour' in task:
+        print('Plotting hourly link level usages')
+        levels = 4
+        N = EU_Nodes_usage()
+        lnames = np.array(link_namer(N))
+        nnames = np.array(node_namer(N))
+        schemeNames = ['localised', 'synchronised']
+        for b in B:
+            colors = ['', 'solar', 'wind']
+            for i, scheme in enumerate(schemes):
+                if scheme == 'square':
+                    colors.append('backup')
+                name = schemeNames[i]
+                quantiles = np.load(resPath + 'quant_' + str(scheme) + '_b_' + str(b) + '.npy')
+                for direction in directions:
+                    for j, color in enumerate(colors):
+                        if direction == 'combined':
+                            Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_import.npy')
+                            Usages += np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_export.npy')
+                            Usages /= 2
+                        else:
+                            Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_' + direction + '.npy')
+                        link_level_hour(levels, Usages, quantiles, name, direction, color, nnames, lnames, b=b)
