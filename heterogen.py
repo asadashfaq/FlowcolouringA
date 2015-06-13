@@ -31,6 +31,7 @@ The script can be called using the following command line arguments:
 - plot:     plot various figures. See below.
 
 Plotting:
+- plot ag:              plot alphas and gammas for various betas
 - plot map:             plot maps of beta layouts
 - plot network:         plot network usage for every color, scheme, node, beta
 - plot network total:   plot total network usage for every scheme, node, beta
@@ -54,6 +55,7 @@ meanEU = 345327.47685659607
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
 figPath = './figures/heterogen/'
+colorPath = './linkcolouring/heterogen/'
 
 # Capacity factors
 cfW = {'BE': 2.7778, 'FR': 3.125, 'BG': 6.6667, 'DK': 2.4390, 'HR': 5.5556, 'DE': 2.7778,
@@ -243,11 +245,11 @@ def vectorTrace(d):
         print(str(direction))
         if not os.path.exists(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy'):
             if direction == 'combined':
-                Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_import.npy')
-                Usages += np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_export.npy')
+                Usages = np.load(colorPath + scheme + '-b-' + str(b) + '_link_mix_import.npy')
+                Usages += np.load(colorPath + scheme + '-b-' + str(b) + '_link_mix_export.npy')
                 Usages /= 2
             else:
-                Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_' + direction + '.npy')
+                Usages = np.load(colorPath + scheme + '-b-' + str(b) + '_link_mix_' + direction + '.npy')
 
             links, nodes, lapse = Usages.shape
             usageS = np.zeros((links, nodes, lapse))
@@ -255,13 +257,13 @@ def vectorTrace(d):
             for l in xrange(links):
                 usageS[l] = Usages[l] * normGenS
                 usageW[l] = Usages[l] * normGenW
-            np.save(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy', usageS)
-            np.save(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageW.npy', usageW)
+            np.save(colorPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy', usageS)
+            np.save(colorPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageW.npy', usageW)
             if scheme == 'square':
                 usageB = np.zeros((links, nodes, lapse))
                 for l in range(links):
                     usageB[l] = Usages[l] * normGenB
-                np.save(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageB.npy', usageB)
+                np.save(colorPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageB.npy', usageB)
             Usages = None
 
             print('Solar')
@@ -277,18 +279,18 @@ def vectorTrace(d):
 
         else:
             print('Solar')
-            usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy')
+            usage = np.load(colorPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageS.npy')
             links, nodes, lapse = usage.shape
             vCalcCont(F, quantiles, usage, nodes, links, 'solar', b, scheme, direction)
             vCalcContDaily(F, quantiles, usage, nodes, links, 'solar', b, scheme, direction)
             print('Wind')
-            usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageW.npy')
+            usage = np.load(colorPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageW.npy')
             links, nodes, lapse = usage.shape
             vCalcCont(F, quantiles, usage, nodes, links, 'wind', b, scheme, direction)
             vCalcContDaily(F, quantiles, usage, nodes, links, 'wind', b, scheme, direction)
             if scheme == 'square':
                 print('Backup')
-                usage = np.load(resPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageB.npy')
+                usage = np.load(colorPath + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usageB.npy')
                 links, nodes, lapse = usage.shape
                 vCalcCont(F, quantiles, usage, nodes, links, 'backup', b, scheme, direction)
                 vCalcContDaily(F, quantiles, usage, nodes, links, 'backup', b, scheme, direction)
@@ -759,6 +761,53 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     plt.close()
 
 
+def agPlot():
+    """
+    Plot evolutino of alphas and gammas for increasing beta
+    """
+    alphas = np.zeros((nNodes, len(B)))
+    gammas = np.zeros((nNodes, len(B)))
+    for i, b in enumerate(B):
+        N = np.load('./results/heterogen/b_' + str(b) + '_linear.npz', mmap_mode='r')
+        alphas[:, i] = N['alpha']
+        gammas[:, i] = N['gamma']
+
+    plt.figure(figsize=(12, 5))
+    ax1 = plt.subplot(121)
+    ax1.set_xticks(np.linspace(0.5, 10.5, 11))
+    ax1.set_xticklabels(range(11), fontsize=8)
+    ax1.set_yticks(np.linspace(.5, 29.5, 30))
+    ax1.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
+    ax1.xaxis.set_tick_params(width=0)
+    ax1.yaxis.set_tick_params(width=0)
+    plt.pcolormesh(alphas[loadOrder], cmap='coolwarm_r')
+    cb1 = plt.colorbar()
+    cb1.solids.set_edgecolor('face')
+    cb1.set_label(label=r'$\alpha$', size=13)
+    plt.xlabel(r'$\beta$')
+
+    maxGamma = np.max(gammas)
+    point = 1 / maxGamma
+    redgreendict = {'red': [(0.0, 1, 1), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
+                    'green': [(0.0, 0.4, 0.4), (point, 1.0, 1.0), (1.0, 0.8, 0.8)],
+                    'blue': [(0.0, 0.4, 0.4), (point, 1.0, 1.0), (1.0, 0.0, 0.0)]}
+    cmap = LinearSegmentedColormap('redgreen', redgreendict, 1000)
+
+    ax2 = plt.subplot(122)
+    ax2.set_xticks(np.linspace(0.5, 10.5, 11))
+    ax2.set_xticklabels(range(11), fontsize=8)
+    ax2.set_yticks(np.linspace(.5, 29.5, 30))
+    ax2.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
+    ax2.xaxis.set_tick_params(width=0)
+    ax2.yaxis.set_tick_params(width=0)
+    plt.pcolormesh(gammas[loadOrder], cmap=cmap)
+    cb2 = plt.colorbar()
+    cb2.solids.set_edgecolor('face')
+    cb2.set_label(label=r'$\gamma$', size=13)
+    plt.xlabel(r'$\beta$')
+    plt.savefig(figPath + 'alpha_gamma' + '.pdf', bbox_inches='tight')
+    plt.close()
+
 # Parameters for parallel calling of functions
 d = []
 for i in range(2 * len(B)):
@@ -785,6 +834,10 @@ if 'vector' in task:
     p.map(vectorTrace, d)
 
 if 'plot' in task:
+    if 'ag' in task:
+        print 'Plotting alphas and gammas'
+        agPlot()
+
     if 'map' in task:
         print 'Plotting maps of beta layouts'
         scheme = 'square'
