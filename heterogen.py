@@ -50,7 +50,8 @@ directions = ['import', 'export', 'combined']
 lapse = 70128
 N_bins = 90
 nNodes = 30
-B = range(11)
+B = [0.5, 1.5, 2.5, 3.5, 4.5]  # range(11)
+# B = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 meanEU = 345327.47685659607
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
@@ -335,7 +336,7 @@ def plot_europe_map(country_weights, b=None, ax=None):
         lines.set_linewidth(0.3)
         ax.add_collection(lines)
         country_count += 1
-    if b: plt.text(2e5, 4e6, r'$\beta = ' + str(b) + r'$', fontsize=12)
+    if b: plt.text(1.5e5, 4e6, r'$\beta = ' + str(b) + r'$', fontsize=12)
 
 
 def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', b=1):
@@ -765,6 +766,7 @@ def agPlot():
     """
     Plot evolutino of alphas and gammas for increasing beta
     """
+    B = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
     alphas = np.zeros((nNodes, len(B)))
     gammas = np.zeros((nNodes, len(B)))
     for i, b in enumerate(B):
@@ -775,7 +777,7 @@ def agPlot():
     plt.figure(figsize=(12, 5))
     ax1 = plt.subplot(121)
     ax1.set_xticks(np.linspace(0.5, 10.5, 11))
-    ax1.set_xticklabels(range(11), fontsize=8)
+    ax1.set_xticklabels(B, fontsize=8)
     ax1.set_yticks(np.linspace(.5, 29.5, 30))
     ax1.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
     ax1.xaxis.set_tick_params(width=0)
@@ -795,7 +797,7 @@ def agPlot():
 
     ax2 = plt.subplot(122)
     ax2.set_xticks(np.linspace(0.5, 10.5, 11))
-    ax2.set_xticklabels(range(11), fontsize=8)
+    ax2.set_xticklabels(B, fontsize=8)
     ax2.set_yticks(np.linspace(.5, 29.5, 30))
     ax2.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
     ax2.xaxis.set_tick_params(width=0)
@@ -841,7 +843,7 @@ if 'plot' in task:
     if 'map' in task:
         print 'Plotting maps of beta layouts'
         scheme = 'square'
-        B = [1, 2, 3, 4]
+        B = [0.5, 1, 1.5, 2]
         myfig = plt.figure(figsize=(15, 6))
         maxG = np.zeros(len(B))
         gammas = np.zeros((len(B), 30))
@@ -937,17 +939,22 @@ if 'plot' in task:
         schemeNames = ['localised', 'synchronised']
         for b in B:
             colors = ['', 'solar', 'wind']
+            c = ['S', 'W']
             for i, scheme in enumerate(schemes):
                 if scheme == 'square':
                     colors.append('backup')
+                    c.append('B')
                 name = schemeNames[i]
                 quantiles = np.load(resPath + 'quant_' + str(scheme) + '_b_' + str(b) + '.npy')
                 for direction in directions:
                     for j, color in enumerate(colors):
-                        if direction == 'combined':
-                            Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_import.npy')
-                            Usages += np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_export.npy')
-                            Usages /= 2
+                        if color == '':
+                            if direction == 'combined':
+                                Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_import.npy')
+                                Usages += np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_export.npy')
+                                Usages /= 2
+                            else:
+                                Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_' + direction + '.npy')
                         else:
-                            Usages = np.load('./linkcolouring/heterogen/' + scheme + '-b-' + str(b) + '_link_mix_' + direction + '.npy')
+                            Usages = np.load('./linkcolouring/heterogen/' + scheme + '_' + direction + '_b_' + str(b) + '_' + 'usage' + c[j - 1] + '.npy')
                         link_level_hour(levels, Usages, quantiles, name, direction, color, nnames, lnames, b=b)
