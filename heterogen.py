@@ -789,7 +789,7 @@ def agPlot():
     plt.xlabel(r'$\beta$')
 
     maxGamma = np.max(gammas)
-    point = 1 / maxGamma
+    point = (1 / maxGamma) * 0.88
     redgreendict = {'red': [(0.0, 1, 1), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
                     'green': [(0.0, 0.4, 0.4), (point, 1.0, 1.0), (1.0, 0.8, 0.8)],
                     'blue': [(0.0, 0.4, 0.4), (point, 1.0, 1.0), (1.0, 0.0, 0.0)]}
