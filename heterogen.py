@@ -774,6 +774,7 @@ def agPlot():
         alphas[:, i] = N['alpha']
         gammas[:, i] = N['gamma']
 
+    norm1 = mpl.colors.Normalize(vmin=0, vmax=1)
     plt.figure(figsize=(12, 5))
     ax1 = plt.subplot(121)
     ax1.set_xticks(np.linspace(0.5, 10.5, 11))
@@ -782,14 +783,15 @@ def agPlot():
     ax1.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
     ax1.xaxis.set_tick_params(width=0)
     ax1.yaxis.set_tick_params(width=0)
-    plt.pcolormesh(alphas[loadOrder], cmap='coolwarm_r')
+    plt.pcolormesh(alphas[loadOrder], norm=norm1, cmap='coolwarm_r')
     cb1 = plt.colorbar()
     cb1.solids.set_edgecolor('face')
     cb1.set_label(label=r'$\alpha$', size=13)
     plt.xlabel(r'$\beta$')
 
     maxGamma = np.max(gammas)
-    point = (1 / maxGamma) * 0.88
+    norm2 = mpl.colors.Normalize(vmin=0, vmax=maxGamma)
+    point = 1 / maxGamma
     redgreendict = {'red': [(0.0, 1, 1), (point, 1.0, 1.0), (1.0, 0.0, 0.0)],
                     'green': [(0.0, 0.4, 0.4), (point, 1.0, 1.0), (1.0, 0.8, 0.8)],
                     'blue': [(0.0, 0.4, 0.4), (point, 1.0, 1.0), (1.0, 0.0, 0.0)]}
@@ -802,7 +804,7 @@ def agPlot():
     ax2.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
     ax2.xaxis.set_tick_params(width=0)
     ax2.yaxis.set_tick_params(width=0)
-    plt.pcolormesh(gammas[loadOrder], cmap=cmap)
+    plt.pcolormesh(gammas[loadOrder], norm=norm2, cmap=cmap)
     cb2 = plt.colorbar()
     cb2.solids.set_edgecolor('face')
     cb2.set_label(label=r'$\gamma$', size=13)
