@@ -33,6 +33,7 @@ The script can be called using the following command line arguments:
 Plotting:
 - plot ag:              plot alphas and gammas for various betas
 - plot map:             plot maps of beta layouts
+- plot total:           plot total network usage for vasrious beta values
 - plot network:         plot network usage for every color, scheme, node, beta
 - plot network total:   plot total network usage for every scheme, node, beta
 - plot network day:     plot daily network usage for every color, scheme, node, beta
@@ -50,8 +51,7 @@ directions = ['import', 'export', 'combined']
 lapse = 70128
 N_bins = 90
 nNodes = 30
-B = [0.5, 1.5, 2.5, 3.5, 4.5]  # range(11)
-# B = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+B = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 meanEU = 345327.47685659607
 inPath = './results/heterogen/input/'
 resPath = './results/heterogen/'
@@ -663,15 +663,17 @@ def plotTotal(scheme, color):
         usagesEx = np.load(resPath + '/N_cont_' + scheme + '_export_b_' + str(b) + colStr + '.npy')
         totUsageEx[:, i] = np.sum(usagesEx, 1) / node_mean_load
 
+    norm1 = mpl.colors.Normalize(vmin=0, vmax=np.max(totUsageIm))
+    norm2 = mpl.colors.Normalize(vmin=0, vmax=np.max(totUsageEx))
     plt.figure(figsize=(12, 5))
     ax1 = plt.subplot(121)
     ax1.set_xticks(np.linspace(0.5, 10.5, 11))
-    ax1.set_xticklabels(range(11), fontsize=8)
+    ax1.set_xticklabels(B, fontsize=8)
     ax1.set_yticks(np.linspace(.5, 29.5, 30))
     ax1.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
     ax1.xaxis.set_tick_params(width=0)
     ax1.yaxis.set_tick_params(width=0)
-    plt.pcolormesh(totUsageIm[loadOrder], cmap=cmap)
+    plt.pcolormesh(totUsageIm[loadOrder], norm=norm1, cmap=cmap)
     cb1 = plt.colorbar()
     cb1.solids.set_edgecolor('face')
     cb1.set_label(label='Network usage', size=11)
@@ -679,12 +681,12 @@ def plotTotal(scheme, color):
 
     ax2 = plt.subplot(122)
     ax2.set_xticks(np.linspace(0.5, 10.5, 11))
-    ax2.set_xticklabels(range(11), fontsize=8)
+    ax2.set_xticklabels(B, fontsize=8)
     ax2.set_yticks(np.linspace(.5, 29.5, 30))
     ax2.set_yticklabels(loadNames, ha="right", va="center", fontsize=8)
     ax2.xaxis.set_tick_params(width=0)
     ax2.yaxis.set_tick_params(width=0)
-    plt.pcolormesh(totUsageEx[loadOrder], cmap=cmap)
+    plt.pcolormesh(totUsageEx[loadOrder], norm=norm2, cmap=cmap)
     cb2 = plt.colorbar()
     cb2.solids.set_edgecolor('face')
     cb2.set_label(label='Network usage', size=11)
@@ -886,16 +888,12 @@ if 'plot' in task:
                 colors.append('backup')
             for b in B:
                 for direction in directions:
-                    print('Direction: ' + direction)
                     for color in colors:
                         if 'total' in task:
-                            print('Plotting total network figures')
                             drawnet_total(N, scheme, direction, color, b)
                         elif 'day' in task:
-                            print('Plotting day/night network figures')
                             drawnet_day(N, scheme, direction, color, b)
                         else:
-                            print('Plotting network figures')
                             drawnet_usage(N, scheme, direction, color, b)
 
     if 'levels' in task:
