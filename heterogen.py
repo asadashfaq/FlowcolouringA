@@ -424,7 +424,7 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', 
         # Save figure
         thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
         pathCheck(thisPath)
-        plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '.png', bbox_inches='tight')
+        plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '.png')
         plt.close()
 
 
@@ -509,7 +509,7 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
     # Save figure
     thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
     pathCheck(thisPath)
-    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png', bbox_inches='tight')
+    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png')
     plt.close()
 
 

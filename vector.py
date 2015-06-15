@@ -230,7 +230,7 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar'):
         ax2.axis('off')
 
         # Save figure
-        plt.savefig(figPath + "network/" + scheme + "/" + str(n.id) + '_' + color + '_' + direction + ".png")
+        plt.savefig(figPath + "network/" + scheme + "/" + str(n.id) + '_' + color + '_' + direction + ".pdf")
         plt.close()
 
 
@@ -356,7 +356,7 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar'):
     ax2.axis('off')
 
     # Save figure
-    plt.savefig(figPath + "network/" + scheme + "/" + 'total_' + color + '_' + direction + ".png")
+    plt.savefig(figPath + "network/" + scheme + "/" + 'total_' + color + '_' + direction + ".pdf")
     plt.close()
 
 
@@ -483,7 +483,7 @@ def drawnet_day(N=None, scheme='linear', direction='combined', color='solar'):
         ax2.axis('off')
 
         # Save figure
-        plt.savefig(figPath + "day/" + scheme + "/" + color + '_' + direction + '_' + time + ".png")
+        plt.savefig(figPath + "day/" + scheme + "/" + color + '_' + direction + '_' + time + ".pdf")
         plt.close()
 
 
@@ -547,7 +547,7 @@ def usagePlotter(direction):
                     modeName = modeNames[0]
                     plt.legend(('solar usage', 'wind usage', 'total usage'), loc=1)
                 plt.title(nodeLabel.tostring() + ' ' + modeName + ' ' + direction + ' flows on link ' + linkLabel)
-                plt.savefig(nodePath + '/' + str(link) + '_' + modeName + '_' + direction + '.png', bbox_inches='tight')
+                plt.savefig(nodePath + '/' + str(link) + '_' + modeName + '_' + direction + '.pdf', bbox_inches='tight')
                 plt.close()
 
 
@@ -593,7 +593,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total' + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total' + '_' + str(direction) + '_' + color + '.pdf', bbox_inches='tight')
     plt.close()
 
     # plot all nodes normalised to usage of first level
@@ -609,7 +609,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total_norm_cont_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total_norm_cont_' + str(direction) + '_' + color + '.pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -656,7 +656,7 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '_' + color + '.png', bbox_inches='tight')
+    plt.savefig(figPath + '/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '_' + color + '.pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -701,7 +701,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         plt.ylabel('Link level')
         plt.axis([0, 24, 0, levels])
         plt.title(nnames[node] + ' ' + direction + ' ' + color)
-        plt.savefig(figPath + '/hourly/' + str(scheme) + '/' + str(node) + '_' + color + '_' + direction + '.png', bbox_inches='tight')
+        plt.savefig(figPath + '/hourly/' + str(scheme) + '/' + str(node) + '_' + color + '_' + direction + '.pdf', bbox_inches='tight')
         plt.close()
 
         hourSums = hourSums / np.sum(hourSums, axis=1)[:, None]
@@ -719,7 +719,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
         plt.ylabel('Link level')
         plt.axis([0, 24, 0, levels])
         plt.title(nnames[node] + ' ' + direction + ' ' + color)
-        plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + color + '_' + direction + '.png', bbox_inches='tight')
+        plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/' + str(node) + '_' + color + '_' + direction + '.pdf', bbox_inches='tight')
         plt.close()
 
     # Plot average hourly usage
@@ -736,7 +736,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
     plt.axis([0, 24, 0, levels])
-    plt.savefig(figPath + '/hourly/' + str(scheme) + '/total_' + color + '_' + direction + '.png', bbox_inches='tight')
+    plt.savefig(figPath + '/hourly/' + str(scheme) + '/total_' + color + '_' + direction + '.pdf', bbox_inches='tight')
     plt.close()
 
     totalNormed /= nodes
@@ -752,7 +752,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
     plt.axis([0, 24, 0, levels])
-    plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/total_' + color + '_' + direction + '.png', bbox_inches='tight')
+    plt.savefig(figPath + '/hourly/' + str(scheme) + '/normed/total_' + color + '_' + direction + '.pdf', bbox_inches='tight')
     plt.close()
 
 if 'trace' in task:
@@ -941,7 +941,7 @@ if 'sanity' in task:
             ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=9)
             plt.axis([0, 30, min(means) - (.1 * min(means)), max(means) + (.1 * max(means))])
             plt.legend(('individual country', 'mean of countries'), loc=2, ncol=2)
-            plt.savefig(figPath + 'error/' + title + '_' + direction + '_.png', bbox_inches='tight')
+            plt.savefig(figPath + 'error/' + title + '_' + direction + '.pdf', bbox_inches='tight')
 
             plt.figure()
             ax = plt.subplot()
@@ -953,5 +953,5 @@ if 'sanity' in task:
             ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=9)
             plt.axis([0, 30, min(weightedMeans) - (.1 * min(weightedMeans)), max(weightedMeans) + (.1 * max(weightedMeans))])
             plt.legend(('individual country', 'mean of countries'), loc=2, ncol=2)
-            plt.savefig(figPath + 'error/' + 'weighted_' + title + '_' + direction + '_.png', bbox_inches='tight')
+            plt.savefig(figPath + 'error/' + 'weighted_' + title + '_' + direction + '.pdf', bbox_inches='tight')
             plt.close()
