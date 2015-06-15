@@ -815,7 +815,6 @@ def agPlot():
     """
     Plot evolutino of alphas and gammas for increasing beta
     """
-    B = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
     alphas = np.zeros((nNodes, len(B)))
     gammas = np.zeros((nNodes, len(B)))
     for i, b in enumerate(B):
@@ -887,8 +886,6 @@ if 'vector' in task:
     p.map(vectorTrace, d)
 
 if 'plot' in task:
-    B = plotB
-
     if 'ag' in task:
         print 'Plotting alphas and gammas'
         agPlot()
@@ -926,6 +923,7 @@ if 'plot' in task:
         plt.savefig(figPath + 'gamma_map.pdf', bbox_inches='tight')
 
     if 'network' in task:
+        B = plotB
         print 'Plotting network figures'
         N = EU_Nodes_usage()
         if 'day' in task:
@@ -946,6 +944,7 @@ if 'plot' in task:
                             drawnet_usage(N, scheme, direction, color, b)
 
     if 'levels' in task:
+        B = plotB
         levels = 4
         N = EU_Nodes_usage()
         lnames = np.array(link_namer(N))
@@ -980,6 +979,7 @@ if 'plot' in task:
                 plotTotal(scheme, color)
 
     if 'hour' in task:
+        B = plotB
         print('Plotting hourly link level usages')
         levels = 4
         N = EU_Nodes_usage()
