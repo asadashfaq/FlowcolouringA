@@ -39,6 +39,9 @@ Plotting:
 - plot network day:     plot daily network usage for every color, scheme, node, beta
 - plot levels:          plot usage of links at different levels
 - plot hour:            plot hourly usage of links at different levels
+
+Include 'all' to plot figures for all beta values e.g.:
+- plot hour all
 """
 
 if len(sys.argv) < 2:
@@ -58,6 +61,14 @@ resPath = './results/heterogen/'
 figPath = './figures/heterogen/'
 colorPath = './linkcolouring/heterogen/'
 
+# Which beta values to make figures for
+plotB = [0, 3]
+if 'all' in task:
+    plotB = B
+
+# List of countries that will get pdf figures
+prettyPlots = [7, 20]
+
 # Capacity factors
 cfW = {'BE': 2.7778, 'FR': 3.125, 'BG': 6.6667, 'DK': 2.4390, 'HR': 5.5556, 'DE': 2.7778,
        'HU': 5.2632, 'FI': 3.7037, 'BA': 6.25, 'NL': 2.5, 'PT': 4.5455, 'NO': 3.125,
@@ -69,6 +80,13 @@ cfS = {'AT': 5.8824, 'BA': 4.7619, 'BE': 7.1429, 'BG': 4.5455, 'CH': 5.8824, 'CZ
        'GB': 6.6667, 'GR': 4.1667, 'HR': 5.0, 'HU': 5.5556, 'IE': 7.6923, 'IT': 4.3478,
        'LT': 7.1429, 'LU': 7.1429, 'LV': 7.6923, 'NL': 6.6667, 'NO': 7.6923, 'PL': 6.6667,
        'PT': 4.3478, 'RO': 5.0, 'RS': 5.2632, 'SE': 7.1429, 'SI': 5.5556, 'SK': 5.8824}
+
+
+def roundTo(x, n):
+    """
+    Round to n+1 significant digits.
+    """
+    return round(x, -int(np.floor(np.sign(x) * np.log10(abs(x)))) + n)
 
 
 def tablePrint():
@@ -424,7 +442,9 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', 
         # Save figure
         thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
         pathCheck(thisPath)
-        plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '.png')
+        if n.id in prettyPlots:
+            plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '_b_' + str(b) + '.pdf')
+        plt.savefig(thisPath + str(n.id) + colStr + '_' + direction + '_b_' + str(b) + '.png')
         plt.close()
 
 
@@ -451,6 +471,23 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
     for l in LF:
         G.add_edge(l[0], l[1], id=l[2])
 
+    # Dictionaries for color maps. Not the same as in figutils.py
+    blueDict = {'red': ((0.0, 1.0, 1.0), (1.0, 0.0, 0.0)),
+                'green': ((0.0, 1.0, 1.0), (1.0, 0.0, 0.0)),
+                'blue': ((0.0, 1.0, 1.0), (1.0, 0.9, 0.9))}
+
+    blueDict2 = {'red': ((0, 0, 0), (.4, 0.5, 0.5), (1.0, 1, 1)),
+                 'green': ((0, 0, 0), (.4, 0, 0), (1.0, 0.0, 0.0)),
+                 'blue': ((0, 1, 1), (.4, 0.5, 0.5), (1.0, 0, 0))}
+
+    orangeDict = {'red': ((0.0, 1.0, 1.0), (1, 1.0, 1.0)),
+                  'green': ((0.0, 1.0, 1.0), (1, 0.65, .65)),
+                  'blue': ((0.0, 1.0, 1.0), (1, 0.0, 0.0))}
+
+    brownDict = {'red': ((0.0, 1.0, 1.0), (1, 0.57, 0.57)),
+                 'green': ((0.0, 1.0, 1.0), (1, 0.36, .36)),
+                 'blue': ((0.0, 1.0, 1.0), (1, 0.15, 0.15))}
+
     if color == 'wind':
         cmap = LinearSegmentedColormap('blue', blueDict, 1000)
     elif color == 'solar':
@@ -470,6 +507,11 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
 
     # Calculate colors of links
     linkUsages = np.sum(N_usages, 0) / quantiles
+    minUsage = np.min(linkUsages)
+    maxUsage = np.max(linkUsages)
+    diffUsage = maxUsage - minUsage
+    linkUsages -= minUsage
+    linkUsages /= diffUsage
     col = [(cmap(l)) for l in linkUsages]
 
     # Create a new figure and plot network below
@@ -478,6 +520,11 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
     # color bar in bottom of figure
     ax1 = fig.add_axes([0.05, 0.08, 0.9, .08])
     cbl = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
+    cbl.solids.set_edgecolor('face')
+    ticks = np.linspace(0, 1, 6)
+    cbl.set_ticks(ticks)
+    tickLabels = [roundTo(i, 1) for i in np.linspace(minUsage, maxUsage, 6)]
+    cbl.set_ticklabels(tickLabels)
 
     # Label just above color bar
     if scheme == 'linear':
@@ -509,7 +556,7 @@ def drawnet_total(N=None, scheme='linear', direction='combined', color='solar', 
     # Save figure
     thisPath = figPath + 'B_' + str(b) + '/network/' + scheme + '/'
     pathCheck(thisPath)
-    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png')
+    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '_b_' + str(b) + '.pdf')
     plt.close()
 
 
@@ -588,7 +635,7 @@ def drawnet_day(N=None, scheme='linear', direction='combined', color='solar', b=
         # Save figure
         thisPath = figPath + 'B_' + str(b) + '/day/' + scheme + '/'
         pathCheck(thisPath)
-        plt.savefig(thisPath + color + '_' + direction + '_' + time + '.png')
+        plt.savefig(thisPath + color + '_' + direction + '_' + time + '_b_' + str(b) + '.pdf')
         plt.close()
 
 
@@ -636,7 +683,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '.png', bbox_inches='tight')
+    plt.savefig(thisPath + 'total' + colStr + '_' + direction + '_b_' + str(b) + '.png', bbox_inches='tight')
     plt.close()
 
 
@@ -743,7 +790,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
 
         thisPath = figPath + 'B_' + str(b) + '/hourly/' + scheme + '/'
         pathCheck(thisPath)
-        plt.savefig(thisPath + str(node) + colStr + '_' + direction + '.png', bbox_inches='tight')
+        plt.savefig(thisPath + str(node) + colStr + '_' + direction + '_b_' + str(b) + '.png', bbox_inches='tight')
         plt.close()
 
     # Plot average hourly usage
@@ -840,6 +887,8 @@ if 'vector' in task:
     p.map(vectorTrace, d)
 
 if 'plot' in task:
+    B = plotB
+
     if 'ag' in task:
         print 'Plotting alphas and gammas'
         agPlot()
@@ -919,7 +968,7 @@ if 'plot' in task:
                         N_usages = np.load(resPath + '/N_cont_' + scheme + '_' + direction + '_b_' + str(b) + colStr + '.npy')
                         link_level_bars(levels, N_usages, quantiles, name, direction, color, nnames, lnames, b=b)
 
-    if 'total' in task:
+    if (('total' in task) and ('network' not in task)):
         print('Plotting total network usage')
         N = np.load('./results/heterogen/b_0_linear.npz', mmap_mode='r')
         node_mean_load = N['mean']
