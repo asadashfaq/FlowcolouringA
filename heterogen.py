@@ -410,6 +410,7 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', 
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05, 0.08, 0.9, .08])
         cbl = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
+        cbl.solids.set_edgecolor('face')
 
         # Label just above color bar
         if scheme == 'linear':
@@ -605,6 +606,7 @@ def drawnet_day(N=None, scheme='linear', direction='combined', color='solar', b=
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05, 0.08, 0.9, .08])
         cbl = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
+        cbl.solids.set_edgecolor('face')
 
         # Label just above color bar
         if scheme == 'linear':
