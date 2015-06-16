@@ -426,18 +426,18 @@ def bars(scheme, verbose=None, norm='load'):
 
         if (network == 'regions' or network == 'superRegions'):
             if length:
-                plt.savefig('./figures/sensitivity/' + scheme + '/' + network + '-network-usage-' + direction + '-' + norm + '-length.png', bbox_inches='tight')
+                plt.savefig('./figures/sensitivity/' + scheme + '/' + network + '-network-usage-' + direction + '-' + norm + '-length.pdf', bbox_inches='tight')
             else:
-                plt.savefig('./figures/sensitivity/' + scheme + '/' + network + '-network-usage-' + direction + '-' + norm + '.png', bbox_inches='tight')
+                plt.savefig('./figures/sensitivity/' + scheme + '/' + network + '-network-usage-' + direction + '-' + norm + '.pdf', bbox_inches='tight')
         else:
             if length:
-                plt.savefig('./figures/' + scheme + '/network-usage-' + direction + '-' + norm + '-length.png', bbox_inches='tight')
-                plt.savefig('./figures/sensitivity/' + scheme + '/network-usage-' + direction + '-' + norm + '-length.png', bbox_inches='tight')
+                plt.savefig('./figures/' + scheme + '/network-usage-' + direction + '-' + norm + '-length.pdf', bbox_inches='tight')
+                plt.savefig('./figures/sensitivity/' + scheme + '/network-usage-' + direction + '-' + norm + '-length.pdf', bbox_inches='tight')
             else:
-                plt.savefig('./figures/' + scheme + '/network-usage-' + direction + '-' + norm + '.png', bbox_inches='tight')
-                plt.savefig('./figures/sensitivity/' + scheme + '/network-usage-' + direction + '-' + norm + '.png', bbox_inches='tight')
+                plt.savefig('./figures/' + scheme + '/network-usage-' + direction + '-' + norm + '.pdf', bbox_inches='tight')
+                plt.savefig('./figures/sensitivity/' + scheme + '/network-usage-' + direction + '-' + norm + '.pdf', bbox_inches='tight')
             if verbose:
-                print('Saved figures to ./figures/' + scheme + '/network-usage-' + direction + '-' + norm + '.png')
+                print('Saved figures to ./figures/' + scheme + '/network-usage-' + direction + '-' + norm + '.pdf')
 
 
 def bars2(scheme, verbose=False):
@@ -604,11 +604,11 @@ def bars2(scheme, verbose=False):
             print '%0.2f' % dr2
 
         if length:
-            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '-length.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '-length.pdf', bbox_inches='tight')
         else:
-            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '.pdf', bbox_inches='tight')
         if verbose:
-            print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '.png')
+            print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-30-53-usage-' + direction + '.pdf')
 
 
 def bars3(scheme, verbose=False):
@@ -781,11 +781,11 @@ def bars3(scheme, verbose=False):
             print '%0.2f' % dr2
 
         if length:
-            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '-length.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '-length.pdf', bbox_inches='tight')
         else:
-            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '.pdf', bbox_inches='tight')
         if verbose:
-            print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '.png')
+            print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-30-8-usage-' + direction + '.pdf')
 
 
 def bars4(scheme, verbose=False):
@@ -1005,11 +1005,11 @@ def bars4(scheme, verbose=False):
             print '%0.2f' % dr4, '%0.2f' % dr5, '%0.2f' % dr6
 
         if length:
-            plt.savefig('./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '-length.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '-length.pdf', bbox_inches='tight')
         else:
-            plt.savefig('./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '.png', bbox_inches='tight')
+            plt.savefig('./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '.pdf', bbox_inches='tight')
         if verbose:
-            print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '.png')
+            print('Saved figures to ./figures/sensitivity/' + scheme + '/compared-all-network-usage-' + direction + '.pdf')
 
 
 def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames, admat=None):
@@ -1063,7 +1063,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total' + '_' + str(direction) + '.png', bbox_inches='tight')
+    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total' + '_' + str(direction) + '.pdf', bbox_inches='tight')
     plt.close()
 
     # plot all nodes normalised to usage of first level
@@ -1079,7 +1079,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm_cont_' + str(direction) + '.png', bbox_inches='tight')
+    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm_cont_' + str(direction) + '.pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -1120,7 +1120,7 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticks(np.linspace(1, nodes, nodes))
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10)
     plt.ylabel('Link level')
-    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '.png', bbox_inches='tight')
+    plt.savefig('./figures/levels/' + str(scheme) + '/' + 'total_norm' + '_' + str(direction) + '.pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -1194,7 +1194,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
     plt.axis([0, 24, 0, levels])
-    plt.savefig('./figures/hourly/' + str(scheme) + '/total_' + direction + '.png', bbox_inches='tight')
+    plt.savefig('./figures/hourly/' + str(scheme) + '/total_' + direction + '.pdf', bbox_inches='tight')
     plt.close()
 
     totalNormed /= nodes
@@ -1210,7 +1210,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
     ax.set_xticklabels(np.array(np.linspace(1, 24, 24), dtype='int'), ha="center", va="top", fontsize=10)
     plt.ylabel('Link level')
     plt.axis([0, 24, 0, levels])
-    plt.savefig('./figures/hourly/' + str(scheme) + '/normed/total_' + direction + '.png', bbox_inches='tight')
+    plt.savefig('./figures/hourly/' + str(scheme) + '/normed/total_' + direction + '.pdf', bbox_inches='tight')
     plt.close()
 
 if 'network' in task:
