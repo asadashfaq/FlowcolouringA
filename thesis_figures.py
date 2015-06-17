@@ -181,7 +181,7 @@ if 'balancing' in task:
         plt.fill_between(bins[:-1], b, color='#0000aa', edgecolor='#0000aa')
         plt.plot([q, q], [0, .4 * top], '-', lw=2, color='#aa0000')
         plt.text(q, (.4 * top) + 0.000005, '99%')
-        plt.xlabel(r'$B_n$ [MW]')
+        plt.xlabel(r'$G^B_n$ [MW]')
         plt.ylabel(r'$p(B_n)$')
         plt.axis([0, bins[-1], 0, top])
         plt.savefig(figPath + '/balancing/' + str(n) + '-' + str(N[n].label) + '.pdf', bbox_inches='tight')
@@ -277,7 +277,7 @@ if 'compare' in task:
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
     ax.xaxis.grid(False)
     ax.xaxis.set_tick_params(width=0)
-    ax.set_ylabel(r'$\mathcal{K}^B / \left\langle L_n \right\rangle$')
+    ax.set_ylabel(r'$\mathcal{K}_n^B / \left\langle L_n \right\rangle$')
     maxes = [max(bars[0]), max(bars[1])]
     plt.axis([0, 30 * 2 + .5, 0, 1.10 * max(maxes)])
 
@@ -308,7 +308,7 @@ if 'compare' in task:
     ax.set_xticklabels(loadNames, rotation=60, ha="right", va="top", fontsize=10.5)
     ax.xaxis.grid(False)
     ax.xaxis.set_tick_params(width=0)
-    ax.set_ylabel(r'$ E^B / \left\langle L_n \right\rangle$')
+    ax.set_ylabel(r'$ E_n^B / \left\langle L_n \right\rangle$')
     maxes = [max(bars[0]), max(bars[1])]
     plt.axis([0, 30 * 2 + .5, 0, 1.10 * max(maxes)])
 
