@@ -11,6 +11,7 @@ from functions import link_label, binMaker
 from aurespf.tools import get_q, AtoKh_old
 from link_namer import link_namer
 import networkx as nx
+from figutils import *
 
 """
 Figures for a paper on flowtracing with unconstrained synchronised flow with
@@ -27,14 +28,6 @@ else:
 
 outPath = './figures/Paper figures feb 15/'
 
-# Node indices and names sorted after descending mean load
-loadOrder = [18, 4, 7, 22, 24, 20, 8, 5, 2, 6, 1, 15, 0, 10, 14,
-             9, 11, 12, 16, 21, 17, 19, 3, 26, 13, 29, 27, 23, 28, 25]
-
-loadNames = np.array(['DE', 'FR', 'GB', 'IT', 'ES', 'SE', 'PL', 'NO', 'NL',
-                      'BE', 'FI', 'CZ', 'AT', 'GR', 'RO', 'BG', 'PT', 'CH',
-                      'HU', 'DK', 'RS', 'IE', 'BA', 'SK', 'HR', 'LT', 'EE',
-                      'SI', 'LV', 'LU'], dtype='|S4')
 
 def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network', savepath=outPath, title=None):
     G = nx.Graph()
@@ -43,71 +36,7 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
     colwidth = (3.425)
     blue = '#134b7c'
 
-    all_countries = ['AUT', 'FIN', 'NLD', 'BIH', 'FRA', 'NOR', 'BEL','GBR', \
-                     'POL', 'BGR', 'GRC', 'PRT', 'CHE', 'HRV', 'ROU', 'CZE',\
-                     'HUN', 'SRB', 'DEU', 'IRL', 'SWE', 'DNK', 'ITA', 'SVN',\
-                     'ESP', 'LUX', 'SVK', 'EST', 'LVA', 'LTU']
-
-    ISO3ISO2dict = {'AUT':'AT', 'FIN':'FI', 'NLD':'NL', 'BIH':'BA',\
-            'FRA':'FR', 'NOR':'NO', 'BEL':'BE','GBR':'GB', 'POL':'PL',\
-            'BGR':'BG', 'GRC':'GR', 'PRT':'PT', 'CHE':'CH', 'HRV':'HR',\
-            'ROU':'RO', 'CZE':'CZ', 'HUN':'HU', 'SRB':'RS', 'DEU':'DE',\
-            'IRL':'IE', 'SWE':'SE', 'DNK':'DK', 'ITA':'IT', 'SVN':'SI',\
-            'ESP':'ES', 'LUX':'LU', 'SVK':'SK', 'EST':'EE', 'LVA':'LV',\
-            'LTU':'LT'}
-
     all_countries_ISO2 = [ISO3ISO2dict[c] for c in all_countries]
-
-    all_links = ['AUT to CHE',
-                 'AUT to CZE',
-                 'AUT to HUN',
-                 'AUT to DEU',
-                 'AUT to ITA',
-                 'AUT to SVN',
-                 'FIN to SWE',
-                 'FIN to EST',
-                 'NLD to NOR',
-                 'NLD to BEL',
-                 'NLD to GBR',
-                 'NLD to DEU',
-                 'BIH to HRV',
-                 'BIH to SRB',
-                 'FRA to BEL',
-                 'FRA to GBR',
-                 'FRA to CHE',
-                 'FRA to DEU',
-                 'FRA to ITA',
-                 'FRA to ESP',
-                 'NOR to SWE',
-                 'NOR to DNK',
-                 'GBR to IRL',
-                 'POL to CZE',
-                 'POL to DEU',
-                 'POL to SWE',
-                 'POL to SVK',
-                 'BGR to GRC',
-                 'BGR to ROU',
-                 'BGR to SRB',
-                 'GRC to ITA',
-                 'PRT to ESP',
-                 'CHE to DEU',
-                 'CHE to ITA',
-                 'HRV to HUN',
-                 'HRV to SRB',
-                 'HRV to SVN',
-                 'ROU to HUN',
-                 'ROU to SRB',
-                 'CZE to DEU',
-                 'CZE to SVK',
-                 'HUN to SRB',
-                 'HUN to SVK',
-                 'DEU to SWE',
-                 'DEU to DNK',
-                 'DEU to LUX',
-                 'SWE to DNK',
-                 'ITA to SVN',
-                 'EST to LVA',
-                 'LVA to LTU']
 
     nodelist = all_countries_ISO2
     all_links_ISO2 = []
@@ -127,40 +56,6 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
 
     for l in linklist:
         G.add_edge(l[0], l[1], weight = link_weights[l[2]])
-
-    pos={}
-
-    pos['AT']=[0.55,0.45]
-    pos['FI']=[.95,1.1]
-    pos['NL']=[0.40,0.85]
-    pos['BA']=[0.65,0.15]
-    pos['FR']=[0.15,0.60]
-    pos['NO']=[0.5,1.1]
-    pos['BE']=[0.275,0.775]
-    pos['GB']=[0.10,1.05]
-    pos['PL']=[0.75,0.8]
-    pos['BG']=[0.9,0.0]
-    pos['GR']=[0.7,0.0]
-    pos['PT']=[0.0,0.15]
-    pos['CH']=[0.4,0.45]
-    pos['HR']=[0.75,0.3]
-    pos['RO']=[1.0,0.15]
-    pos['CZ']=[0.75,0.60]
-    pos['HU']=[1.0,0.45]
-    pos['RS']=[0.85,0.15]
-    pos['DE']=[0.45,0.7]
-    pos['IE']=[0.0,0.95]
-    pos['SE']=[0.75,1.0]
-    pos['DK']=[0.5,0.875]
-    pos['IT']=[0.4,0.2]
-    pos['SI']=[0.55,0.3]
-    pos['ES']=[0.15,0.35]
-    pos['LU']=[0.325,0.575]
-    pos['SK']=[0.90,0.55]
-    pos['EE']=[1.03,0.985]
-    pos['LV']=[0.99,0.85]
-    pos['LT']=[0.925,0.72]
-
 
     redgreendict = {'red':[(0.0, .4, .4), (0.2, .7, .7), (0.5, 1.0, 1.0) ,(.8, 0.0, 0.0) ,(1.0, 0.0, 0.0)],
                     'green':[(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.5, 1.0, 1.0),(.8, .7, .7), (1.0, .3, .3)],
@@ -254,38 +149,6 @@ def draw_static_network(N=None, F=None, tit="1", show_link_size=True, typ=0, mod
     quants =  np.load('./results/quantiles_square_70128.npy')
     for q in range(50):
         G.add_edge(ListF[q][0], ListF[q][1] , weight=quants[q])
-
-    pos={}
-    pos['AT']=[0.55,0.45]
-    pos['FI']=[.95,1.1]
-    pos['NL']=[0.40,0.85]
-    pos['BA']=[0.65,0.15]
-    pos['FR']=[0.15,0.60]
-    pos['NO']=[0.5,1.1]
-    pos['BE']=[0.275,0.775]
-    pos['GB']=[0.10,1.05]
-    pos['PL']=[0.75,0.8]
-    pos['BG']=[0.9,0.0]
-    pos['GR']=[0.7,0.0]
-    pos['PT']=[0.0,0.15]
-    pos['CH']=[0.4,0.45]
-    pos['HR']=[0.75,0.3]
-    pos['RO']=[1.0,0.15]
-    pos['CZ']=[0.75,0.60]
-    pos['HU']=[1.0,0.45]
-    pos['RS']=[0.85,0.15]
-    pos['DE']=[0.45,0.7]
-    pos['IE']=[0.0,0.95]
-    pos['SE']=[0.75,1.0]
-    pos['DK']=[0.5,0.875]
-    pos['IT']=[0.4,0.2]
-    pos['SI']=[0.55,0.3]
-    pos['ES']=[0.15,0.35]
-    pos['LU']=[0.325,0.575]
-    pos['SK']=[0.90,0.55]
-    pos['EE']=[1.0,0.94]
-    pos['LV']=[0.95,0.83]
-    pos['LT']=[0.87,0.72]
 
     fig = plt.figure(dpi=400,figsize=(1.7*colwidth,1.7*colwidth*0.75))
 
@@ -405,47 +268,11 @@ def drawnet_capacities(N=None,scheme='square',direction='combined'):
     for l in LF:
         G.add_edge(l[0], l[1], id=l[2])
 
-    # Define position of nodes
-    pos={}
-    pos['AT']=[0.55,0.45]
-    pos['FI']=[.95,1.1]
-    pos['NL']=[0.40,0.85]
-    pos['BA']=[0.65,0.15]
-    pos['FR']=[0.15,0.60]
-    pos['NO']=[0.5,1.1]
-    pos['BE']=[0.275,0.775]
-    pos['GB']=[0.10,1.05]
-    pos['PL']=[0.75,0.8]
-    pos['BG']=[0.9,0.0]
-    pos['GR']=[0.7,0.0]
-    pos['PT']=[0.0,0.15]
-    pos['CH']=[0.4,0.45]
-    pos['HR']=[0.75,0.3]
-    pos['RO']=[1.0,0.15]
-    pos['CZ']=[0.75,0.60]
-    pos['HU']=[1.0,0.45]
-    pos['RS']=[0.85,0.15]
-    pos['DE']=[0.45,0.7]
-    pos['IE']=[0.0,0.95]
-    pos['SE']=[0.75,1.0]
-    pos['DK']=[0.5,0.875]
-    pos['IT']=[0.4,0.2]
-    pos['SI']=[0.55,0.3]
-    pos['ES']=[0.15,0.35]
-    pos['LU']=[0.325,0.575]
-    pos['SK']=[0.90,0.55]
-    pos['EE']=[1.0,0.985]
-    pos['LV']=[0.975,0.87]
-    pos['LT']=[0.925,0.77]
 
     # Define color scale for links
     blueDict = {'red': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
-
-    blueDict2 = {'red': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0.5, 0.5),(1.0, 1, 1)),
-             'green': ((0.0, 1.0, 1.0),(.2,0,0),(.5, 0, 0),(1.0, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(.2,1,1),(.5, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
 
@@ -566,47 +393,10 @@ def drawnet_import(N, scheme='square', direction='import', norm=True):
     for l in LF:
         G.add_edge(l[0], l[1], id=l[2])
 
-    # Define position of nodes
-    pos={}
-    pos['AT']=[0.55,0.45]
-    pos['FI']=[.95,1.1]
-    pos['NL']=[0.40,0.85]
-    pos['BA']=[0.65,0.15]
-    pos['FR']=[0.15,0.60]
-    pos['NO']=[0.5,1.1]
-    pos['BE']=[0.275,0.775]
-    pos['GB']=[0.10,1.05]
-    pos['PL']=[0.75,0.8]
-    pos['BG']=[0.9,0.0]
-    pos['GR']=[0.7,0.0]
-    pos['PT']=[0.0,0.15]
-    pos['CH']=[0.4,0.45]
-    pos['HR']=[0.75,0.3]
-    pos['RO']=[1.0,0.15]
-    pos['CZ']=[0.75,0.60]
-    pos['HU']=[1.0,0.45]
-    pos['RS']=[0.85,0.15]
-    pos['DE']=[0.45,0.7]
-    pos['IE']=[0.0,0.95]
-    pos['SE']=[0.75,1.0]
-    pos['DK']=[0.5,0.875]
-    pos['IT']=[0.4,0.2]
-    pos['SI']=[0.55,0.3]
-    pos['ES']=[0.15,0.35]
-    pos['LU']=[0.325,0.575]
-    pos['SK']=[0.90,0.55]
-    pos['EE']=[1.0,0.985]
-    pos['LV']=[0.975,0.87]
-    pos['LT']=[0.925,0.77]
-
     # Define color scale for links
     blueDict = {'red': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
-
-    blueDict2 = {'red': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0.5, 0.5),(1.0, .7, .7)),
-             'green': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,.8,.8),(.4, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
 
@@ -712,47 +502,10 @@ def drawnet_export(N, scheme='square', direction='export', norm=True):
     for l in LF:
         G.add_edge(l[0], l[1], id=l[2])
 
-    # Define position of nodes
-    pos={}
-    pos['AT']=[0.55,0.45]
-    pos['FI']=[.95,1.1]
-    pos['NL']=[0.40,0.85]
-    pos['BA']=[0.65,0.15]
-    pos['FR']=[0.15,0.60]
-    pos['NO']=[0.5,1.1]
-    pos['BE']=[0.275,0.775]
-    pos['GB']=[0.10,1.05]
-    pos['PL']=[0.75,0.8]
-    pos['BG']=[0.9,0.0]
-    pos['GR']=[0.7,0.0]
-    pos['PT']=[0.0,0.15]
-    pos['CH']=[0.4,0.45]
-    pos['HR']=[0.75,0.3]
-    pos['RO']=[1.0,0.15]
-    pos['CZ']=[0.75,0.60]
-    pos['HU']=[1.0,0.45]
-    pos['RS']=[0.85,0.15]
-    pos['DE']=[0.45,0.7]
-    pos['IE']=[0.0,0.95]
-    pos['SE']=[0.75,1.0]
-    pos['DK']=[0.5,0.875]
-    pos['IT']=[0.4,0.2]
-    pos['SI']=[0.55,0.3]
-    pos['ES']=[0.15,0.35]
-    pos['LU']=[0.325,0.575]
-    pos['SK']=[0.90,0.55]
-    pos['EE']=[1.0,0.985]
-    pos['LV']=[0.975,0.87]
-    pos['LT']=[0.925,0.77]
-
     # Define color scale for links
     blueDict = {'red': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'green': ((0.0, 1.0, 1.0),(1.0, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(1.0, 1.0, 1.0))}
-
-    blueDict2 = {'red': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0.5, 0.5),(1.0, .7, .7)),
-             'green': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,0,0),(.4, 0, 0),(1.0, 0.0, 0.0)),
-             'blue': ((0.0, 1.0, 1.0),(0.015, 1.0, 1.0),(.2,.8,.8),(.4, 0.5, 0.5),(1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue',blueDict2,1000)
 
@@ -861,11 +614,43 @@ def usageMesh(direction):
         for r in range(2):
             name = ''
             if r == 1:
-                blue_data = {'red': ((0., 1, 1), (0.01, 1, 1), (1.0, 0.031, 0.031)),
-                             'green': ((0., 1, 1), (0.01, 1, 1), (1.0, 0.247, 0.247)),
-                             'blue': ((0., 1, 1), (0.01, 1, 1), (1.0, 0.51, 0.51))}
-                cmap = LinearSegmentedColormap('blue', blue_data, 1000)
+                # blue_data = {'red': ((0., 1, 1), (0.01, 1, 1), (1.0, 0.031, 0.031)),
+                #              'green': ((0., 1, 1), (0.01, 1, 1), (1.0, 0.247, 0.247)),
+                #              'blue': ((0., 1, 1), (0.01, 1, 1), (1.0, 0.51, 0.51))}
+                # cmap = LinearSegmentedColormap('blue', blue_data, 1000)
                 name = '-blue'
+
+                # Sligt modification of matplotlib built in 'Blues'.
+                # Lowest value is now completely white
+                Blues_data = {'blue': [(0.0, 1.0, 1.0), (0.125, 0.9686274528503418,
+                    0.9686274528503418), (0.25, 0.93725490570068359, 0.93725490570068359),
+                    (0.375, 0.88235294818878174, 0.88235294818878174), (0.5,
+                    0.83921569585800171, 0.83921569585800171), (0.625, 0.7764706015586853,
+                    0.7764706015586853), (0.75, 0.70980393886566162, 0.70980393886566162),
+                    (0.875, 0.61176472902297974, 0.61176472902297974), (1.0,
+                    0.41960784792900085, 0.41960784792900085)],
+
+                    'green': [(0.0, 1, 1), (0.125,
+                    0.92156863212585449, 0.92156863212585449), (0.25,
+                    0.85882353782653809, 0.85882353782653809), (0.375,
+                    0.7921568751335144, 0.7921568751335144), (0.5,
+                    0.68235296010971069, 0.68235296010971069), (0.625,
+                    0.57254904508590698, 0.57254904508590698), (0.75,
+                    0.44313725829124451, 0.44313725829124451), (0.875,
+                    0.31764706969261169, 0.31764706969261169), (1.0,
+                    0.18823529779911041, 0.18823529779911041)],
+
+                    'red': [(0.0, 1, 1), (0.125,
+                    0.87058824300765991, 0.87058824300765991), (0.25,
+                    0.7764706015586853, 0.7764706015586853), (0.375,
+                    0.61960786581039429, 0.61960786581039429), (0.5,
+                    0.41960784792900085, 0.41960784792900085), (0.625,
+                    0.25882354378700256, 0.25882354378700256), (0.75,
+                    0.12941177189350128, 0.12941177189350128), (0.875,
+                    0.031372550874948502, 0.031372550874948502), (1.0,
+                    0.031372550874948502, 0.031372550874948502)]}
+
+                cmap = LinearSegmentedColormap('blue', Blues_data, 1000)
 
             levels = [0, 0.01, 0.02, 0.04, 0.06, .12, .25, .50, 1.00]
             norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
