@@ -23,6 +23,24 @@ all_countries = ['AUT', 'FIN', 'NLD', 'BIH', 'FRA', 'NOR', 'BEL', 'GBR', 'POL', 
                  'GRC', 'PRT', 'CHE', 'HRV', 'ROU', 'CZE', 'HUN', 'SRB', 'DEU', 'IRL',
                  'SWE', 'DNK', 'ITA', 'SVN', 'ESP', 'LUX', 'SVK', 'EST', 'LVA', 'LTU']
 
+all_links = ['AUT to CHE', 'AUT to CZE', 'AUT to HUN', 'AUT to DEU', 'AUT to ITA',
+             'AUT to SVN', 'FIN to SWE', 'FIN to EST', 'NLD to NOR', 'NLD to BEL',
+             'NLD to GBR', 'NLD to DEU', 'BIH to HRV', 'BIH to SRB', 'FRA to BEL',
+             'FRA to GBR', 'FRA to CHE', 'FRA to DEU', 'FRA to ITA', 'FRA to ESP',
+             'NOR to SWE', 'NOR to DNK', 'GBR to IRL', 'POL to CZE', 'POL to DEU',
+             'POL to SWE', 'POL to SVK', 'BGR to GRC', 'BGR to ROU', 'BGR to SRB',
+             'GRC to ITA', 'PRT to ESP', 'CHE to DEU', 'CHE to ITA', 'HRV to HUN',
+             'HRV to SRB', 'HRV to SVN', 'ROU to HUN', 'ROU to SRB', 'CZE to DEU',
+             'CZE to SVK', 'HUN to SRB', 'HUN to SVK', 'DEU to SWE', 'DEU to DNK',
+             'DEU to LUX', 'SWE to DNK', 'ITA to SVN', 'EST to LVA', 'LVA to LTU']
+
+ISO3ISO2dict = {'AUT': 'AT', 'FIN': 'FI', 'NLD': 'NL', 'BIH': 'BA', 'FRA': 'FR',
+                'NOR': 'NO', 'BEL': 'BE', 'GBR': 'GB', 'POL': 'PL', 'BGR': 'BG',
+                'GRC': 'GR', 'PRT': 'PT', 'CHE': 'CH', 'HRV': 'HR', 'ROU': 'RO',
+                'CZE': 'CZ', 'HUN': 'HU', 'SRB': 'RS', 'DEU': 'DE', 'IRL': 'IE',
+                'SWE': 'SE', 'DNK': 'DK', 'ITA': 'IT', 'SVN': 'SI', 'ESP': 'ES',
+                'LUX': 'LU', 'SVK': 'SK', 'EST': 'EE', 'LVA': 'LV', 'LTU': 'LT'}
+
 # Dictionary with index of the countries in the shapefiles
 shapefile_index = {'AUT': 16, 'BEL': 19, 'BGR': 23, 'BIH': 26, 'CHE': 40, 'CZE': 60,
                    'DEU': 61, 'DNK': 64, 'ESP': 71, 'EST': 72, 'FIN': 74, 'FRA': 77,
