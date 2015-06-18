@@ -3,6 +3,7 @@ from __future__ import division
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 from multiprocessing import Pool
 from aurespf.tools import get_q, get_quant_caps
 from link_colour_less import track_flows, get_link_direction
@@ -11,6 +12,7 @@ from link_namer import node_namer, link_namer, link_dict
 from functions import binMaker, bin_prob, bin_CDF, node_contrib
 from europe_plusgrid import *
 from EUgrid import EU_Nodes
+from figutils import *
 
 """
 Script to investigate the transition of a node's usage of the links as
@@ -34,6 +36,8 @@ if len(sys.argv) < 2:
     raise Exception('Not enough inputs')
 else:
     task = str(sys.argv[1:])
+
+cmap = LinearSegmentedColormap('blue', Blues_data, 1000)
 
 
 def calc_usage(N, F, lapse, scheme, b):
@@ -130,8 +134,9 @@ def plotter():
             totalUsagesLin.append(np.sum(.5 * N_usages, 1) / node_mean_load)
         usages = np.array(usages).transpose()
         ax1 = plt.subplot(121)
-        plt.pcolormesh(usages, cmap='Blues')
-        plt.colorbar()
+        plt.pcolormesh(usages, cmap=cmap)
+        cbl1 = plt.colorbar()
+        cbl1.solids.set_edgecolor('face')
         plt.xlabel(r'$\beta$')
         ax1.set_xticks(np.linspace(0, 30, 16))
         ax1.set_xticklabels(np.linspace(0, 1.5, 16))
@@ -150,8 +155,9 @@ def plotter():
             totalUsagesSqr.append(np.sum(.5 * N_usages, 1) / node_mean_load)
         usages = np.array(usages).transpose()
         ax2 = plt.subplot(122)
-        plt.pcolormesh(usages, cmap='Blues')
-        plt.colorbar()
+        plt.pcolormesh(usages, cmap=cmap)
+        cbl2 = plt.colorbar()
+        cbl2.solids.set_edgecolor('face')
         plt.xlabel(r'$\beta$')
         ax2.set_xticks(np.linspace(0, 30, 16))
         ax2.set_xticklabels(np.linspace(0, 1.5, 16))
@@ -173,16 +179,18 @@ def plotter():
     ax3.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax3.set_yticks(np.linspace(.5, 29.5, 30))
     ax3.set_yticklabels(names_sort, ha="right", va="center", fontsize=9)
-    plt.pcolormesh(totalUsagesLin, cmap='Blues')
-    plt.colorbar()
+    plt.pcolormesh(totalUsagesLin, cmap=cmap)
+    cbl3 = plt.colorbar()
+    cbl3.solids.set_edgecolor('face')
     plt.xlabel(r'$\beta$')
     ax4 = plt.subplot(122)
     ax4.set_xticks(np.linspace(0, 30, 16))
     ax4.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax4.set_yticks(np.linspace(.5, 29.5, 30))
     ax4.set_yticklabels(names_sort, ha="right", va="center", fontsize=9)
-    plt.pcolormesh(totalUsagesSqr, cmap='Blues')
-    plt.colorbar()
+    plt.pcolormesh(totalUsagesSqr, cmap=cmap)
+    cbl4 = plt.colorbar()
+    cbl4.solids.set_edgecolor('face')
     plt.xlabel(r'$\beta$')
     plt.savefig('./figures/constrained/total-network-usage.pdf', bbox_inches='tight')
     plt.close()
@@ -241,7 +249,7 @@ def plotter():
         ax7.set_xticklabels(np.linspace(0, 1.5, 16))
         ax7.set_yticks(np.linspace(.5, 29.5, 30))
         ax7.set_yticklabels(names, ha="right", va="center", fontsize=9)
-        plt.pcolormesh(usages, cmap='Blues')
+        plt.pcolormesh(usages, cmap=cmap)
         plt.colorbar()
         plt.xlabel(r'$\beta$')
         plt.title('Usage of link ' + link_names[link] + ', localised')
@@ -260,7 +268,7 @@ def plotter():
         ax8.set_xticklabels(np.linspace(0, 1.5, 16))
         ax8.set_yticks(np.linspace(.5, 29.5, 30))
         ax8.set_yticklabels(names, ha="right", va="center", fontsize=9)
-        plt.pcolormesh(usages, cmap='Blues')
+        plt.pcolormesh(usages, cmap=cmap)
         plt.colorbar()
         plt.xlabel(r'$\beta$')
         plt.title('Usage of link ' + link_names[link] + ', synchronised')
@@ -323,7 +331,7 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     ax3.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax3.set_yticks(np.linspace(.5, 29.5, 30))
     ax3.set_yticklabels(names, ha="right", va="center", fontsize=9)
-    plt.pcolormesh(totalUsagesLin, cmap='Blues')
+    plt.pcolormesh(totalUsagesLin, cmap=cmap)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
     ax4 = plt.subplot(122)
@@ -331,7 +339,7 @@ if (('plot' in task) and ('total' in task) and ('area' not in task)):
     ax4.set_xticklabels(np.linspace(0, 1.5, 16), fontsize=8)
     ax4.set_yticks(np.linspace(.5, 29.5, 30))
     ax4.set_yticklabels(names, ha="right", va="center", fontsize=9)
-    plt.pcolormesh(totalUsagesSqr, cmap='Blues')
+    plt.pcolormesh(totalUsagesSqr, cmap=cmap)
     plt.colorbar()
     plt.xlabel(r'$\beta$')
     plt.savefig('./figures/constrained/total-network-usage.pdf', bbox_inches='tight')
