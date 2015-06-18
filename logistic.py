@@ -234,7 +234,7 @@ def multi_TC(N, mode):  # N must be N = transcaps(EU_Nodes())
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig(figPath + 'network_usage_' + mode + '_ex.pdf')
+    plt.savefig(figPath + 'network_usage_' + mode + '_ex.pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -252,7 +252,7 @@ def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
     plt.plot(years[1:], N[18].g_share[1:], color=auplot.yellow, lw=3, label='Germany')
     plt.plot(years[1:], N[21].g_share[1:], color=auplot.red, lw=3, label='Denmark')
     plt.plot(years[1:], N[10].g_share[1:], color=auplot.lightblue, lw=3, label='Greece')
-    plt.ylabel(r'VRES penetration $\gamma$')
+    plt.ylabel(r'Renewable penetration $\gamma$')
     plt.xlabel('year')
     plt.axis([2016, 2050, 0, 1])
     plt.yticks([0.2, 0.4, 0.6, 0.8, 1.0])
@@ -265,7 +265,7 @@ def multi_GS(N):  # N must be N = transcaps(EU_Nodes())
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig(figPath + 'logistic_gammas.pdf')
+    plt.savefig(figPath + 'logistic_gammas.pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -313,7 +313,7 @@ def capPlotter(mode, direction):
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig(figPath + 'caps_' + mode + '_' + direction + '.pdf')
+    plt.savefig(figPath + 'caps_' + mode + '_' + direction + '.pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -362,7 +362,7 @@ def capPlotterGamma(mode, direction, gammas):
     plt.gcf().set_size_inches([1.5 * auplot.colwidth, 1.0 * auplot.colwidth])
     plt.gcf().set_dpi(400)
     plt.tight_layout()
-    plt.savefig(figPath + 'caps_g_' + mode + '_' + direction + '.pdf')
+    plt.savefig(figPath + 'caps_g_' + mode + '_' + direction + '.pdf', bbox_inches='tight')
     plt.close()
 
 
