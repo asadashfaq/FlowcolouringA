@@ -21,6 +21,8 @@ This script can be called from command line with one of the following inputs:
 - plot network day:     same as above but split for daytime and nighttime
 - plot network total:   plot total network usage for each color
 - plot usage:           plot average usage for each color
+- plot levels:           Bar plots of nodes' link usage at different levels for each color
+- plot hour:            Same as above but for different hours of the day for each ccolor
 - sanity:               check whether the individual colors add to the scalar flow tracing
 
 Results from this script go to the folder: ./results/vector/
@@ -39,6 +41,9 @@ modes = ['linear', 'square']
 directions = ['import', 'export', 'combined']
 outPath = './results/vector/'
 figPath = './figures/vector/'
+
+Oranges_cmap = LinearSegmentedColormap('Oranges_data', OrRd_data, 1000)
+Blues_cmap = LinearSegmentedColormap('Blues_data', OrRd_data, 1000)
 
 
 def usageCalc(F, quantiles, Usages, nodes, links, name):
@@ -415,9 +420,9 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, color, nnames,
     if not admat:
         admat = np.genfromtxt('./settings/eadmat.txt')
     if color == 'solar':
-        cmap = 'Oranges'
+        cmap = Oranges_cmap
     elif color == 'wind':
-        cmap = 'Blues'
+        cmap = Blues_cmap
     elif color == 'backup':
         cmap = 'Greys'
     nodes, links = usages.shape
@@ -478,9 +483,9 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, color, nnames,
     if not admat:
         admat = np.genfromtxt('./settings/eadmat.txt')
     if color == 'solar':
-        cmap = 'Oranges'
+        cmap = Oranges_cmap
     elif color == 'wind':
-        cmap = 'Blues'
+        cmap = Blues_cmap
     elif color == 'backup':
         cmap = 'Greys'
     links, nodes, lapse = usages.shape
@@ -525,9 +530,9 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, color, nnames,
     if not admat:
         admat = np.genfromtxt('./settings/eadmat.txt')
     if color == 'solar':
-        cmap = 'Oranges'
+        cmap = Oranges_cmap
     elif color == 'wind':
-        cmap = 'Blues'
+        cmap = Blues_cmap
     elif color == 'backup':
         cmap = 'Greys'
     links, nodes, lapse = usages.shape

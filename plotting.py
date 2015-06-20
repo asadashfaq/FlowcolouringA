@@ -10,6 +10,7 @@ from EUgrid import EU_Nodes_usage, EU_Nodes_regions, EU_Nodes_superRegions
 from link_namer import *
 from scipy.stats import pearsonr, spearmanr
 from functions import *
+from figutils import *
 
 """
 Script that makes network figures of a country's usage for import, export and
@@ -18,6 +19,7 @@ the combination
 Call the script using only one of the following command line arguments:
 - network:                  network figures with coloured links, only works for N=30
 - level:                    Bar plots of nodes' link usage at different levels.
+- hour:                     Same as above but for different hours of the day.
 - total:                    barplots comparing total network usage for different export schemes
 - total cap:                Normalize to NTC in stead of load
 - total sensitivity:        same as above, but for N=8 and N=50 networks
@@ -45,14 +47,7 @@ if 'verbose' in task:
 else:
     verbose = False
 
-# Node indices and names sorted after descending mean load
-loadOrder = [18, 4, 7, 22, 24, 20, 8, 5, 2, 6, 1, 15, 0, 10, 14,
-             9, 11, 12, 16, 21, 17, 19, 3, 26, 13, 29, 27, 23, 28, 25]
-
-loadNames = np.array(['DE', 'FR', 'GB', 'IT', 'ES', 'SE', 'PL', 'NO', 'NL',
-                      'BE', 'FI', 'CZ', 'AT', 'GR', 'RO', 'BG', 'PT', 'CH',
-                      'HU', 'DK', 'RS', 'IE', 'BA', 'SK', 'HR', 'LT', 'EE',
-                      'SI', 'LV', 'LU'], dtype='|S4')
+OrRd_cmap = LinearSegmentedColormap('orangeRed', OrRd_data, 1000)
 
 
 def simpleMerger(data, merge_dict):
@@ -186,47 +181,10 @@ def drawnet_usage(N=None, scheme='linear', direction='combined'):
     for l in LF:
         G.add_edge(l[0], l[1], id=l[2])
 
-    # Define position of nodes
-    pos = {}
-    pos['AT'] = [0.55, 0.45]
-    pos['FI'] = [.95, 1.1]
-    pos['NL'] = [0.40, 0.85]
-    pos['BA'] = [0.65, 0.15]
-    pos['FR'] = [0.15, 0.60]
-    pos['NO'] = [0.5, 1.1]
-    pos['BE'] = [0.275, 0.775]
-    pos['GB'] = [0.10, 1.05]
-    pos['PL'] = [0.75, 0.8]
-    pos['BG'] = [0.9, 0.0]
-    pos['GR'] = [0.7, 0.0]
-    pos['PT'] = [0.0, 0.15]
-    pos['CH'] = [0.4, 0.45]
-    pos['HR'] = [0.75, 0.3]
-    pos['RO'] = [1.0, 0.15]
-    pos['CZ'] = [0.75, 0.60]
-    pos['HU'] = [1.0, 0.45]
-    pos['RS'] = [0.85, 0.15]
-    pos['DE'] = [0.45, 0.7]
-    pos['IE'] = [0.0, 0.95]
-    pos['SE'] = [0.75, 1.0]
-    pos['DK'] = [0.5, 0.875]
-    pos['IT'] = [0.4, 0.2]
-    pos['SI'] = [0.55, 0.3]
-    pos['ES'] = [0.15, 0.35]
-    pos['LU'] = [0.325, 0.575]
-    pos['SK'] = [0.90, 0.55]
-    pos['EE'] = [1.0, 0.985]
-    pos['LV'] = [0.975, 0.87]
-    pos['LT'] = [0.925, 0.77]
-
     # Define color scale for links
     blueDict = {'red': ((0.0, 1.0, 1.0), (1.0, 0.0, 0.0)),
                 'green': ((0.0, 1.0, 1.0), (1.0, 0.0, 0.0)),
                 'blue': ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0))}
-
-    blueDict2 = {'red': ((0.0, 1.0, 1.0), (.15, 0, 0), (.4, 0.5, 0.5), (1.0, 1, 1)),
-                 'green': ((0.0, 1.0, 1.0), (.15, 0, 0), (.4, 0, 0), (1.0, 0.0, 0.0)),
-                 'blue': ((0.0, 1.0, 1.0), (.15, 1, 1), (.4, 0.5, 0.5), (1.0, 0, 0))}
 
     cmap = LinearSegmentedColormap('blue', blueDict2, 1000)
 
@@ -404,8 +362,8 @@ def bars(scheme, verbose=None, norm='load'):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            # ax.set_ylabel(r'Network usage [MW$_T$km/MW$_L$]')
-            ax.set_ylabel(r'$M_n km/\left\langle L_n \right\rangle$')
+            # ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
+            ax.set_ylabel(r'$M_n /\left\langle L_n \right\rangle$')
         else:
             if norm == 'cap':
                 ax.set_ylabel(r'$M_n/ \mathcal{K}^T$')
@@ -556,7 +514,7 @@ def bars2(scheme, verbose=False):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            ax.set_ylabel(r'$M_n$km/$\left\langle L_n\right\rangle$')
+            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         else:
             ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(link_proportional), max(usage_proportional), max(link_proportional_merged), max(usage_proportional_merged)]
@@ -733,7 +691,7 @@ def bars3(scheme, verbose=False):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            ax.set_ylabel(r'$M_n$km/$\left\langle L_n\right\rangle$')
+            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         else:
             ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(SR_link_proportional), max(SR_usage_proportional), max(country_link_proportional), max(country_usage_proportional)]
@@ -940,7 +898,7 @@ def bars4(scheme, verbose=False):
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
         if length:
-            ax.set_ylabel(r'$M_n$km/$\left\langle L_n\right\rangle$')
+            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         else:
             ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(SR_link_proportional), max(SR_usage_proportional), max(country_usage_proportional), max(country_link_proportional), max(region_usage_proportional), max(region_link_proportional)]
@@ -1054,7 +1012,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     usages = usageLevels.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder], cmap='OrRd')
+    plt.pcolormesh(usages[:, loadOrder], cmap=OrRd_cmap)
     plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
@@ -1070,7 +1028,7 @@ def link_level_bars(levels, usages, quantiles, scheme, direction, nnames, lnames
     usages = usageLevelsNorm.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder], cmap='OrRd')
+    plt.pcolormesh(usages[:, loadOrder], cmap=OrRd_cmap)
     plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
@@ -1111,7 +1069,7 @@ def link_level_norm(levels, usages, quantiles, scheme, direction, nnames, lnames
     usages = usageLevelsNorm.transpose()
     plt.figure(figsize=(11, 3))
     ax = plt.subplot()
-    plt.pcolormesh(usages[:, loadOrder], cmap='OrRd')
+    plt.pcolormesh(usages[:, loadOrder], cmap=OrRd_cmap)
     plt.colorbar().set_label(label=r'$ \sum_l\, (H_{ln(t)}) / \sum_l\, (\mathcal{K}^T_l)$', size=11)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
@@ -1148,7 +1106,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
 
         plt.figure(figsize=(9, 3))
         ax = plt.subplot()
-        plt.pcolormesh(hourSums, cmap='OrRd')
+        plt.pcolormesh(hourSums, cmap=OrRd_cmap)
         plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
         ax.set_yticks(np.linspace(.5, levels - .5, levels))
         ax.set_yticklabels(range(1, levels + 1))
@@ -1166,7 +1124,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
         totalNormed += hourSums
         plt.figure(figsize=(9, 3))
         ax = plt.subplot()
-        plt.pcolormesh(hourSums, cmap='OrRd')
+        plt.pcolormesh(hourSums, cmap=OrRd_cmap)
         plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
         ax.set_yticks(np.linspace(.5, levels - .5, levels))
         ax.set_yticklabels(range(1, levels + 1))
@@ -1184,7 +1142,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
     totalHour /= nodes
     plt.figure(figsize=(9, 3))
     ax = plt.subplot()
-    plt.pcolormesh(totalHour, cmap='OrRd')
+    plt.pcolormesh(totalHour, cmap=OrRd_cmap)
     plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
@@ -1200,7 +1158,7 @@ def link_level_hour(levels, usages, quantiles, scheme, direction, nnames, lnames
     totalNormed /= nodes
     plt.figure(figsize=(9, 3))
     ax = plt.subplot()
-    plt.pcolormesh(totalNormed, cmap='OrRd')
+    plt.pcolormesh(totalNormed, cmap=OrRd_cmap)
     plt.colorbar().set_label(label=r'$U_n^{(l)}$', size=11)
     ax.set_yticks(np.linspace(.5, levels - .5, levels))
     ax.set_yticklabels(range(1, levels + 1))
