@@ -361,15 +361,10 @@ def bars(scheme, verbose=None, norm='load'):
 
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
-        if length:
-            # ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
-            ax.set_ylabel(r'$M_n /\left\langle L_n \right\rangle$')
+        if norm == 'cap':
+            ax.set_ylabel(r'$M_n/ \mathcal{K}^T$')
         else:
-            if norm == 'cap':
-                ax.set_ylabel(r'$M_n/ \mathcal{K}^T$')
-            else:
-                # ax.set_ylabel(r'Network usage [MW$_T$/MW$_L$]')
-                ax.set_ylabel(r'$M_n/\left\langle L_n \right\rangle$')
+            ax.set_ylabel(r'$M_n/\left\langle L_n \right\rangle$')
         maxes = [max(link_proportional), max(data_sort)]
         plt.axis([0, nNodes * 2 + .5, 0, 1.15 * max(maxes)])
 
@@ -513,10 +508,7 @@ def bars2(scheme, verbose=False):
 
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
-        if length:
-            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
-        else:
-            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
+        ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(link_proportional), max(usage_proportional), max(link_proportional_merged), max(usage_proportional_merged)]
         plt.axis([0, nNodes * 2 + .5, 0, 1.15 * max(maxes)])
 
@@ -690,10 +682,7 @@ def bars3(scheme, verbose=False):
 
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
-        if length:
-            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
-        else:
-            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
+        ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(SR_link_proportional), max(SR_usage_proportional), max(country_link_proportional), max(country_usage_proportional)]
         plt.axis([0, nNodes * 2 + .5, 0, 1.15 * max(maxes)])
 
@@ -897,10 +886,7 @@ def bars4(scheme, verbose=False):
         ax.set_xticklabels(names_sort, rotation=0, ha="left", va="top", fontsize=10.5)
         ax.xaxis.grid(False)
         ax.xaxis.set_tick_params(width=0)
-        if length:
-            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
-        else:
-            ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
+        ax.set_ylabel(r'$M_n$/$\left\langle L_n\right\rangle$')
         maxes = [max(SR_link_proportional), max(SR_usage_proportional), max(country_usage_proportional), max(country_link_proportional), max(region_usage_proportional), max(region_link_proportional)]
         plt.axis([0, nNodes * 2 + .5, 0, 1.11 * max(maxes)])
 
