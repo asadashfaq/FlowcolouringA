@@ -424,7 +424,12 @@ def drawnet_usage(N=None, scheme='linear', direction='combined', color='solar', 
 
         # Set color of nodes, highlight one and draw all
         node_c = ["#000000" for node in N]
-        node_c[n.id] = "#B30000"
+        if direction == 'import':
+            node_c[n.id] = "#B30000"
+        elif direction == 'export':
+            node_c[n.id] = "#00B300"
+        elif direction == 'combined':
+            node_c[n.id] = "#0000B3"
         nx.draw_networkx_nodes(G, pos, node_size=500, nodelist=nodelist, node_color=node_c, facecolor=(1, 1, 1))
 
         # Draw links colored by usage of node n
