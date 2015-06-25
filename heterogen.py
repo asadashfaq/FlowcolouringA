@@ -905,8 +905,8 @@ if 'plot' in task:
         maxG = np.zeros(len(B))
         gammas = np.zeros((len(B), 30))
         for i, b in enumerate(B):
-            N = EU_Nodes_usage('../' + resPath + 'b_' + str(b) + '_' + scheme + '.npz')
-            gammas[i] = [n.gamma for n in N]
+            N = np.load(resPath + 'b_' + str(b) + '_' + scheme + '.npz', mmap_mode='r')
+            gammas[i] = N['gamma']
             maxG[i] = max(gammas[i])
         maxG = max(maxG)
         point = 1 / maxG
