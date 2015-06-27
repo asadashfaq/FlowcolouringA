@@ -701,16 +701,17 @@ def plotTotal(scheme, color):
     totUsageIm = np.zeros((nNodes, len(B)))
     totUsageEx = np.zeros((nNodes, len(B)))
     if color == 'solar':
-        cmap = 'Oranges'
+        cmap = LinearSegmentedColormap('orange', Oranges_data, 1000)
     elif color == 'wind':
-        cmap = 'Blues'
+        cmap = LinearSegmentedColormap('blue', Blues_data, 1000)
     elif color == 'backup':
         cmap = 'Greys'
     if color != '':
         colStr = '_' + color
     else:
         colStr = color
-        cmap = 'OrRd'
+        cmap = LinearSegmentedColormap('orangeRed', OrRd_data, 1000)
+
     for i, b in enumerate(B):
         usagesIm = np.load(resPath + '/N_cont_' + scheme + '_import_b_' + str(b) + colStr + '.npy')
         totUsageIm[:, i] = np.sum(usagesIm, 1) / node_mean_load
