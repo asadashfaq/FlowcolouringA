@@ -402,7 +402,7 @@ def drawnet_import(N, scheme='square', direction='import', norm=True):
 
     # color scale for nodes
     greenDict = {'red': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0)),
-             'green': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .3, .3)),
+             'green': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .2, .2)),
              'blue': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapNodes = LinearSegmentedColormap('green',greenDict,1000)
 
@@ -437,8 +437,10 @@ def drawnet_import(N, scheme='square', direction='import', norm=True):
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05,0.04,0.4,.08])
         cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='horizontal')
+        cbl.solids.set_edgecolor('face')
         ax2 = fig.add_axes([0.55,0.04,0.40,.08])
         cbl2 = mpl.colorbar.ColorbarBase(ax2,cmapNodes,orientation='horizontal')
+        cbl2.solids.set_edgecolor('face')
 
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
@@ -480,7 +482,7 @@ def drawnet_import(N, scheme='square', direction='import', norm=True):
         ax3.axis('off')
 
         # Save figure
-        plt.savefig(outPath+'fig 5/'+scheme+'/'+str(n.id)+'_'+str(direction)+normString+".png")
+        plt.savefig(outPath+'fig 5/'+scheme+'/'+str(n.id)+'_'+str(direction)+normString+".pdf")
         plt.close()
 
 
@@ -511,12 +513,12 @@ def drawnet_export(N, scheme='square', direction='export', norm=True):
 
     # color scale for nodes
     greenDict = {'red': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0)),
-             'green': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .3, .3)),
+             'green': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .2, .2)),
              'blue': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapGreen = LinearSegmentedColormap('green',greenDict,1000)
 
     # color scale for nodes
-    redDict = {'red': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .4, .4)),
+    redDict = {'red': ((0.0, 1.0, 1.0),(.2, .7, .7),(1, .3, .3)),
              'green': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0)),
              'blue': ((0.0, 1.0, 1.0),(.2, 0.0, 0.0),(1, 0.0, 0.0))}
     cmapNodes = LinearSegmentedColormap('red',redDict,1000)
@@ -551,8 +553,10 @@ def drawnet_export(N, scheme='square', direction='export', norm=True):
         # color bar in bottom of figure
         ax1 = fig.add_axes([0.05,0.04,0.4,.08])
         cbl = mpl.colorbar.ColorbarBase(ax1,cmap,orientation='horizontal')
+        cbl.solids.set_edgecolor('face')
         ax2 = fig.add_axes([0.55,0.04,0.40,.08])
         cbl2 = mpl.colorbar.ColorbarBase(ax2,cmapNodes,orientation='horizontal')
+        cbl2.solids.set_edgecolor('face')
 
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
@@ -594,7 +598,7 @@ def drawnet_export(N, scheme='square', direction='export', norm=True):
         ax3.axis('off')
 
         # Save figure
-        plt.savefig(outPath+'fig 5/'+scheme+'/'+str(n.id)+'_'+str(direction)+normString+".png")
+        plt.savefig(outPath+'fig 5/'+scheme+'/'+str(n.id)+'_'+str(direction)+normString+".pdf")
         plt.close()
 
 
@@ -652,10 +656,12 @@ if '1' in figNum:
             node_weights = N['mismatch'][:,t] + N['balancing'][:,t]
             means = N['mean']
             node_weights =  node_weights / means
+            if t == 30:
+                print node_weights
             # Scaling to the colorbar so [-1, 1] becomes [0, 1]
             node_weights += 1
             node_weights /= 2
-            make_europe_graph(F[:,t], node_weights, t)
+            #make_europe_graph(F[:,t], node_weights, t)
 
 if '2' in figNum:
     print 'Making figure 2'
@@ -689,7 +695,7 @@ if '4' in figNum:
 if '5' in figNum:
     print 'Making figure 5'
     for scheme in ['linear', 'square']:
-        for norm in [0, 1]:
+        for norm in [1]:
             N = EU_Nodes_usage(scheme + '.npz')
             drawnet_import(N, scheme=scheme, norm=norm)
             drawnet_export(N, scheme=scheme, norm=norm)

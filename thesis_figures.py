@@ -97,12 +97,12 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             plt.text(txtCoor, .95, label)
             plt.text(txtCoor, .9, direction)
 
-            ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$')
+            ax.set_xlabel(r'$|f_l(t)|/\mathcal{K}_l^T$')
             plt.axis([0, Fmax[l] / qq, 0, 1])
             if mode == 'old':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.png', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '.pdf', bbox_inches='tight')
             if mode == 'new':
-                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.png', bbox_inches='tight')
+                plt.savefig(figPath + 'scatter/' + str(N[n].label) + '/' + str(l) + '-' + str(direction) + '-' + mode + '.pdf', bbox_inches='tight')
             plt.close()
     return
 
@@ -111,13 +111,13 @@ if 'scatter' in task:
     F = np.load('./results/square-flows.npy')
     Fmax = np.max(np.abs(F), 1)
 
-    export_usage = np.load('./linkcolouring/old_square_copper_link_mix_export_all_alpha=same.npy')
-    scatter_plotter(N, F, Fmax, export_usage, 'export', mode='old')
-    scatter_plotter(N, F, Fmax, export_usage, 'export', mode='new')
-    export_usage = []  # frees roughly 800 MB RAM before loading import usage.
+    #export_usage = np.load('./linkcolouring/old_square_copper_link_mix_export_all_alpha=same.npy')
+    #scatter_plotter(N, F, Fmax, export_usage, 'export', mode='old')
+    #scatter_plotter(N, F, Fmax, export_usage, 'export', mode='new')
+    #export_usage = []  # frees roughly 800 MB RAM before loading import usage.
 
     import_usage = np.load('./linkcolouring/old_square_copper_link_mix_import_all_alpha=same.npy')
-    scatter_plotter(N, F, Fmax, import_usage, 'import', mode='old')
+    #scatter_plotter(N, F, Fmax, import_usage, 'import', mode='old')
     scatter_plotter(N, F, Fmax, import_usage, 'import', mode='new')
     import_usage = []
 

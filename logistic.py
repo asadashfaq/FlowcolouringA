@@ -341,7 +341,7 @@ def capPlotterGamma(mode, direction, gammas):
     plt.plot(gammas, nodeCaps[21], color=auplot.red, lw=3, label='Denmark')
     plt.plot(gammas, nodeCaps[10], color=auplot.lightblue, lw=3, label='Greece')
     plt.ylabel(r'$\mathcal{K}^T_n(\gamma) / \mathcal{K}^T(\gamma)$')
-    plt.xlabel('gamma')
+    plt.xlabel('$\gamma$')
     #plt.yticks([0.1, 0.2, 0.3, 0.4])
     plt.xticks([1.25, 1.5, 1.75, 2.])
     if mode == 'square':

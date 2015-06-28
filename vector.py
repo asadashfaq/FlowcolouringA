@@ -42,8 +42,8 @@ directions = ['import', 'export', 'combined']
 outPath = './results/vector/'
 figPath = './figures/vector/'
 
-Oranges_cmap = LinearSegmentedColormap('Oranges_data', OrRd_data, 1000)
-Blues_cmap = LinearSegmentedColormap('Blues_data', OrRd_data, 1000)
+Oranges_cmap = LinearSegmentedColormap('Oranges_data', Oranges_data, 1000)
+Blues_cmap = LinearSegmentedColormap('Blues_data', Blues_data, 1000)
 
 
 def usageCalc(F, quantiles, Usages, nodes, links, name):

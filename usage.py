@@ -320,7 +320,7 @@ if 'converge' in task:
     # plt.plot(test_bins,means+stds,'--k')
     # plt.plot(test_bins,means-stds,'--k')
     plt.xlabel('Number of bins')
-    plt.ylabel(r'$C/\mathcal{K}^T$')
+    plt.ylabel(r'$\mathcal{K}^T/\mathcal{K}^{T,\,99\%}$')
     plt.legend((r'99.5$\%$', '90 bins', 'mean', 'min/max'), loc=0)
     #plt.title('Convergence check for different bin sizes')
     plt.savefig('./figures/convergence/convergence.pdf', bbox_inches='tight')

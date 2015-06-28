@@ -26,7 +26,8 @@ Call the script using only one of the following command line arguments:
 - sensitivity compare:      compare different networks: N=30 & N=8 ; N=30 & N=53
 - sensitivity compare all:  as just above for N=53, N=30, N=8
 
-The last 4 can be followed by 'length' to include modelling of link lengths.
+The last 4 can be followed by 'length' to include modelling of link lengths. Or
+by 'text' to print correlations on the figures
 """
 
 if len(sys.argv) > 1:
@@ -42,10 +43,16 @@ if 'length' in task:
 else:
     length = False
 
+if 'text' in task:
+    text = True
+else:
+    text = False
+
 if 'verbose' in task:
     verbose = True
 else:
     verbose = False
+
 
 OrRd_cmap = LinearSegmentedColormap('orangeRed', OrRd_data, 1000)
 
@@ -529,7 +536,8 @@ def bars2(scheme, verbose=False):
         usage2 = usage_proportional_merged[np.where(usage_proportional_merged > 0)]
         usageCorr = '%0.2f' % pearsonr(usage1, usage2)[0]
         s = 'linkCorr = ' + linkCorr + ', usageCorr = ' + usageCorr
-        plt.text(6, .9 * max(maxes), s)
+        if text:
+            plt.text(6, .9 * max(maxes), s)
 
         # Calculate Spearman correlation
         sl1 = '%0.2f' % spearmanr(link1, link2)[0]
@@ -539,7 +547,8 @@ def bars2(scheme, verbose=False):
         dc, dr1, dvx, dvy = dcov_all(link1, link2)
         dc, dr2, dvx, dvy = dcov_all(usage1, usage2)
         s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
-        plt.text(6, .8 * max(maxes), s)
+        if text:
+            plt.text(6, .8 * max(maxes), s)
 
         if verbose:
             print '30-53 ' + direction
@@ -703,7 +712,8 @@ def bars3(scheme, verbose=False):
         usage2 = country_usage_proportional[np.where(country_usage_proportional > 0)]
         usageCorr = '%0.2f' % pearsonr(usage1, usage2)[0]
         s = 'linkCorr = ' + linkCorr + ', usageCorr = ' + usageCorr
-        plt.text(2, .9 * max(maxes), s)
+        if text:
+            plt.text(2, .9 * max(maxes), s)
 
         # Calculate Spearman correlation
         sl1 = '%0.2f' % spearmanr(link1, link2)[0]
@@ -713,7 +723,8 @@ def bars3(scheme, verbose=False):
         dc, dr1, dvx, dvy = dcov_all(link1, link2)
         dc, dr2, dvx, dvy = dcov_all(usage1, usage2)
         s = 'linkdCorr = ' + '%0.2f' % dr1 + ', usagedCorr = ' + '%0.2f' % dr2
-        plt.text(2, .8 * max(maxes), s)
+        if text:
+            plt.text(2, .8 * max(maxes), s)
 
         if verbose:
             print '30-8 ' + direction
@@ -914,8 +925,9 @@ def bars4(scheme, verbose=False):
         usageCorr3 = '%0.2f' % pearsonr(usage2, usage3)[0]
         s1 = 'link(8,30) = ' + linkCorr1 + ', link(8,53) = ' + linkCorr2 + ', link(30,53) = ' + linkCorr3
         s2 = 'usage(8,30) = ' + usageCorr1 + ', usage(8,53) = ' + usageCorr2 + ', usage(30,53) = ' + usageCorr3
-        plt.text(.5 * bw, .9 * max(maxes), s1, fontsize=8)
-        plt.text(.5 * bw, .82 * max(maxes), s2, fontsize=8)
+        if text:
+            plt.text(.5 * bw, .9 * max(maxes), s1, fontsize=8)
+            plt.text(.5 * bw, .82 * max(maxes), s2, fontsize=8)
 
         # Calculate distance correlations
         dc, dr1, dvx, dvy = dcov_all(link1, link2)
@@ -927,8 +939,9 @@ def bars4(scheme, verbose=False):
 
         s3 = 'link(8,30) = ' + '%0.2f' % dr1 + ', link(8,53) = ' + '%0.2f' % dr2 + ', link(30,53) = ' + '%0.2f' % dr3
         s4 = 'usage(8,30) = ' + '%0.2f' % dr4 + ', usage(8,53) = ' + '%0.2f' % dr5 + ', usage(30,53) = ' + '%0.2f' % dr6
-        plt.text(.5 * bw, .70 * max(maxes), s3, fontsize=8)
-        plt.text(.5 * bw, .62 * max(maxes), s4, fontsize=8)
+        if text:
+            plt.text(.5 * bw, .70 * max(maxes), s3, fontsize=8)
+            plt.text(.5 * bw, .62 * max(maxes), s4, fontsize=8)
 
         sl1 = '%0.2f' % spearmanr(link1, link2)[0]
         sl2 = '%0.2f' % spearmanr(link1, link3)[0]
