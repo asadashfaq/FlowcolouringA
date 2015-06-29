@@ -204,7 +204,7 @@ if 'compare' in task:
             P[np.where(P < 0)] = 0
             bars[i, n.id] = np.mean(abs(P)) / n.mean
 
-    print 'Imports:', np.mean(bars[0]), np.mean(bars[1]), np.mean((bars[1] - bars[0]) * 100 / bars[0])
+    print 'Imports:', np.mean(bars[0]), np.mean(bars[1]), (np.mean((bars[1]) - np.mean(bars[0])) * 100 / np.mean(bars[0]))
 
     plt.figure(figsize=(10, 4))
     ax = plt.subplot(111)
@@ -235,7 +235,7 @@ if 'compare' in task:
         for n in N:
             bars[i, n.id] = np.mean(n.mismatch + n.balancing - n.curtailment) / n.mean
 
-    print 'Exports:', np.mean(bars[0]), np.mean(bars[1]), np.mean((bars[1] - bars[0]) * 100 / bars[0])
+    print 'Exports:', np.mean(bars[0]), np.mean(bars[1]), (np.mean((bars[1]) - np.mean(bars[0])) * 100 / np.mean(bars[0]))
 
     plt.figure(figsize=(10, 4))
     ax = plt.subplot(111)
@@ -267,7 +267,7 @@ if 'compare' in task:
         for n in N:
             bars[i, n.id] = get_q(n.balancing, .99) / n.mean
 
-    print 'Balancing capacity:', np.mean(bars[0]), np.mean(bars[1]), np.mean((bars[1] - bars[0]) * 100 / bars[0])
+    print 'Balancing capacity:', np.mean(bars[0]), np.mean(bars[1]), (np.mean((bars[1]) - np.mean(bars[0])) * 100 / np.mean(bars[0]))
 
     plt.figure(figsize=(10, 4))
     ax = plt.subplot(111)
@@ -298,7 +298,7 @@ if 'compare' in task:
         for n in N:
             bars[i, n.id] = np.mean(n.balancing) / n.mean
 
-    print 'Balancing energy:', np.mean(bars[0]), np.mean(bars[1]), np.mean((bars[1] - bars[0]) * 100 / bars[0])
+    print 'Balancing energy:', np.mean(bars[0]), np.mean(bars[1]), (np.mean((bars[1]) - np.mean(bars[0])) * 100 / np.mean(bars[0]))
 
     plt.figure(figsize=(10, 4))
     ax = plt.subplot(111)
