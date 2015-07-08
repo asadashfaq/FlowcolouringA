@@ -57,11 +57,6 @@ def make_europe_graph(link_weights, node_weights, t, figfilename='/fig 1/network
     for l in linklist:
         G.add_edge(l[0], l[1], weight = link_weights[l[2]])
 
-    redgreendict = {'red':[(0.0, .4, .4), (0.2, .7, .7), (0.5, 1.0, 1.0) ,(.8, 0.0, 0.0) ,(1.0, 0.0, 0.0)],
-                    'green':[(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.5, 1.0, 1.0),(.8, .7, .7), (1.0, .3, .3)],
-                    'blue':[(0.0, 0.0, 0.0), (0.2, 0.0, 0.0), (0.5, 1.0, 1.0), (.8, 0.0, 0.0), (1.0, 0.0, 0.0)]}
-
-
     cmap = LinearSegmentedColormap('redgreen', redgreendict, 1000)
 
     fig = plt.figure(dpi=400, figsize=(0.85*dcolwidth,0.85*dcolwidth*0.8))
@@ -661,7 +656,7 @@ if '1' in figNum:
             # Scaling to the colorbar so [-1, 1] becomes [0, 1]
             node_weights += 1
             node_weights /= 2
-            #make_europe_graph(F[:,t], node_weights, t)
+            make_europe_graph(F[:,t], node_weights, t)
 
 if '2' in figNum:
     print 'Making figure 2'
