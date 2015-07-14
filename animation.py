@@ -10,8 +10,32 @@ from figutils import *
 """
 Create animations from results.
 """
-figPath = './figures/gif/'
-resolution = 10  # number of interpolations between original results
+figPath = './figures/animation/'
+
+
+def interpolator(data, steps, loop=False):
+    """
+    Load n by t data. Interpolate linearly _steps_ matrices between the t input
+    steps. If _loop_ is set, interpolate from the last t to the first t, so a
+    looping .gif can be made.
+    """
+    n, t = data.shape
+    if not loop:
+        idata = np.zeros((n, (t-1) * steps + 1))
+    else:
+        idata = np.zeros((n, t * steps))
+    index = range(0, t * steps, steps)
+    for k, i in enumerate(index):
+        idata[:, i] = data[:, k]
+        if k > 0:
+            delta = (data[:, k] - data[:, k - 1]) / steps
+            for step in xrange(i - steps + 1, i, 1):
+                idata[:, step] = idata[:, step - 1] + delta
+    if loop:
+        delta = (data[:, 0] - data[:, -1]) / steps
+        for step in xrange(1, steps):
+            idata[:, i + step] = idata[:, i + step - 1] + delta
+    return idata
 
 
 def make_europe_graph(link_weights, node_weights, t, filename='injection/', savepath=figPath, title=None):
@@ -48,14 +72,6 @@ def make_europe_graph(link_weights, node_weights, t, filename='injection/', save
     ax1 = fig.add_axes([0.05, 0.08, 0.9, 0.08])
     ax2 = fig.add_axes([-0.05, 0.15, 1.1, 0.95])
 
-    # span = 2*np.max(np.abs(node_weights))
-    # norm_node_weights = [w/span+0.5 for w in node_weights]
-    # now the scale shows the actual phi normalized to unit length
-    # the offset and factor of 2 is because the colormap is defined
-    # from 0 to 1
-    phi_length = np.sqrt(np.sum(node_weights ** 2))
-    norm_node_weights = [w / (2 * phi_length) + 0.5 for w in node_weights]
-
     # node_colors = [cmap(w) for w in norm_node_weights]
     node_colors = [cmap(w) for w in node_weights]
     nx.draw_networkx_nodes(G, pos, node_size=400, nodelist=nodelist,
@@ -89,28 +105,34 @@ def make_europe_graph(link_weights, node_weights, t, filename='injection/', save
     cb1 = mpl.colorbar.ColorbarBase(ax1, cmap, orientation='horizontal')
     cb1.set_ticks([0, 0.5, 1])
     cb1.set_ticklabels(['-1', '0', '1'])
-    # ax1.set_xlabel(r'$\Phi_n$' + ' [normalized]')
     ax1.set_xlabel(r'$P_n / \left\langleL_n\right\rangle$')
     ax1.xaxis.set_label_position('top')
     ax1.set_xticks('none')
     ax2.axis('off')
     if title != None:
         fig.suptitle(title)
-    fig.savefig(savepath + filename + 'injection-' + str(t) + '.png')
+    if t < 10:
+        tstr = '00' + str(t)
+    elif 10 <= t < 100:
+        tstr = '0' + str(t)
+    else:
+        tstr = str(t)
+    fig.savefig(savepath + filename + 'injection-' + tstr + '.png')
     plt.close()
-
 
 N = np.load('./results/square.npz', mmap_mode='r')
 F = np.load('./results/square-flows.npy')
 ranges = [range(24)]
+steps = 5
 for r in ranges:
-    for t in r:
-        node_weights = N['mismatch'][:, t] + N['balancing'][:, t]
-        means = N['mean']
-        node_weights = node_weights / means
-        if t == 30:
-            print node_weights
-        # Scaling to the colorbar so [-1, 1] becomes [0, 1]
-        node_weights += 1
-        node_weights /= 2
-        make_europe_graph(F[:, t], node_weights, t)
+    node_weights = N['mismatch'][:, r] + N['balancing'][:, r] - N['curtailment'][:, r]
+    means = N['mean']
+    for i in range(30):
+        node_weights[i, :] = node_weights[i, :] / means[i]
+    node_weights = interpolator(node_weights, steps, loop=True)
+    # Scaling to the colorbar so [-1, 1] becomes [0, 1]
+    node_weights += 1
+    node_weights /= 2
+    iFlow = interpolator(F[:, r], steps, loop=True)
+    for t in xrange(node_weights.shape[1]):
+        make_europe_graph(iFlow[:, t], node_weights[:, t], t)
