@@ -2,18 +2,20 @@
 from __future__ import division
 import numpy as np
 from aurespf.solvers import AtoKh
+from figutils import loadNames
 
 """
 A collection of commonly used functions.
 """
 
-def get_link_direction(n,N):
-	a,b,c,d,e=AtoKh(N)
 
-	for k in N:
-		if str(k.label)==e[n][0][0:2]: start_node=k
-		if str(k.label)==e[n][0][6:8]: end_node=k
-	return [start_node,end_node]
+def get_link_direction(n, N):
+    a, b, c, d, e = AtoKh(N)
+    for k in N:
+        if str(k.label) == e[n][0][0:2]: start_node = k
+        if str(k.label) == e[n][0][6:8]: end_node = k
+    return [start_node, end_node]
+
 
 def link_label(num, N):
     """
@@ -145,6 +147,32 @@ def node_contrib(H, bin_edges, linkID=None, lengths=None):
         if ((type(lengths) != list) and (not hasattr(lengths, 'all'))):  # load lengths if none are given
             lengths = getLengths(lengths)
         return C * lengths[linkID]
+
+
+def linkSort(start=True, lnames=False, nnames=False):
+    """
+    Sort links after node names. If start is True the starting end of the link is used
+    to match node name. Else the link end is used.
+    """
+    if type(lnames) != list:
+        lnames = np.load('lnames.npy')
+    if type(nnames) != list:
+        nnames = loadNames
+    sortIDs = []
+    sortNames = []
+    for name in loadNames:
+        for i, l in enumerate(lnames):
+            if start:
+                if l[:2] == name:
+                    sortIDs.append(i)
+                    sortNames.append(l)
+            else:
+                if l[3:] == name:
+                    sortIDs.append(i)
+                    sortNames.append(l)
+    return sortIDs, sortNames
+
+
 """
 The following three functions are for manipulating adjacency matrices.
 They are especially used in newRegions.py.
