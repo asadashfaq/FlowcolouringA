@@ -440,13 +440,13 @@ def drawnet_import(N, scheme='square', direction='import', norm=True):
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
         if norm:
-            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$', fontsize=15)
             cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
         else:
-            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}$ [GW]')
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}$ [GW]', fontsize=15)
             cbl.set_ticklabels(['0','4','8','12','16','20'])
 
-        ax2.set_xlabel(r'$\mathcal{I}_{n\leftarrow m}$')
+        ax2.set_xlabel(r'$\mathcal{I}_{n\leftarrow m}$', fontsize=15)
         ax2.xaxis.set_label_position('top')
         cbl2.set_ticks(np.linspace(0,1,6))
         cbl2.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
@@ -556,13 +556,13 @@ def drawnet_export(N, scheme='square', direction='export', norm=True):
         ax1.xaxis.set_label_position('top')
         cbl.set_ticks(np.linspace(0,1,6))
         if norm:
-            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$', fontsize=15)
             cbl.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
         else:
-            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}$ [GW]')
+            ax1.set_xlabel(r'$\mathcal{K}^T_{ln}$ [GW]', fontsize=15)
             cbl.set_ticklabels(['0','4','8','12','16','20'])
 
-        ax2.set_xlabel(r'$\mathcal{E}_{n\rightarrow m}$')
+        ax2.set_xlabel(r'$\mathcal{E}_{n\rightarrow m}$', fontsize=15)
         ax2.xaxis.set_label_position('top')
         cbl2.set_ticks(np.linspace(0,1,6))
         cbl2.set_ticklabels(['0','0.1','0.2','0.3','0.4','0.5'])
