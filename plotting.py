@@ -378,7 +378,10 @@ def bars(scheme, verbose=None, norm='load'):
         # Legend
         artists = [plt.Line2D([0, 0], [0, 0], ls='dashed', lw=2.0, c='k'), plt.Rectangle((0, 0), 0, 0, ec=green, fc=green), plt.Rectangle((0, 0), 0, 0, ec=blue, fc=blue)]
         LABS = ['M$^1$', 'M$^2$', 'M$^3$']
-        leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+        if norm = 'cap':
+            leg = plt.legend(artists, LABS, loc='upper right', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
+        else:
+            leg = plt.legend(artists, LABS, loc='upper left', ncol=len(artists), columnspacing=0.6, borderpad=0.4, borderaxespad=0.0, handletextpad=0.2, handleheight=1.2)
         leg.get_frame().set_alpha(0)
         leg.get_frame().set_edgecolor('white')
         ltext = leg.get_texts()
