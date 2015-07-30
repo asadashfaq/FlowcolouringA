@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 from EUgrid import EU_Nodes_usage
-from functions import link_label, binMaker
+from functions import link_label, binMaker, linkSort
 from aurespf.tools import get_q, AtoKh_old
 from link_namer import link_namer
 import networkx as nx
@@ -603,6 +603,8 @@ def usageMesh(direction):
         quantiles = np.load('./results/quantiles_' + str(scheme) + '_70128.npy')
         usages = N_usages / quantiles
         usages = usages[loadOrder]
+        usages = usages.T
+        usages = usages[linkIDs]
 
         # adapted from the official "jet" colormap: /lib/matplotlib/_cm.py
         jet_data = {'red': ((0., 1, 1), (0.015, 0, 0), (0.35, 0, 0), (0.66, 1, 1), (0.89, 1, 1), (1, 0.5, 0.5)),
@@ -625,7 +627,7 @@ def usageMesh(direction):
 
             plt.figure(figsize=(10, 11))
             ax = plt.subplot(1, 1, 1)
-            plt.pcolormesh(usages.T, cmap=cmap, norm=norm)
+            plt.pcolormesh(usages, cmap=cmap, norm=norm)
             cbl = plt.colorbar()
             cbl.set_label(label=r'$\mathcal{K}_{ln}^T / \mathcal{K}_{l}^T$', size=14)
             cbl.set_ticks(levels)
@@ -667,7 +669,7 @@ if '2' in figNum:
 if '3' in figNum:
     print 'Making table 3'
     directions = ['import', 'export', 'combined']
-    lnames = np.array(link_namer())
+    linkIDs, lnames = linkSort()
     p = Pool(len(directions))
     p.map(usageMesh, directions)
 
