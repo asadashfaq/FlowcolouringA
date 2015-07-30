@@ -329,11 +329,11 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             if mode == 'old':
                 usages = usage[l,n,:]/Fmax[l]
                 plt.plot([0, Fmax[l]/qq], [0, 1], '-k',lw=1) # diagonal
-                ax.set_ylabel(r'$C_{ln}(t)$')
+                ax.set_ylabel(r'$C_{ln}(t)$', fontsize=14)
             if mode == 'new':
                 usages = usage[l,n,:]/linkflow
                 names = names[1:]
-                ax.set_ylabel(r'$C_{ln}(t)$')
+                ax.set_ylabel(r'$C_{ln}(t)$', fontsize=14)
 
             # scatter
             plt.scatter(linkflow/qq, usages, c='#000099', edgecolor='none', alpha=.2)
@@ -351,11 +351,11 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
 
             label = link_label(l,N)
             # ax.set_title('Synchronised'+' '+str(direction)+' flows on link '+label)
-            ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$')
+            ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$', fontsize=14)
 
             # Plot link name and direction in figure
-            plt.text(.9, .95, label)
-            plt.text(.9, .9, direction)
+            plt.text(.88, .95, label, fontsize=14)
+            plt.text(.88, .9, direction, fontsize=14)
 
             # Shrink x-axis to make room for legend
             # box = ax.get_position()
