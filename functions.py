@@ -173,6 +173,35 @@ def linkSort(start=True, lnames=False, nnames=False):
     return sortIDs, sortNames
 
 
+def linkSortSimple(lnames=False, nnames=False):
+    """
+    Sort links after node names.
+    """
+    if type(lnames) != list:
+        lnames = np.load('lnames.npy')
+    if type(nnames) != list:
+        nnames = loadNames
+    sortIDs = []
+    sortNames = []
+    ids = []
+    for name in nnames:
+        tempList = []
+        tempID = []
+        for i, l in enumerate(lnames):
+            if i in ids: continue
+            if name in l:
+                tempList.append(l)
+                tempID.append(i)
+                ids.append(i)
+        for n in loadNames:
+            if n == name: continue
+            for i, l in enumerate(tempList):
+                if n in l:
+                    sortNames.append(l)
+                    sortIDs.append(tempID[i])
+    return sortIDs, sortNames
+
+
 """
 The following three functions are for manipulating adjacency matrices.
 They are especially used in newRegions.py.

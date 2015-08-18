@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 from EUgrid import EU_Nodes_usage
-from functions import link_label, binMaker, linkSort
+from functions import link_label, binMaker, linkSort, linkSortSimple
 from aurespf.tools import get_q, AtoKh_old
 from link_namer import link_namer
 import networkx as nx
@@ -317,6 +317,7 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
     """
     nodes = [0, 3, 18, 24]
     links = usage.shape[0]
+    fontsize = 16
     for l in range(links):
         diag = []
         diagflow = []
@@ -329,11 +330,11 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
             if mode == 'old':
                 usages = usage[l,n,:]/Fmax[l]
                 plt.plot([0, Fmax[l]/qq], [0, 1], '-k',lw=1) # diagonal
-                ax.set_ylabel(r'$C_{ln}(t)$', fontsize=14)
+                ax.set_ylabel(r'$c_{ln}(t)$', fontsize=fontsize)
             if mode == 'new':
                 usages = usage[l,n,:]/linkflow
                 names = names[1:]
-                ax.set_ylabel(r'$C_{ln}(t)$', fontsize=14)
+                ax.set_ylabel(r'$c_{ln}(t)$', fontsize=fontsize)
 
             # scatter
             plt.scatter(linkflow/qq, usages, c='#000099', edgecolor='none', alpha=.2)
@@ -351,11 +352,11 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
 
             label = link_label(l,N)
             # ax.set_title('Synchronised'+' '+str(direction)+' flows on link '+label)
-            ax.set_xlabel(r'$|F_l(t)|/\mathcal{K}_l^T$', fontsize=14)
+            ax.set_xlabel(r'$f_l(t)/\mathcal{K}_l^T$', fontsize=fontsize)
 
             # Plot link name and direction in figure
-            plt.text(.88, .95, label, fontsize=14)
-            plt.text(.88, .9, direction, fontsize=14)
+            plt.text(.85, .92, label, fontsize=fontsize)
+            plt.text(.85, .88, direction, fontsize=fontsize)
 
             # Shrink x-axis to make room for legend
             # box = ax.get_position()
@@ -364,9 +365,9 @@ def scatter_plotter(N, F, Fmax, usage, direction, mode):
 
             plt.axis([0, 1, 0, 1])
             if mode == 'old':
-                plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.png', bbox_inches='tight')
+                plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'.pdf', bbox_inches='tight')
             if mode == 'new':
-                plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'-'+mode+'.png', bbox_inches='tight')
+                plt.savefig(outPath+'fig 4/'+str(N[n].label)+'/'+str(l)+'-'+str(direction)+'-'+mode+'.pdf', bbox_inches='tight')
             plt.close('all') # fixes memory leak.
     return
 
@@ -629,7 +630,7 @@ def usageMesh(direction):
             ax = plt.subplot(1, 1, 1)
             plt.pcolormesh(usages, cmap=cmap, norm=norm)
             cbl = plt.colorbar()
-            cbl.set_label(label=r'$\mathcal{K}_{ln}^T / \mathcal{K}_{l}^T$', size=14)
+            cbl.set_label(label=r'$\mathcal{K}_{ln}^T / \mathcal{K}_{l}^T$', size=18)
             cbl.set_ticks(levels)
             cbl.set_ticklabels(levels)
             ax.set_xticks(np.linspace(1, 30, 30))
@@ -669,7 +670,9 @@ if '2' in figNum:
 if '3' in figNum:
     print 'Making table 3'
     directions = ['import', 'export', 'combined']
-    linkIDs, lnames = linkSort()
+    linkIDs, lnames = linkSortSimple()
+    linkIDs = linkIDs[::-1]
+    lnames = lnames[::-1]
     p = Pool(len(directions))
     p.map(usageMesh, directions)
 
