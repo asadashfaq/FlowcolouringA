@@ -12,6 +12,7 @@ from new_linkcolouralgorithm_less import track_link_usage_total
 from link_namer import node_namer, link_namer, link_dict
 from functions import binMaker, bin_prob, bin_CDF, node_contrib
 from europe_plusgrid import *
+from EUgrid import EU_Nodes
 from figutils import *
 
 """
@@ -26,7 +27,8 @@ Call the script using only one of the following command line arguments:
 - solve:        Solve power flows for various constraints
 - trace:        Run flow tracing and save results.
 - usage:        Calculate node's usage of links.
-
+- plot:         figures of total network usages
+- plot area:    stacked area figures of network usages
 """
 
 if len(sys.argv) < 2:
@@ -199,7 +201,7 @@ if (('plot' in task) and ('area' not in task)):
 
     # Plot figures of total network usage
     # Figure comparing nodes' total network usage as function of b
-    names = loadNames[::-1] # reversed because .argsort sorts from smallest to largest
+    names = loadNames[::-1]  # reversed because .argsort above sorts from smallest to largest
     plt.figure(figsize=(12, 6))
     ax3 = plt.subplot(121)
     ax3.set_xticks(np.linspace(0, 30, 16))
@@ -296,3 +298,220 @@ if (('plot' in task) and ('area' not in task)):
     plt.title('Total network usage, synchronised')
     plt.savefig(figPath + 'total-network-usage-beta-normed.pdf', bbox_inches='tight')
     plt.close('all')
+
+
+"""
+Plotting stacked area figures of network usages
+"""
+if (('plot' in task) and ('area' in task)):
+    print('Plotting area figures')
+    N = EU_Nodes()
+    F = abs(np.load('./ConstrainedFlowData/Europe_aHE_0.05q99_DC_lin_flows.npy'))
+    link_dic = link_dict(N, F)
+    nodes = range(len(N))
+    links = range(len(F))
+    names = np.array([str(N[i].label) for i in range(len(N))])
+    link_names = np.array(link_namer(N, F))
+    N = np.load('./ConstrainedFlowData/Europe_aHE_copper_DC_lin.npz', mmap_mode='r+')
+    node_mean_load = N['mean']
+    N = None
+    betas = np.linspace(0.05, 1.5, 30)
+
+    for n in ['', 'norm']:
+        if n == 'norm':
+            saveString = 'normed/'
+        else:
+            saveString = ''
+
+        # Country's usage of all links as function of b
+        for node in nodes:
+            plt.figure(figsize=(12, 5))
+            usages = []
+            scheme = 'lin'
+            for b in np.linspace(0.05, 1.5, 30):
+                # Load data and results
+                F = abs(np.load('./ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_DC_' + scheme + '_flows.npy'))
+                quantiles = np.load('./constrained/quantiles_' + scheme + '_b_' + str(b) + '.npy')
+                N_usages = np.load('./constrained/Node_contrib_' + scheme + '_combined_b_' + str(b) + '.npy')
+                if n == 'norm':
+                    usages.append(.5 * N_usages[node] / quantiles)
+                else:
+                    usages.append(.5 * N_usages[node])
+            usages = np.array(usages).transpose()
+            ax1 = plt.subplot(121)
+
+            max_usages = np.max(usages, 1)
+            sort_usages = usages[max_usages.argsort()]
+            if n == 'norm':
+                norm_usages = sort_usages / np.sum(sort_usages, 0)
+            else:
+                norm_usages = sort_usages
+            sort_link_names = link_names[max_usages.argsort()]
+            top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+            for a in links:
+                if a < len(links) - 6:
+                    col = "#6e5160"
+                else:
+                    col = top_col[len(links) - a - 1]
+                if a == 0:
+                    ax1.fill_between(betas, 0, norm_usages[a, :], facecolor=col, alpha=.7)
+                    baseline = norm_usages[a, :]
+                else:
+                    plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
+                    ax1.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                    if a >= len(links) - 10:
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
+                                 sort_link_names[a], color=col, va='center', fontsize=9)
+                    baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
+
+            ax1.set_xticks(np.linspace(0, 1.5, 16))
+            ax1.set_xticklabels(np.linspace(0, 1.5, 16))
+            plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
+            plt.xlabel(r'$\beta$')
+            if n == 'norm':
+                plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
+            else:
+                plt.ylabel(r'$\mathcal{K}^T_{ln}$ [W]')
+
+            usages = []
+            scheme = 'minDis'
+            for b in np.linspace(0.05, 1.5, 30):
+                # Load data and results
+                F = abs(np.load('./ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_lin_flows.npy'))
+                quantiles = np.load('./constrained/quantiles_' + scheme + '_b_' + str(b) + '.npy')
+                N_usages = np.load('./constrained/Node_contrib_' + scheme + '_combined_b_' + str(b) + '.npy')
+                if n == 'norm':
+                    usages.append(.5 * N_usages[node] / quantiles)
+                else:
+                    usages.append(.5 * N_usages[node])
+            usages = np.array(usages).transpose()
+            ax2 = plt.subplot(122)
+
+            max_usages = np.max(usages, 1)
+            sort_usages = usages[max_usages.argsort()]
+            if n == 'norm':
+                norm_usages = sort_usages / np.sum(sort_usages, 0)
+            else:
+                norm_usages = sort_usages
+            sort_link_names = link_names[max_usages.argsort()]
+            top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+            for a in links:
+                if a < len(links) - 6:
+                    col = "#6e5160"
+                else:
+                    col = top_col[len(links) - a - 1]
+                if a == 0:
+                    ax2.fill_between(betas, 0, norm_usages[a, :], facecolor=col, alpha=.7)
+                    baseline = norm_usages[a, :]
+                else:
+                    plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
+                    ax2.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                    if a >= len(links) - 10:
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
+                                 sort_link_names[a], color=col, va='center', fontsize=9)
+                    baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
+
+            ax2.set_xticks(np.linspace(0, 1.5, 16))
+            ax2.set_xticklabels(np.linspace(0, 1.5, 16))
+            plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
+            plt.xlabel(r'$\beta$')
+            plt.savefig(figPath + saveString + 'node-usage-area-' + str(node) + '.pdf', bbox_inches='tight')
+            plt.close()
+
+        # All countries usage of a single link as function of b
+        for link in links:
+            plt.figure(figsize=(12, 5))
+            usages = []
+            scheme = 'lin'
+            for b in betas:
+                # Load data and results
+                F = abs(np.load('./ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_DC_' + scheme + '_flows.npy'))
+                quantiles = np.load('./constrained/quantiles_' + scheme + '_b_' + str(b) + '.npy')
+                N_usages = np.load('./constrained/Node_contrib_' + scheme + '_combined_b_' + str(b) + '.npy')
+                if n == 'norm':
+                    usages.append(.5 * N_usages[:, link] / quantiles[link])
+                else:
+                    usages.append(.5 * N_usages[:, link])
+            usages = np.array(usages).transpose()
+            ax3 = plt.subplot(121)
+
+            max_usages = np.max(usages, 1)
+            sort_usages = usages[max_usages.argsort()]
+            if n == 'norm':
+                norm_usages = sort_usages / np.sum(sort_usages, 0)
+            else:
+                norm_usages = sort_usages
+            sort_names = names[max_usages.argsort()]
+            top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+            for a in nodes:
+                if a < len(nodes) - 6:
+                    col = "#6e5160"
+                else:
+                    col = top_col[len(nodes) - a - 1]
+                if a == 0:
+                    ax3.fill_between(betas, 0, norm_usages[a, :], facecolor=col, alpha=.7)
+                    baseline = norm_usages[a, :]
+                else:
+                    plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
+                    ax3.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                    if a >= len(nodes) - 10:
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2, sort_names[a], color=col, va='center', fontsize=9)
+                    baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
+
+            ax3.set_xticks(np.linspace(0, 1.5, 16))
+            ax3.set_xticklabels(np.linspace(0, 1.5, 16))
+            plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
+            plt.xlabel(r'$\beta$')
+            if n == 'norm':
+                plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
+            else:
+                plt.ylabel(r'$\mathcal{K}^T_{ln}$ [W]')
+
+            usages = []
+            scheme = 'minDis'
+            for b in np.linspace(0.05, 1.5, 30):
+                # Load data and results
+                F = abs(np.load('./ConstrainedFlowData/Europe_aHE_' + str(b) + 'q99_lin_flows.npy'))
+                quantiles = np.load('./constrained/quantiles_' + scheme + '_b_' + str(b) + '.npy')
+                N_usages = np.load('./constrained/Node_contrib_' + scheme + '_combined_b_' + str(b) + '.npy')
+                if n == 'norm':
+                    usages.append(.5 * N_usages[:, link] / quantiles[link])
+                else:
+                    usages.append(.5 * N_usages[:, link])
+            usages = np.array(usages).transpose()
+            ax4 = plt.subplot(122)
+
+            max_usages = np.max(usages, 1)
+            sort_usages = usages[max_usages.argsort()]
+            if n == 'norm':
+                norm_usages = sort_usages / np.sum(sort_usages, 0)
+            else:
+                norm_usages = sort_usages
+            sort_names = names[max_usages.argsort()]
+            top_col = ["#cc66cc", "#cc6666", "#cc9966", "#66cc66", "#66cccc", "#6666cc"]
+
+            for a in nodes:
+                if a < len(nodes) - 6:
+                    col = "#6e5160"
+                else:
+                    col = top_col[len(nodes) - a - 1]
+                if a == 0:
+                    ax4.fill_between(betas, 0, norm_usages[a, :], facecolor=col, alpha=.7)
+                    baseline = norm_usages[a, :]
+                else:
+                    plot_data = [norm_usages[a, i] + baseline[i] for i in range(len(baseline))]
+                    ax4.fill_between(betas, baseline, plot_data, facecolor=col, alpha=.7)
+                    if a >= len(nodes) - 10:
+                        plt.text(1.51, 0 + baseline[-1] + (plot_data[-1] - baseline[-1]) / 2,
+                                 sort_names[a], color=col, va='center', fontsize=9)
+                    baseline = [baseline[i] + norm_usages[a, i] for i in range(len(baseline))]
+
+            ax4.set_xticks(np.linspace(0, 1.5, 16))
+            ax4.set_xticklabels(np.linspace(0, 1.5, 16))
+            plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
+            plt.xlabel(r'$\beta$')
+            plt.savefig(figPath + saveString + 'link-usage-area-' + str(link) + '.pdf', bbox_inches='tight')
+            plt.close()
