@@ -295,7 +295,7 @@ if (('plot' in task) and ('area' not in task)):
         plt.plot(betas, normedUsagesminDis[n], '-', color=col, lw=1.5, alpha=alph)
     ax6.set_xlabel(r'$\beta$')
     plt.axis([0.05, 1.5, 0, 1.1 * np.max(normedUsagesminDis)])
-    plt.title('Total network usage, synchronised')
+    plt.title('Total network usage, min. diss.')
     plt.savefig(figPath + 'total-network-usage-beta-normed.pdf', bbox_inches='tight')
     plt.close('all')
 
@@ -369,6 +369,7 @@ if (('plot' in task) and ('area' in task)):
             ax1.set_xticklabels(np.linspace(0, 1.5, 16))
             plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
             plt.xlabel(r'$\beta$')
+            plt.title('Network usage, DC')
             if n == 'norm':
                 plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
             else:
@@ -417,6 +418,8 @@ if (('plot' in task) and ('area' in task)):
             ax2.set_xticklabels(np.linspace(0, 1.5, 16))
             plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
             plt.xlabel(r'$\beta$')
+            plt.title('Network usage, min. diss.')
+            plt.suptitle('Link usage by ' + names[node], fontsize=14)
             plt.savefig(figPath + saveString + 'node-usage-area-' + str(node) + '.pdf', bbox_inches='tight')
             plt.close()
 
@@ -465,6 +468,7 @@ if (('plot' in task) and ('area' in task)):
             ax3.set_xticklabels(np.linspace(0, 1.5, 16))
             plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
             plt.xlabel(r'$\beta$')
+            plt.title('Network usage, DC')
             if n == 'norm':
                 plt.ylabel(r'$\mathcal{K}^T_{ln}/\mathcal{K}^T_l$')
             else:
@@ -513,5 +517,7 @@ if (('plot' in task) and ('area' in task)):
             ax4.set_xticklabels(np.linspace(0, 1.5, 16))
             plt.axis([0.05, 1.5, 0, max(np.sum(norm_usages, 0))])
             plt.xlabel(r'$\beta$')
+            plt.title('Network usage, min. diss.')
+            plt.suptitle('Usage of link ' + link_names[link], fontsize=14)
             plt.savefig(figPath + saveString + 'link-usage-area-' + str(link) + '.pdf', bbox_inches='tight')
             plt.close()
